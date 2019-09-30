@@ -1,0 +1,470 @@
+<?php
+
+/**
+ * @file
+ * Provides RussianPost shipping quotes for Drupal Commerce.
+ */
+
+
+module_load_include('inc', 'commerce_russianpost', 'includes/commerce_russianpost.services');
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_russianpost_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/shipping/methods/russianpost/edit'] = array(
+    'title' => 'Edit',
+    'description' => 'Configure the RussianPost shipping method.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_russianpost_settings_form'),
+    'access arguments' => array('administer shipping'),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 0,
+    'file' => 'includes/commerce_russianpost.admin.inc',
+  );
+
+  foreach (commerce_shipping_services('russianpost') as $name => $shipping_service) {
+    // Convert underscores to hyphens for the menu item argument.
+    $service_name_arg = 'russianpost-' . strtr($name, '_', '-');
+
+    $items['admin/commerce/config/shipping/services/' . $service_name_arg . '/remove'] = array(
+      'title' => t('Remove'),
+      'description' => 'Remove this service.',
+      'page callback' => 'commerce_russianpost_service_delete_page',
+      'page arguments' => array($name),
+      'access arguments' => array('administer shipping'),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 0,
+      'file' => 'includes/commerce_russianpost.admin.inc',
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ */
+function commerce_russianpost_commerce_shipping_method_info() {
+  $shipping_methods = array();
+
+  $shipping_methods['russianpost'] = array(
+    'title' => t('RussianPost'),
+    'description' => t('Provides RussianPost shipping quotes.'),
+  );
+
+  return $shipping_methods;
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ */
+function commerce_russianpost_commerce_shipping_service_info() {
+  $enabled_shipping_services = array();
+
+  // Get list of all available shipping services.
+  $all_services = array();
+  foreach (commerce_russianpost_services_list() as $service_code => $service_data) {
+    $all_services[commerce_russianpost_generate_service_machine_name($service_code)] = $service_data['name'];
+  }
+
+  foreach (commerce_russianpost_load_enabled_services() as $name => $service) {
+    // Use shipping service name directly from RussianPost if possible, default
+    // to the one that was stored in the database.
+    $service_title = isset($all_services[$name]) ? $all_services[$name] : $service['title'];
+
+    $enabled_shipping_services[$name] = array(
+      // theme_shipping_method_admin_overview() runs check_plain() on title.
+      'title' => t('RussianPost !service_title', array('!service_title' => $service_title)),
+//      'display_title' => t('RussianPost !service_title', array('!service_title' => $service_title)),
+      'display_title' => 'Почта России',
+      'shipping_method' => 'russianpost',
+      'rules_component' => TRUE,
+      'price_component' => $name,
+      'weight' => $service['weight'],
+      'callbacks' => array(
+        'rate' => 'commerce_russianpost_service_rate_order',
+        'details_form' => 'commerce_russianpost_details_form',
+        'details_form_validate' => 'commerce_russianpost_details_form_validate',
+        'details_form_submit' => 'commerce_russianpost_details_form_submit',
+      ),
+    );
+
+    // On service list pages, add note to any services that aren't in the list
+    // retrieved from the RussianPost API.
+    if ((substr(current_path(), 0, 30) == 'admin/commerce/config/shipping') && !empty($all_services) && !in_array($name, array_keys($all_services))) {
+      $enabled_shipping_services[$name]['description'] = t('<em>NOTE: This service no longer appears in the RussianPost Web Services API.</em>');
+    }
+  }
+
+  return $enabled_shipping_services;
+}
+
+/**
+ * Implements hook_commerce_price_component_type_info().
+ */
+function commerce_russianpost_commerce_price_component_type_info() {
+  $components = array();
+
+  // Define price components for services with 'disabled' status; preserving
+  // data integrity for past orders.
+  foreach (commerce_russianpost_load_disabled_services() as $machine_name => $service) {
+    $components[$machine_name] = array(
+      'title' => t('[DISABLED] RussianPost !service_title', array('!service_title' => $service['title'])),
+      'display_title' => t('Shipping: RussianPost !service_title', array('!service_title' => $service['title'])),
+      'shipping_service' => $machine_name,
+      'weight' => 20,
+    );
+  }
+
+  return $components;
+}
+
+/**
+ * Implements hook_commerce_shipping_service_rate_options_alter().
+ */
+function commerce_russianpost_commerce_shipping_service_rate_options_alter(&$options, $order)
+{
+    if (isset($order->shipping_rates['rp_cennayaposylka'] )) {
+        $line_item = $order->shipping_rates['rp_cennayaposylka'];
+        $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
+        $data = $line_item_wr->commerce_unit_price->data->value();
+
+        $message = $cost = '';
+        if (empty($data['errors'])) {
+            $cost = $line_item_wr->commerce_unit_price->amount->value();
+            $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
+        } else {
+            $message = implode('<br />', $data['errors']);
+        }
+
+        $options['rp_cennayaposylka'] =   '<div class="carrier">Заберу<br />на почте</div>' .
+                            '<div class="message">' . $message . '</div>' .
+                            '<div class="cost">' . $cost . '</div>';
+    }
+}
+
+/**
+ * Shipping service callback: returns shipping rates for a given order.
+ */
+function commerce_russianpost_service_rate_order($shipping_service, $order)
+{
+    //$start = microtime(true);
+    $rate = array(
+        'amount' => 0,
+        'currency_code' => 'RUB',
+        'data' => array(),
+    );
+
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+
+    $rates = &drupal_static(__FUNCTION__);
+    if (!$rates) {
+
+        // Build the rate request for the current order.
+        module_load_include('inc', 'commerce_russianpost', 'includes/commerce_russianpost.rates');
+        $rate_request = commerce_russianpost_build_rate_request($order);
+
+        // если запрос сформирован
+        if (!empty($rate_request['postal-code']) && !empty($rate_request['weight'])) {
+            // поднять из кэша расчёт для этого Индекса-Суммы-Веса
+            $cache_key = $rate_request['postal-code'] . $rate_request['content-value'] . $rate_request['weight'];
+//                $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, variable_get('commerce_russianpost_cache_timeout', 600));
+            $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, 1);
+
+            if (!$cache) {
+                // при переходе на страницу оформления запрос на расчёт выполняется дважды
+                // при первом построении формы и автонажатии кнопки Recalc
+                // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
+                if (arg(0) != 'checkout') {
+                    $rates = [];
+                    $response = commerce_russianpost_api_request($rate_request, t('Requesting shipping rates for package in Order @order_number', ['@order_number' => $order->order_number]));
+
+                    if ($response) {
+                        $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
+                        if (empty($response['services']['message']['error'])) {
+                            foreach (commerce_russianpost_parse_rate_response($response['services']) as $service_name => $rate) {
+                                if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100) {
+                                    $rate['amount'] = 0;
+                                }
+                                $rate['amount'] = ceil($rate['amount'] / 100) * 100;
+                                $rates[$service_name] = $rate;
+                            }
+                        }
+                        else {
+                            foreach (commerce_russianpost_load_enabled_services() as $service_name => $service) {
+                                $rates[$service_name] = [
+                                    'amount' => 0,
+                                    'currency_code' => '',
+                                    'data' => [
+                                        'errors' => [$response['services']['message']['error']],
+                                        'messages' => [$response['services']['message']['message']],
+                                    ],
+                                ];
+                            }
+                        }
+
+                        commerce_shipping_rates_cache_set('russianpost' . $cache_key, $order, $rates);
+                    }
+                } else {
+                    $rate['data']['errors'][] = 'выполняется расчёт...';
+                }
+            } else {
+                $rates = $cache;
+            }
+        } else {
+            if (empty($rate_request['postal-code'])) $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+            if (empty($rate_request['weight'])) $rate['data']['errors'][] = 'Расчёт не выполнен, так не удалось определить вес.';
+        }
+    }
+
+
+    return isset($rates[$shipping_service['name']]) ? $rates[$shipping_service['name']] : $rate;
+}
+
+/**
+ * Submits an API request to the RussianPost XML Processor.
+ *
+ * @param string $target_url
+ *   The url to submit the request to.
+ * @param string $xml
+ *   An XML string to submit.
+ * @param string $message
+ *   (Optional) Log message to use for logged API requests.
+ * @param string $alternate_api_key
+ *   (Optional) An API key (if different from the one saved in the database)
+ *
+ * @return array or bool
+ *   Returns a array containing the response from the API server or
+ *   FALSE if there was no response or an error occurred.
+ */
+function commerce_russianpost_api_request($params = array(), $message = '') {
+  $calc = &drupal_static(__FUNCTION__);
+
+    // If the services haven't been loaded yet, do so now.
+    if (!isset($calc)) {
+        header('Content-Type: text/html; charset=utf-8');
+
+        // Формируем запрос со всеми необходимыми переменными
+        $queryString = 'f=' . rawurlencode($params['origin-postal-code']);
+        $queryString .= '&c=' . (empty($params['country-code']) ? 'RU' : rawurlencode($params['country-code']));
+        $queryString .= '&t=' . rawurlencode($params['postal-code']);
+        $queryString .= '&w=' . $params['weight'] . '&v=' . $params['content-value'];
+        $queryString .= isset($params['expected-mailing-date']) ? '&d=' . $params['expected-mailing-date'] : '';
+        $queryString .= '&st=' . $params['site'] . '&ml=' . $params['email'];
+        $queryString .= '&o=php&cs=utf-8';
+
+        // Формируем URL запроса.
+        $request = "http://api.postcalc.ru/?$queryString";
+
+        // Формируем опции запроса. Это необязательно, однако упрощает контроль и отладку
+        $arrOptions = array('http' =>
+            array('header' => 'Accept-Encoding: gzip', 'timeout' => 5, 'user_agent' => phpversion())
+        );
+
+        // Log the API request if specified.
+        $logging = variable_get('commerce_russianpost_log');
+        if (isset($logging['request']) && $logging['request']) {
+            if (empty($message)) {
+                $message = t('Submitting API request to the RussianPost processor');
+            }
+
+            watchdog('russianpost', '!message. Запрос: !request', array('!message' => $message, '!request' => '<pre>' . print_r( $request, true) . '</pre>'), null);
+        }
+
+        $calc = array();
+
+        // Соединяемся с сервером
+        if ($response = file_get_contents($request, false, stream_context_create($arrOptions))) {
+
+            // Разархивируем ответ
+            if (substr($response, 0, 3) == "\x1f\x8b\x08") $response = gzinflate(substr($response, 10, -8));
+
+            // Переводим ответ в массив PHP
+            $response_arr = unserialize($response);
+
+            if (isset($logging['response']) && $logging['response']) {
+                watchdog('russianpost', 'Ответ: !request', array('!request' => '<pre>' . print_r( $response_arr, true) . '</pre>'), null);
+            }
+
+            //$response_status = commerce_russianpost_validate_api_response($response);
+
+            if ($response_arr['Status'] != 'OK') {
+                $calc['services']['message'] = array(
+                    'error' => 2,
+                    'message' => $response_arr['Message'],
+                );
+            } else {
+                foreach ($response_arr['Отправления'] as $key => $item) {
+                    if ($item['Товарное'] == 1 && $item['Ценное'] == 1) {
+                        $enkey = transliteration_get($key, '?', language_default('language'));
+                        $calc['services'][$enkey] = array(
+                            'key' => $enkey,
+                            'name' => $key,
+                            'cost' => $item['Доставка'],
+                            'delivery_time' => $item['СрокДоставки'],
+                            'package_count' => $item['Количество'],
+                            'base_cost' => $item['Тариф'],
+                            'ensurance' => isset($item['Страховка']) ? $item['Страховка'] : 0,
+                            'class' => $item['КлассДоставки'],
+                            'error' => isset($item['НетРасчета']) ? $item['НетРасчета'] : '',
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+  return $calc;
+}
+
+/**
+ * Checks a RussianPost API response for errors.
+ *
+ * @param SimpleXMLElement $response
+ *   The response element to evaluate.
+ * 
+ * @return array
+ *   An array containing an error status and any related messages.
+ */
+function commerce_russianpost_validate_api_response($response)
+{
+  $status = array(
+    'error' => FALSE,
+    'messages' => array(),
+  );
+
+  // Check for error messages.
+  if ($response->getName() == 'messages') {
+    $status['error'] = TRUE;
+
+    foreach ($response as $message) {
+      $status['messages'][] = t('From RussianPost API: @code (@description)', array(
+        '@code' => $message->{'code'},
+        '@description' => $message->{'description'},
+      ));
+    }
+  }
+
+  return $status;
+}
+
+/**
+ * Shipping service callback: returns the example shipping service details form.
+ */
+function commerce_russianpost_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
+{
+    $pane_form = array();
+
+    if (empty($errors)) {
+
+        $pane_form['username'] = array(
+            '#title' => 'Фамилия, Имя, Отчество',
+            '#type' => 'textfield',
+        );
+        $pane_form['phone'] = array(
+            '#title' => 'Телефон',
+            '#type' => 'textfield',
+            '#attributes' => ['class' => ['masked-phone']],
+        );
+
+        $pane_form['zipcode'] = array(
+            '#title' => 'Индекс',
+            '#type' => 'textfield',
+        );
+        $pane_form['addr'] = array(
+            '#title' => 'Адрес',
+            '#type' => 'textfield',
+        );
+        $pane_form['office'] = array(
+            '#title' => 'Квартира/Офис',
+            '#type' => 'textfield',
+        );
+
+        $pane_form['callme'] = array(
+            '#title' => t('Call me to get details about my order and delivery'),
+            '#type' => 'checkbox',
+        );
+    }
+
+    return $pane_form;
+}
+
+/**
+ * Shipping service callback: validates the shipping service details.
+ */
+function commerce_russianpost_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
+{
+    $field = 'username';
+    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните ФИО получателя'); }
+    if (drupal_strlen($details_values[$field]) < 5) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно'); }
+    $field = 'phone';
+    if (drupal_strlen($details_values[$field]) < 10) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате +7 (xxx) xxx-xxxx'); }
+    $field = 'addr';
+    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Адрес необходим для доставки уведомления'); }
+    if (drupal_strlen($details_values[$field]) < 4) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Слишком короткий адрес'); }
+    $field = 'zipcode';
+    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Индекс обязателен'); }
+    if (drupal_strlen($details_values[$field]) != 6) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите шестизначный индекс'); }
+}
+
+/**
+ * Shipping service callback: validates the shipping service details.
+ */
+function commerce_russianpost_details_form_submit($details_form, $details_values, $line_item)
+{
+    // сохраняем введенные пользователем данные
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
+    $order_wrapper->field_username = $details_values['username'];
+    $order_wrapper->field_phone = $details_values['phone'];
+    $order_wrapper->commerce_customer_shipping->field_addr = $details_values['addr'];
+    $order_wrapper->commerce_customer_shipping->field_office = $details_values['office'];
+    $order_wrapper->commerce_customer_shipping->field_zipcode = $details_values['zipcode'];
+    $order_wrapper->commerce_customer_shipping->field_callme = $details_values['callme'];
+    $order_wrapper->commerce_customer_shipping->save();
+    $order_wrapper->save();
+}
+
+
+/**
+ * Formats a postal/zip-code for submission to RussianPost web services API.
+ *
+ * @param string $code
+ *   A postal/zip code.
+ *
+ * @param string $country
+ *   A two-letter country code.
+ *
+ * @return string
+ *   A formatted postal/zip code.
+ */
+function commerce_russianpost_format_postal_code($code, $country = NULL) {
+  switch ($country) {
+    // Canada: H0H0H0 (uppercase, no space, filter out invalid characters).
+    case 'CA':
+      return preg_replace('/[^A-Z0-9]+/', '', strtoupper($code));
+
+    // USA: 12345 or 12345-6789 (filter out invalid characters).
+    case 'US':
+      return preg_replace('/[^0-9\-]+/', '', $code);
+
+    // Other: Do nothing.
+    default:
+      return $code;
+  }
+}
+
+// callback функция, возвращающая информацию о доставке для заказов
+function rp_cennayaposylka_info($item)
+{
+    $component_data = empty($item->commerce_total['und'][0]['data']) ? [] : $item->commerce_total['und'][0]['data'];
+    return [
+        'title' => 'Почта России, Ценная посылка',
+        'method' => $item->commerce_shipping_service,
+        'address' => empty($component_data['address']) ? '' : $component_data['address'],
+    ];
+}

@@ -1,0 +1,259 @@
+<?php
+/**
+* @file
+* Adds new payment way - bank transfer
+*/
+
+// payment method nem
+define('BANK_TRANSFER_METHOD_NAME', 'bank_transfer');
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function bank_transfer_commerce_payment_method_info() {
+    return array(
+        // Системное название способа оплаты.
+        BANK_TRANSFER_METHOD_NAME => array(
+            // Название способа оплаты для отображения в админке.
+            'title' => 'Банковский перевод',
+            // Название способа оплаты для отображения в форме чекаута. Может содержать html.
+            // Опционально.
+            'display_title' => '<div class="carrier">' . t('Pay offline') . '</div><div class="message">' . t('Bank transfer') . '</div>',
+            // Описание способа оплаты. Опционально.
+            'description' => t('Bank Transfer Payment Method'),
+            // Состояние способа оплаты при включении модуля: TRUE — включён, FALSE — выключен
+            // (по умолчанию). Опционально.
+            'active' => TRUE,
+            // Сможет ли администратор самостоятельно добавить этот способ оплаты для
+            // завершённого заказа. Опционально. По умолчанию TRUE.
+            'terminal' => TRUE,
+            // Нужно ли покупателю покидать пределы сайта при оплате заказа этим способом.
+            // Опционально. По умолчанию FALSE.
+            'offsite' => FALSE,
+            // Автоматический редирект на сторонний сайт при оплате заказа этим способом.
+            // Опционально. По умолчанию FALSE.
+            'offsite_autoredirect' => FALSE,
+        ),
+    );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function bank_transfer_menu() {
+    // добавляем страницу со счётом
+    $items['checkout/%commerce_order/complete/invoice'] = array(
+        'title' => t('Bank transfer invoice'),
+        'page callback' => 'bank_transfer_show_invoice',
+        'page arguments' => array(1),
+        'access arguments' => array('view own commerce_order entities'),
+        'type' => MENU_CALLBACK,
+    );
+
+    return $items;
+}
+
+/**
+ * Implements hook_theme
+ */
+function bank_transfer_theme(){
+    return array(
+        'bank_transfer_invoice' => array(
+            'variables' => array( 'invoice' => NULL ),
+            'template' => 'bank_transfer_invoice',
+        ),
+    );
+}
+
+/**
+ * Menu item callback: invoice page
+ */
+function bank_transfer_show_invoice($order) {
+    // получаем методы оплаты в переменную $order->payment_methods
+    rules_invoke_all('commerce_payment_methods', $order);
+
+    // выбираем нужный метод
+    $vars['payment_method'] = '';
+    foreach($order->payment_methods as $key=>$method) {
+        if (strpos($key,BANK_TRANSFER_METHOD_NAME) === 0) $vars['payment_method'] = $method;
+    }
+
+    if (isset($order->data['bank_transfer'])) {
+        // информация о заказе
+        $vars['customer'] = $order->data['bank_transfer']['cstm_name'];
+        $vars['order_id'] = $order->order_number;
+        $vars['total_nds'] = sprintf("%01.2f", $order->commerce_order_total['und'][0]['amount'] / 100 * 0.18);
+        $vars['total_amount'] = sprintf("%01.2f", $order->commerce_order_total['und'][0]['amount'] / 100);
+        $vars['total_amount_str'] = mb_ucfirst(_num2str($vars['total_amount']));
+
+        foreach ($order->commerce_line_items['und'] as $key => $line_item) {
+            $item = commerce_line_item_load($line_item['line_item_id']);
+            if ($item->type == 'product')
+                $product = commerce_product_load($item->commerce_product['und'][0]['product_id']);
+            $vars['line_items'][] = array(
+                'title' => ($item->type == 'product') ? $product->title : t($item->line_item_label),
+                'quantity' => sprintf("%d", ($item->type == 'product') ? $item->quantity : 1),
+                'price' => sprintf("%01.2f", ($item->type == 'product') ? $item->commerce_unit_price['und'][0]['amount'] / 100 : $item->commerce_unit_price['und'][0]['amount'] / 100),
+                'amount' => sprintf("%01.2f", ($item->type == 'product') ? $item->commerce_total['und'][0]['amount'] / 100 : $item->commerce_unit_price['und'][0]['amount'] / 100)
+            );
+        }
+        $vars['total_qty'] = ++$key;
+
+        $output = theme('bank_transfer_invoice', array('invoice' => $vars));
+    } else {
+        $output = t('There is no invoice for this order');
+    }
+
+    return $output;
+}
+
+/**
+ * Payment method callback: settings form.
+ */
+function bank_transfer_settings_form($settings = NULL) {
+    $form = array();
+    $settings = (array)$settings
+        + array('information' => '',
+                'title' => '',
+                'rcpt_name' => '',
+                'rcpt_address' => '',
+                'rcpt_inn' => '',
+                'rcpt_kpp' => '',
+                'rcpt_bik' => '',
+                'rcpt_acc' => '',
+                'rcpt_k_acc' => '',
+                'rcpt_bank' => '',
+                'rcpt_boss' => '',
+                'rcpt_buh' => '',
+                'rcpt_logo' => '',
+                );
+
+    // Информация о способе оплаты
+        // информация
+    $form['information'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Information'),
+        '#description' => t('Information you would like to be shown to users when they select this payment mthd.'),
+        '#default_value' => $settings['information'],
+    );
+
+    // информация о получателе платежа
+        // наименование
+    $form['rcpt_name'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient name'),
+        '#description' => t('Payment recipient name'),
+        '#default_value' => $settings['rcpt_name'],
+    );
+        // адрес
+    $form['rcpt_address'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient address'),
+        '#default_value' => $settings['rcpt_address'],
+    );
+        // инн
+    $form['rcpt_inn'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient INN'),
+        '#default_value' => $settings['rcpt_inn'],
+    );
+        // КПП
+    $form['rcpt_kpp'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient KPP'),
+        '#default_value' => $settings['rcpt_kpp'],
+    );
+        // БИК
+    $form['rcpt_bik'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient BIK'),
+        '#default_value' => $settings['rcpt_bik'],
+    );
+        // счёт
+    $form['rcpt_acc'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient account'),
+        '#default_value' => $settings['rcpt_acc'],
+    );
+        // корр.счёт
+    $form['rcpt_k_acc'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient korr. account'),
+        '#default_value' => $settings['rcpt_k_acc'],
+    );
+        // банк получателя
+    $form['rcpt_bank'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient bank name'),
+        '#default_value' => $settings['rcpt_bank'],
+    );
+
+        // руководитель
+    $form['rcpt_boss'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient bank boss'),
+        '#default_value' => $settings['rcpt_boss'],
+    );
+
+        // гл. бухгалтер
+    $form['rcpt_buh'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Recipient accounter'),
+        '#default_value' => $settings['rcpt_buh'],
+    );
+
+        // логотип
+    $form['rcpt_logo'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Logo file with path'),
+        '#default_value' => $settings['rcpt_logo'],
+    );
+
+    return $form;
+}
+
+/**
+ * Payment method callback: submit form.
+ */
+function bank_transfer_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+    $form = array();
+
+    // Выводим информацию о способе оплаты
+    if (!empty($payment_method['settings']['information'])) {
+        $form['bank_transfer_information'] = array(
+            '#markup' => '<div class="info">'. $payment_method['settings']['information']. '</div>'
+        );
+    }
+
+    return $form;
+}
+
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function bank_transfer_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge)
+{
+    $order->data['bank_transfer'] = $pane_values;
+
+    // Создаём транзакцию
+    $transaction = commerce_payment_transaction_new('bank_transfer', $order->order_id);
+    $transaction->instance_id = $payment_method['instance_id'];
+    $transaction->amount = $charge['amount'];
+    $transaction->currency_code = $charge['currency_code'];
+    $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+    $transaction->message = t('The payment is pending.');
+    commerce_payment_transaction_save($transaction);
+}
+
+/**
+ * Implements hook_preprocess_page
+ */
+function bank_transfer_preprocess_page(&$vars)
+{
+    // страница печати счёта, изменить шаблон
+    if (arg(0) == 'checkout' && arg(2) == 'complete' && arg(3) == 'invoice') {
+            $vars['theme_hook_suggestions'][] = 'page__print';
+    }
+}
+

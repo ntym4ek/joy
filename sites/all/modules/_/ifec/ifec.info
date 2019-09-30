@@ -1,0 +1,11 @@
+name = "Inline Form Errors Custom"
+description = "Put form error messages inline with the form elements (custom rewritten)"
+package = Custom
+core = 7.x
+configure = admin/config/user-interface/ifec
+
+dependencies[] = ctools
+
+files[] = ifec.settings.inc
+files[] = ifec.theme.inc
+files[] = ifec.variable.inc

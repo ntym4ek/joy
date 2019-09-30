@@ -1,0 +1,165 @@
+<?php
+
+/**
+ * @file
+ * Defines an example shipping method for testing and development.
+ */
+
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ */
+function pickup_commerce_shipping_method_info() {
+    $shipping_methods = array();
+
+    $shipping_methods['pickup_shipping_method'] = array(
+        'title' => t('Pickup shipping method'),
+        'description' => t('Defines shipping method by pickup.'),
+    );
+
+    return $shipping_methods;
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ */
+function pickup_commerce_shipping_service_info() {
+  $shipping_services = array();
+
+  $shipping_services['pickup_shipping_service'] = array(
+    'title' => t('Pickup shipping service'),
+    'display_title' => t('Pickup'),
+    'shipping_method' => 'pickup_shipping_method',
+    'price_component' => 'pickup',
+    'weight' => 2,
+    'callbacks' => array(
+      'rate' => 'pickup_service_rate_order',
+      'details_form' => 'pickup_service_details_form',
+      'details_form_validate' => 'pickup_service_details_form_validate',
+      'details_form_submit' => 'pickup_service_details_form_submit',
+    ),
+  );
+
+  return $shipping_services;
+}
+
+/**
+ * Shipping service callback: returns a base price array for a shipping service
+ * calculated for the given order.
+ */
+function pickup_service_rate_order($shipping_service, $order) {
+    // в $order после ajax submit старые данные, загружаем заново
+    // $order = commerce_order_load($order->order_id);
+
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    $error = $message = '';
+    $shipping_cost = 0;
+
+    return array(
+        'amount' => $shipping_cost*100,
+        'currency_code' => $order_wrapper->commerce_order_total->currency_code->value(),
+        'data' => array(
+            'error' => $error,
+            'message' => $message,
+        ),
+    );
+}
+
+
+/**
+ * Allows modules to alter the options array generated to select a shipping
+ * service on the checkout form.
+ */
+function pickup_commerce_shipping_service_rate_options_alter(&$options, $order){
+    if (isset( $order->shipping_rates['pickup_shipping_service'] )) {
+        $options['pickup_shipping_service'] =   '<div class="carrier">' . t('Pickup') . '</div>' .
+            '<div class="message">' . t('From our warehouse') . '</div>' .
+            '<div class="cost">' . t('free', [], ['context' => 'Checkout delivery cost']) . '</div>';
+    }
+}
+
+/**
+ * Shipping service callback: returns the shipping service details form.
+ */
+function pickup_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
+{
+    // вывести инфо о пункте самовывоза
+    $pane_form = array();
+
+    $pane_form['info'] = array(
+        '#markup' => '<div class="form-item form-item-markup"><p>Забрать товар можно по адресу г. Кирово-Чепецк, ул. Производственная, д.6</p><p></p></div>',
+    );
+
+    $pane_form['username'] = array(
+        '#title' => 'Фамилия, Имя, Отчество',
+        '#type' => 'textfield',
+    );
+    $pane_form['phone'] = array(
+        '#title' => 'Телефон',
+        '#type' => 'textfield',
+        '#attributes' => ['class' => ['masked-phone']],
+    );
+
+    $pane_form['notes'] = array(
+        '#title' => t('Notes to order'),
+        '#type' => 'textarea',
+        '#rows' => 2,
+    );
+
+    $pane_form['callme'] = array(
+        '#title' => t('Call me to get details about my order and delivery'),
+        '#type' => 'checkbox',
+    );
+
+    return $pane_form;
+}
+
+/**
+ * Shipping service callback: validates the example shipping service details.
+ */
+function pickup_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
+{
+    $fields = array();
+    if (drupal_strlen($details_values['username']) < 8) { $fields[] = 'username'; }
+    if (drupal_strlen($details_values['phone']) < 5) { $fields[] = 'phone'; }
+
+    if ($fields) {
+        $message = 'Поля, выделенные красным, не заполнены или заполнены с ошибкой.';
+        foreach($fields as $field) {
+            form_set_error(implode('][', array_merge($form_parents, array($field))), $message);
+            $message = '';
+        }
+        return false;
+    } else {
+        return true;
+    }
+}
+
+/**
+ * Shipping service callback: increases the shipping line item's unit price if
+ * express delivery was selected.
+ */
+function pickup_service_details_form_submit($details_form, $details_values, $line_item)
+{
+    // сохраняем введенные пользователем данные
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
+
+    $order_wrapper->field_username = $details_values['username'];
+    $order_wrapper->field_phone = $details_values['phone'];
+    $order_wrapper->commerce_customer_shipping->field_notes = $details_values['notes'];
+    $order_wrapper->commerce_customer_shipping->field_callme = $details_values['callme'];
+    $order_wrapper->commerce_customer_shipping->save();
+    $order_wrapper->save();
+}
+
+// callback функция, возвращающая информацию о доставке для заказов
+function pickup_shipping_service_info($item)
+{
+    $component_data = empty($item->commerce_total['und'][0]['data']) ? [] : $item->commerce_total['und'][0]['data'];
+    return [
+        'title' => $item->line_item_label,
+        'method' => $item->commerce_shipping_service,
+        'address' => '613048, Кирово-Чепецк, ул. Производственная, д.6',
+    ];
+}

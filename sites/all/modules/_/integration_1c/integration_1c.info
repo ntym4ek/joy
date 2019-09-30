@@ -1,0 +1,7 @@
+name = Интеграция с 1C
+version = 7.x-1.0
+core = 7.x
+package = Custom
+
+files[] = views/handlers/integration_1c_handler_field_line_items_xml.inc
+files[] = views/handlers/integration_1c_handler_field_payment.inc

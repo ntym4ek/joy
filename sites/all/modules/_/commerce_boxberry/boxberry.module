@@ -1,0 +1,338 @@
+<?php
+
+/**
+ * @file
+ * Defines an example shipping method for testing and development.
+ */
+
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ */
+function boxberry_commerce_shipping_method_info()
+{
+    $shipping_methods['boxberry_shipping_method'] = array(
+        'title' => t('Boxberry shipping method'),
+        'description' => t('Defines shipping method by Boxberry.'),
+    );
+
+    return $shipping_methods;
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ */
+function boxberry_commerce_shipping_service_info()
+{
+  $shipping_services['boxberry_shipping_service'] = array(
+    'title' => t('Boxberry shipping service'),
+    'display_title' => 'Пункт выдачи',
+    'shipping_method' => 'boxberry_shipping_method',
+    'price_component' => 'boxberry',
+    'weight' => 1,
+    'callbacks' => array(
+      'rate' => 'boxberry_service_rate_order',
+      'details_form' => 'boxberry_service_details_form',
+      'details_form_validate' => 'boxberry_service_details_form_validate',
+      'details_form_submit' => 'boxberry_service_details_form_submit',
+    ),
+  );
+
+  return $shipping_services;
+}
+
+/**
+ * Shipping service callback: returns a base price array for a shipping service
+ * calculated for the given order.
+ */
+function boxberry_service_rate_order($shipping_service, $order)
+{
+    $rate = array(
+        'amount' => 0,
+        'currency_code' => 'RUB',
+        'data' => [],
+    );
+
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    $rates = &drupal_static(__FUNCTION__);
+    if (!$rates) {
+        $rate_request = boxberry_build_rate_request($order);
+
+        if ($rate_request['zipcode']) {
+            $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
+//                $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400)); // день в кэше
+            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // день в кэше
+
+            if (!$cache) {
+                // при переходе на страницу оформления запрос на расчёт выполняется дважды
+                // при первом построении формы и автонажатии кнопки Recalc
+                // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
+                if (arg(0) != 'checkout') {
+
+                    $response = boxberry_api_request($rate_request);
+
+                    if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
+                        $rate['data']['errors'][] = $response['cost_data'][0]['err'];
+                    }
+                    else {
+                        // записать в field_data данные запроса
+                        $order_wr = entity_metadata_wrapper('commerce_order', $order);
+                        $field_name = commerce_physical_order_shipping_field_name($order);
+
+                        $data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+                        $data['boxberry']['response'] = $response;
+                        $order_wr->{$field_name}->field_data = json_encode($data);
+                        $order_wr->{$field_name}->save();
+
+                        $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
+                        $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
+                        if (!empty($response['point_data'])) $rate['data']['address'] = $response['point_data']['Address'];
+
+
+                        $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
+                        if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100) {
+                            $rate['amount'] = 0;
+                        } else {
+                            // для Владивостока и многих других почему-то выдаёт нулевую стоимость
+                            if ($rate['amount'] == 0) {
+                                $rate['data']['errors'][] = 'ошибка при расчёте стоимости';
+                                return false;
+                            }
+                        }
+
+                        // Cache these rates.
+                        commerce_shipping_rates_cache_set('boxberry' . $cache_key, $order, $rate);
+                    }
+                } else {
+                    $rate['data']['errors'][] = 'выполняется расчёт...';
+                }
+            }
+            else {
+                $rate = $cache;
+            }
+        } else {
+            $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+        }
+    }
+
+
+    return $rate;
+}
+
+function boxberry_build_rate_request($order)
+{
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+
+    // Determine the shipping profile reference field name for the order.
+    $field_name = commerce_physical_order_shipping_field_name($order);
+    $shipping_profile = $order_wr->{$field_name}->value();
+
+    // базовые данные
+    $zipcode = empty($shipping_profile->field_zipcode_calc['und'][0]['value']) ? '' : $shipping_profile->field_zipcode_calc['und'][0]['value'];
+    $weight = 1000; // расчитывать для любого веса, менеджеры будут разбивать на несколько, стоимость разбивки не актуальна
+    $amount = $order_wr->commerce_order_total->value()['amount']/100;
+
+    // возможно пункт уже выбран, нужно получить данные о нём
+    $target_point = null;
+    if (!empty($shipping_profile->field_data['und'][0]['value'])) {
+        $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+        $target_point = empty($data['boxberry']['id']) ? '' : $data['boxberry']['id'];
+
+        // удаление старых неактуальных данных, занесенных Сдэком в старом формате
+        if (isset($data['profiles'])) {
+            $shipping_profile_wr = $order_wr->{$field_name};
+            $shipping_profile_wr->field_data->set(NULL);
+            $shipping_profile_wr->save();
+
+            $rate['data']['errors'][] = 'выбрать пункт';
+            return $rate;
+        }
+    }
+
+    $request = [
+        'zipcode' => $zipcode,
+        'weight' => $weight,
+        'amount' => $amount,
+        'target_point' => $target_point,
+    ];
+
+    return $request;
+}
+
+function boxberry_api_request($data)
+{
+    // стоимость доставки
+    $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=DeliveryCosts&weight=' . $data['weight'] . '&zip=' . $data['zipcode'] . '&ordersum=' . $data['amount'];
+    $handle = fopen($url, "rb"); $contents = stream_get_contents($handle); fclose($handle);
+    $response['cost_data'] = json_decode($contents, TRUE);
+
+    // описание точки
+    if ($data['target_point']) {
+        $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=PointsDescription&code=' . $data['target_point'];
+//        $url = 'http://api.boxberry.de/json.php?token=93542.rjpqabfe&method=PointsDescription&code=' . $data['target_point'];
+        $handle = fopen($url, "rb");
+        $contents = stream_get_contents($handle);
+        fclose($handle);
+        $response['point_data'] = json_decode($contents, TRUE);
+    }
+
+    return $response;
+}
+
+/**
+ * Allows modules to alter the options array generated to select a shipping
+ * service on the checkout form.
+ */
+function boxberry_commerce_shipping_service_rate_options_alter(&$options, $order)
+{
+    if (isset($order->shipping_rates['boxberry_shipping_service'] )) {
+        $line_item = $order->shipping_rates['boxberry_shipping_service'];
+        $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
+        $data = $line_item_wr->commerce_unit_price->data->value();
+
+        $message = $cost = '';
+        if (empty($data['errors'])) {
+            $cost = $line_item_wr->commerce_unit_price->amount->value();
+            $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
+        } else {
+            $message = implode('<br />', $data['errors']);
+        }
+
+        $options['boxberry_shipping_service'] = '<div class="carrier">Заберу<br />в пункте выдачи</div>' .
+                                                '<div class="message">' . $message . '</div>' .
+                                                '<div class="cost">' . $cost . '</div>';
+    }
+}
+
+
+/**
+ * Shipping service callback: returns the shipping service details form.
+ */
+function boxberry_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
+{
+    $pane_form = array();
+
+    if (!empty($order->shipping_rates['boxberry_shipping_service'])) {
+        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates['boxberry_shipping_service']);
+        if ($line_item_wrapper->value()) $data = $line_item_wrapper->commerce_unit_price->data->value();
+    }
+
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+//    $weight = commerce_physical_order_weight($order, 'g')['weight'];
+    $weight = 1000; // расчитывать для любого веса, менеджеры будут разбивать на несколько, стоимость разбивки не актуальна
+
+    $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
+
+    $pane_form['order_amount'] = ['#type' => 'hidden', '#value' => $products_amount_base/100, '#attributes' => ['class' => ['boxberry-order-amount']]];
+    $pane_form['order_weight'] = ['#type' => 'hidden', '#value' => $weight, '#attributes' => ['class' => ['boxberry-order-weight']]];
+
+    // адрес пункта выдачи
+    $pane_form['select'] = [
+        '#type' => 'item',
+        '#markup' => '' .
+                        '<label class="control-label">Адрес пункта выдачи</label>' .
+                        '<div><span class="boxberry_addr_show">' . (empty($data['address']) ? '' : $data['address']) . '</span> ' .
+                        (empty($data['address']) ?
+                            '<a href="#" id="boxberry_link"><strong>Выбрать пункт выдачи на карте</strong></a>'
+                            : ' (' . '<a href="#"  id="boxberry_link"><strong>изменить пункт выдачи</strong></a>' . ')') .
+                        '</div>' .
+                    ''
+        ];
+
+    $pane_form['boxberry_set'] = array(
+        '#type' => 'hidden',
+        '#attributes' => ['class' => ['boxberry-set']],
+        '#value' => empty($data['address']) ? 0 : 1
+    );
+
+    $pane_form['username'] = array(
+        '#title' => 'Фамилия, Имя, Отчество',
+        '#type' => 'textfield',
+    );
+    $pane_form['phone'] = array(
+        '#title' => 'Телефон',
+        '#type' => 'textfield',
+        '#attributes' => ['class' => ['masked-phone']],
+    );
+
+    $pane_form['callme'] = array(
+        '#title' => t('Call me to get details about my order and delivery'),
+        '#type' => 'checkbox',
+    );
+
+    return $pane_form;
+}
+
+/**
+ * Shipping service callback: validates the shipping service details.
+ */
+function boxberry_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
+{
+    if ($details_values['boxberry_set'] == 0)     {
+        form_set_error(implode('][', array_merge($form_parents, ['select'])), 'Выберите пункт доставки на карте и нажмите "Выбрать отделение"');
+    }
+
+    $field = 'username';
+    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните это поле'); }
+    if (drupal_strlen($details_values[$field]) < 5) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно'); }
+    $field = 'phone';
+    if (drupal_strlen($details_values[$field]) < 10) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате +7 (xxx) xxx-xxxx'); }
+}
+
+/**
+ * Shipping service callback: increases the shipping line item's unit price if
+ * express delivery was selected.
+ */
+function boxberry_service_details_form_submit($details_form, $details_values, $line_item)
+{
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
+    $order_wrapper->field_username = $details_values['username'];
+    $order_wrapper->field_phone = $details_values['phone'];
+    $order_wrapper->commerce_customer_shipping->field_callme = $details_values['callme'];
+    $order_wrapper->commerce_customer_shipping->save();
+    $order_wrapper->save();
+}
+
+/**
+ * Implements hook_preprocess_page
+ */
+function boxberry_preprocess_page(&$vars)
+{
+    // добавляем скрипт Boxberry
+    if (strpos($_GET['q'], 'checkout') === 0) {
+        drupal_add_js('https://points.boxberry.de/js/boxberry.js');
+        drupal_add_js(drupal_get_path('module', 'boxberry') . '/js/boxberry.js');
+    }
+}
+
+// callback функция, возвращающая информацию о доставке для заказов
+function boxberry_shipping_service_info($item, $shipping_profile)
+{
+    $component_data = empty($item->commerce_total['und'][0]['data']) ? [] : $item->commerce_total['und'][0]['data'];
+    $point_data = empty($shipping_profile->field_data['und'][0]['value']) ? null : json_decode($shipping_profile->field_data['und'][0]['value'], true);
+    $point_id = empty($shipping_profile->field_boxberry_target['und'][0]['value']) ? null : $shipping_profile->field_boxberry_target['und'][0]['value'];
+
+    if (!$point_id && !empty($point_data['boxberry'])) {
+        $point_id = $point_data['boxberry']['id'];
+    }
+
+    return [
+        'title' => $item->line_item_label,
+        'method' => $item->commerce_shipping_service,
+        'address' => empty($component_data['address']) ? '' : $component_data['address'],
+        'point_id' => $point_id,
+    ];
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function boxberry_form_commerce_checkout_form_checkout_alter(&$form, &$form_state)
+{
+    // проверить, может быть для Boxberry пункт уже выбран
+    // сбросить ошибку для модуля вывода ошибок под элементами
+    if (!empty($form_state['input']['commerce_shipping']['service_details']['boxberry_set'])) {
+        unset($form_state['storage']['errors']['commerce_shipping][service_details][select']);
+    }
+}

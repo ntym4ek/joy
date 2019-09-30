@@ -1,0 +1,177 @@
+<?php
+
+/**
+ * @file
+ * Defines an example shipping method for testing and development.
+ */
+
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ */
+function courier_commerce_shipping_method_info()
+{
+    $shipping_methods['courier_shipping_method'] = array(
+        'title' => t('Courier shipping method'),
+        'description' => t('Defines shipping method by courier.'),
+    );
+
+    return $shipping_methods;
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ */
+function courier_commerce_shipping_service_info()
+{
+  $shipping_services['courier_shipping_service'] = array(
+    'title' => t('Courier shipping service'),
+    'display_title' => t('Courier'),
+    'shipping_method' => 'courier_shipping_method',
+    'price_component' => 'shipping',
+    'weight' => 2,
+    'callbacks' => array(
+      'rate' => 'courier_service_rate_order',
+      'details_form' => 'courier_service_details_form',
+      'details_form_validate' => 'courier_service_details_form_validate',
+      'details_form_submit' => 'courier_service_details_form_submit',
+    ),
+  );
+
+  return $shipping_services;
+}
+
+/**
+ * Shipping service callback: returns a base price array for a shipping service
+ * calculated for the given order.
+ */
+function courier_service_rate_order($shipping_service, $order)
+{
+    $rate = array(
+        'amount' => 0,
+        'currency_code' => 'RUB',
+        'data' => [],
+    );
+
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+
+    $field_name = commerce_physical_order_shipping_field_name($order);
+    $shipping_profile = $order_wr->{$field_name}->value();
+
+    if (!empty($shipping_profile->field_zipcode_calc['und'][0]['value'])) {
+        if (!empty($shipping_profile->field_data['und'][0]['value'])) {
+            $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+
+            // если стоит 1, стоимость ставить от BB
+            $to_door_cost = variable_get('courier_delivery_cost', 150) == 1 ? $data['boxberry']['response']['cost_data']['price_service'] : variable_get('courier_delivery_cost', 150);
+            $to_point_cost = $data['boxberry']['response']['cost_data']['price_base'];
+
+            $amount = $to_point_cost + $to_door_cost;
+
+            $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
+            if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100) {
+                $amount = $to_door_cost;
+            } else {
+                // для Владивостока и многих других почему-то до пункта выдачи выдаёт нулевую стоимость
+                if ($to_point_cost == 0) {
+                    $rate['data']['errors'][] = 'ошибка при расчёте стоимости';
+                    return false;
+                }
+            }
+            $rate['amount'] = ceil($amount)*100;
+
+        }
+    }
+
+    return $rate['amount'] ? $rate : false;
+}
+
+
+/**
+ * Allows modules to alter the options array generated to select a shipping
+ * service on the checkout form.
+ */
+function courier_commerce_shipping_service_rate_options_alter(&$options, $order)
+{
+    if (isset($order->shipping_rates['courier_shipping_service'] )) {
+        $line_item = $order->shipping_rates['courier_shipping_service'];
+        $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
+        $data = $line_item_wr->commerce_unit_price->data->value();
+
+        $message = $cost = '';
+        if (empty($data['errors'])) {
+            $cost = commerce_currency_format($line_item_wr->commerce_unit_price->amount->value(), 'RUB');
+        } else {
+            $message = implode('<br />', $data['errors']);
+        }
+
+        $options['courier_shipping_service'] =  '<div class="carrier">Привезёт<br />курьер</div>' .
+                                                '<div class="message">' . $message . '</div>' .
+                                                '<div class="cost">' . $cost . '</div>';
+    }
+}
+
+/**
+ * Shipping service callback: returns the shipping service details form.
+ */
+function courier_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
+{
+    $pane_form = array();
+
+    $pane_form['username'] = array(
+        '#title' => 'Фамилия, Имя, Отчество',
+        '#type' => 'textfield',
+    );
+    $pane_form['phone'] = array(
+        '#title' => 'Телефон',
+        '#type' => 'textfield',
+        '#attributes' => ['class' => ['masked-phone']],
+    );
+
+    $pane_form['addr'] = array(
+        '#title' => 'Адрес',
+        '#type' => 'textfield',
+    );
+    $pane_form['office'] = array(
+        '#title' => 'Квартира/Офис',
+        '#type' => 'textfield',
+    );
+
+    $pane_form['callme'] = array(
+        '#title' => t('Call me to get details about my order and delivery'),
+        '#type' => 'checkbox',
+    );
+
+    return $pane_form;
+}
+
+/**
+ * Shipping service callback: validates the shipping service details.
+ */
+function courier_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
+{
+    $field = 'username';
+    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните это поле'); }
+    if (drupal_strlen($details_values[$field]) < 5) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно'); }
+    $field = 'phone';
+    if (drupal_strlen($details_values[$field]) < 10) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате +7 (xxx) xxx-xxxx'); }
+    $field = 'addr';
+    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Адрес необходим для доставки курьером'); }
+    if (drupal_strlen($details_values[$field]) < 4) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Слишком короткий адрес'); }
+}
+
+/**
+ * Shipping service callback: increases the shipping line item's unit price if
+ * express delivery was selected.
+ */
+function courier_service_details_form_submit($details_form, $details_values, $line_item)
+{
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
+    $order_wrapper->field_username = $details_values['username'];
+    $order_wrapper->field_phone = $details_values['phone'];
+    $order_wrapper->commerce_customer_shipping->field_addr = $details_values['addr'];
+    $order_wrapper->commerce_customer_shipping->field_office = $details_values['office'];
+    $order_wrapper->commerce_customer_shipping->field_callme = $details_values['callme'];
+    $order_wrapper->commerce_customer_shipping->save();
+    $order_wrapper->save();
+}

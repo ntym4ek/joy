@@ -1,0 +1,4 @@
+name = Payment | Bank Transfer
+description = Adds new payment way - bank transfer
+package = Commerce (payment)
+core = 7.x

@@ -1,0 +1,13 @@
+<?php
+
+
+/**
+ * increases module weight to make it run after all modules
+ */
+function helper_update_7001() {
+  db_update('system')
+    ->fields(array('weight' => 9999))
+    ->condition('name', 'helper')
+    ->execute();
+}
+

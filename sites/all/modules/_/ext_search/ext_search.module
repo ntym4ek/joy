@@ -1,0 +1,87 @@
+<?php
+
+function ext_search_menu_alter(&$items)
+{
+    // новый callback для строки поиска
+    $items['search_api_live_results/%search_api_live_results_search']['page callback'] = 'ext_search_search_api_live_results_json';
+}
+
+/**
+ * Page callback for getting live results.
+ *
+ * изменение стандартного callback search live results
+ * так как он работает только с node, а нам нужен commerce_product
+ */
+function ext_search_search_api_live_results_json(SearchApiLiveResultsSearch $search, $keys = '') {
+    $ret = array();
+
+    $keys = explode(' ', $keys);
+    $query = $search->getQuery($keys);
+    $entity_type = $search->index()->item_type;
+
+    if ($query) {
+        $max_items = (!empty($search->options['num_results']))? $search->options['num_results'] : 5;
+        $query->range(0, $max_items);
+        $results = $query->execute();
+        foreach ((array) $results['results'] as $result) {
+            if ($search->options['display'] == 'view_mode') {
+                $ret[] = drupal_render(node_view(node_load($result['id']), 'live_results_search'));
+                $ret[] = drupal_render(entity_view($entity_type, entity_load_single($entity_type, $result['id']), 'live_results_search'));
+            }
+            else {
+                $entity = entity_load_single($entity_type, $result['id']);
+                $title = t('Title undefined');
+                if (isset($entity->title)) $title = $entity->title;
+                elseif (isset($entity->name)) $title = $entity->name;
+
+                $url = 'node/' . $result['id'];
+                if ($entity_type == 'commerce_product') {
+                    $host_node_id = _get_product_display_by_product_id($result['id']);
+                    $url = url('node/'. $host_node_id);
+                }
+                $ret[] = l($title, $url, ['query' => ['id' => $result['id']]]);
+            }
+        }
+    }
+
+    drupal_json_output($ret);
+}
+
+/**
+ * изменение формы поиска
+ */
+function ext_search_form_search_api_page_search_form_alter(&$form, &$form_state)
+{
+    $form['form']['keys_1']['#prefix'] = '<div class="input-group">';
+    $form['form']['keys_1']['#title'] = '';
+    $form['form']['keys_1']['#attributes']['class'][] = 'form-control';
+    $form['form']['keys_1']['#attributes']['placeholder'] = 'Я хочу купить...';
+    $form['form']['submit_1']['#prefix'] = '<span class="input-group-btn">';
+    $form['form']['submit_1']['#value'] = 'Найти';
+    $form['form']['submit_1']['#attributes']['class'][] = 'btn-brand';
+    $form['form']['submit_1']['#suffix'] = '</span></div>';
+}
+
+/**
+ * Implements hook_search_api_alter_callback_info().
+ */
+function ext_search_search_api_alter_callback_info()
+{
+    // добавляем свой фильтр товаров по статусу
+    $callbacks['search_api_alter_commerce_product_status'] = array(
+        'name' => t('Exclude unpublished Commerce Product'),
+        'description' => t('Exclude unpublished (or referenced to unpublished Node) Commerce Product from index.'),
+        'class' => 'SearchApiAlterCommerceProductStatus',
+    );
+
+    return $callbacks;
+}
+
+/**
+ * Implements hook_preprocess_page
+ */
+function ext_search_preprocess_page(&$vars)
+{
+    // добавляем скрипт
+    drupal_add_js(drupal_get_path('module', 'ext_search') . '/ext_search.js');
+}

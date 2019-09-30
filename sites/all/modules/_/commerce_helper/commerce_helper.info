@@ -1,0 +1,4 @@
+name = Commerce Helper
+description = "Модуль со вспомогательными функциями для Commerce."
+package = Custom
+core = 7.x

@@ -1,0 +1,6 @@
+name = Delovie Linii
+description = Доставка ТК Деловые Линии с автоматическим расчётом стоимости (на основе Commerce CanadaPost) для Drupal Commerce.
+package = Commerce (shipping)
+dependencies[] = commerce_physical
+dependencies[] = commerce_shipping
+core = 7.x

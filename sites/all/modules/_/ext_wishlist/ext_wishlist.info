@@ -1,0 +1,7 @@
+name = Customizations to Commerce Wish List
+description = Дополнения к Commerce Wish List
+version = 7.x-1.0
+core = 7.x
+package = Custom
+
+dependencies[] = commerce_wishlist

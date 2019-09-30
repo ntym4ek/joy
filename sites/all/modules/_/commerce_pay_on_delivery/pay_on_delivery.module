@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Provides an example payment method for Drupal Commerce for testing and
+ *   development.
+ */
+
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function pay_on_delivery_commerce_payment_method_info() {
+    $payment_methods = array();
+
+    $payment_methods['pay_on_delivery'] = array(
+        'title' => t('Pay on delivery'),
+        'description' => t('Pay on delivery payment method'),
+        'display_title' => '<div class="carrier">' . t('Pay on delivery') . '</div><div class="message">' . t('Cash or bank card on delivery') . '</div>',
+        'active' => TRUE,
+    );
+
+    return $payment_methods;
+}
+
+/**
+ * Payment method callback: submit form.
+ */
+function pay_on_delivery_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function pay_on_delivery_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+}
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function pay_on_delivery_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+}
+

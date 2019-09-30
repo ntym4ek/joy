@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * @file
+ * Install file.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function ifec_schema() {
+  $schema = array();
+
+  // Table for positions and types of the challenges.
+  $schema['ifec'] = array(
+    'description' => 'This table describes which form should be used with field messages and which field types should be converted.',
+    'fields' => array(
+      'form_id' => array(
+        'description' => 'The form_id of the form to use with field messages.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'field_types' => array(
+        'description' => 'Serialized array of the field types to convert.',
+        'type' => 'text',
+        'size' => 'big',
+        'serialize' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'Enabled boolean. 1 (True), 0 (False)',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'display' => array(
+        'description' => 'Display type',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => -1,
+      ),
+    ),
+    'primary key' => array('form_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function ifec_install() {
+
+  // Update module weight.
+  db_update('system')
+    ->fields(array(
+      'weight' => 1000,
+    ))
+    ->condition('name', 'ifec')
+    ->execute();
+
+  // Insert some defaults.
+  $form_ids = array(
+    'comment_form',
+    'user_register_form',
+    'user_pass',
+    'user_login',
+  );
+  foreach ($form_ids as $form_id) {
+    $id = db_insert('ifec')
+      ->fields(array(
+        'form_id' => $form_id,
+        'field_types' => NULL,
+        'status' => 0,
+      ))
+      ->execute();
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * @todo The drupal_(un)install_schema functions are called automatically in D7.
+ * drupal_install_schema('ifec')
+ */
+function ifec_uninstall() {
+  variable_del('ifec_show_form_ids');
+  variable_del('ifec_display');
+  variable_del('ifec_general_message');
+  variable_del('ifec_position_inline_message');
+}

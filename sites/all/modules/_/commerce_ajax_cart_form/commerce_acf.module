@@ -1,0 +1,165 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_acf_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/commerce-acf'] = array(
+    'title' => 'Commerce Ajax Cart Form',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_acf_settings_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
+}
+
+/**
+ * Settings form.
+ */
+function commerce_acf_settings_form($form, &$form_state) {
+  $cart_view = views_get_view('commerce_cart_form');
+  $cart_view_displays = array();
+  foreach ($cart_view->display as $key => $display) {
+    $cart_view_displays[$key] = $display->display_title;
+  }
+
+  $form['commerce_acf_displays'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Ajaxify cart forms'),
+    '#options' => $cart_view_displays,
+    '#default_value' => variable_get('commerce_acf_displays', array()),
+  );
+
+  $form['commerce_acf_ajaxify_quantity'] = array(
+    '#title' => t('Ajaxify quantity input'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('commerce_acf_ajaxify_quantity'),
+  );
+
+  $form['commerce_acf_ajaxify_remove'] = array(
+    '#title' => t('Ajaxify remove button'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('commerce_acf_ajaxify_remove'),
+  );
+
+  $form['commerce_acf_quantity_spinner'] = array(
+    '#title' => t('Use quantity spinner'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('commerce_acf_quantity_spinner'),
+  );
+
+  $form['commerce_acf_quantity_readonly'] = array(
+    '#title' => t('Disable edit quantity using keyboard'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('commerce_acf_quantity_readonly'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Alter commerce cart form.
+ */
+function commerce_acf_commerce_cart_form_alter(&$form, &$form_state, $form_id) {
+  $quantity_spinner = variable_get('commerce_acf_quantity_spinner');
+  $quantity_readonly = variable_get('commerce_acf_quantity_readonly');
+
+  if ($quantity_spinner) {
+    $form['#attached']['library'][] = array('system', 'ui.spinner');
+  }
+  $form['#attached']['js'][] = drupal_get_path('module', 'commerce_acf') . '/commerce_acf.js';
+
+  $form['#action'] = url('cart');
+
+  $form['actions']['submit']['#name'] = 'update-cart';
+  $form['actions']['submit']['#ajax'] = array(
+    'callback' => 'commerce_acf_ajax_update_form',
+  );
+
+  // Quantity input
+  if (variable_get('commerce_acf_ajaxify_quantity') && !empty($form['edit_quantity'])) {
+    foreach (element_children($form['edit_quantity']) as $key) {
+      $form['edit_quantity'][$key]['#ajax'] = array(
+        'callback' => '',
+        'event' => 'quantityChanged',
+        'progress' => 'none',
+        'trigger_as' => array(
+          'name' => 'update-cart',
+        )
+      );
+
+      $form['edit_quantity'][$key]['#attributes']['class'][] = 'quantity-input';
+
+      if ($quantity_spinner) {
+        $form['edit_quantity'][$key]['#attributes']['class'][] = 'quantity-input-spinner';
+      }
+      if ($quantity_readonly) {
+        $form['edit_quantity'][$key]['#attributes']['class'][] = 'quantity-input-disabled';
+      }
+    }
+  }
+
+  // Delete button
+  if (variable_get('commerce_acf_ajaxify_remove') && !empty($form['edit_delete'])) {
+    foreach(element_children($form['edit_delete']) as $key) {
+      if (!empty($form['edit_delete'][$key]['#line_item_id'])) {
+        $form['edit_delete'][$key]['#ajax'] = array(
+          'callback' => 'commerce_acf_ajax_update_form',
+          'event' => 'click',
+          'progress' => 'none',
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter(): views_form.
+ */
+function commerce_acf_form_views_form_alter(&$form, &$form_state, $form_id) {
+  if (strpos($form_id, 'views_form_commerce_cart_form_') === 0) {
+    $view = $form_state['build_info']['args'][0];
+    $allowed_displays = variable_get('commerce_acf_displays', array());
+
+    if (in_array($view->current_display, $allowed_displays)) {
+      commerce_acf_commerce_cart_form_alter($form, $form_state, $form_id);
+    }
+  }
+}
+
+/**
+ * Cart form update AJAX callback.
+ */
+function commerce_acf_ajax_update_form($form, &$form_state) {
+  drupal_get_messages();
+  $_POST = array();
+  $cart_view = $form_state['build_info']['args'][0];
+
+  return commerce_acf_ajax_update_cart_view($cart_view->name, $cart_view->current_display);
+}
+
+/**
+ * AJAX update cart view.
+ */
+function commerce_acf_ajax_update_cart_view($view_name, $view_display_name) {
+  $order_id = commerce_cart_order_id($GLOBALS['user']->uid);
+
+  $cart_view = views_get_view($view_name);
+  $cart_view->set_display($view_display_name);
+  $cart_view->set_arguments(array($order_id));
+  $cart_view->pre_execute();
+  $cart_view->execute();
+
+  $commands = array(
+    ajax_command_replace('.view-commerce-cart-form', $cart_view->render()),
+  );
+  drupal_alter('commerce_acf_commands', $commands, $cart_view);
+
+  return array(
+    '#type' => 'ajax',
+    '#commands' => $commands,
+  );
+}

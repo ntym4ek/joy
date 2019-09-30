@@ -1,0 +1,8 @@
+name = Payment | Оплата при получении
+description = Оплата при получении
+package = Commerce
+dependencies[] = commerce
+dependencies[] = commerce_payment
+core = 7.x
+
+

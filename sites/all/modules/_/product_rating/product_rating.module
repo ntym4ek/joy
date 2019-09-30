@@ -1,0 +1,396 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function product_rating_menu() {
+  global $user;
+    $items['product/rating/%/add'] = array(
+        'page callback' => 'product_rating_add_callback',
+        'page arguments' => array(2),
+        'access callback' => $user->uid,
+        'type' => MENU_CALLBACK,
+    );
+//    $items['product/rating/%/get-list'] = array(
+//        'page callback' => 'product_rating_get_list_callback',
+//        'page arguments' => array(2, 'show'),
+//        'access arguments' => array('access content'),
+//        'type' => MENU_CALLBACK,
+//    );
+//    $items['product/rating/%/hide-list'] = array(
+//        'page callback' => 'product_rating_get_list_callback',
+//        'page arguments' => array(2, 'hide'),
+//        'access arguments' => array('access content'),
+//        'type' => MENU_CALLBACK,
+//    );
+    return $items;
+}
+
+/**
+ * Реализация hook_entity_info()
+ */
+function product_rating_entity_info() {
+    return array(
+        'product_rating' => array(                                      // Системное имя сущности
+            'label' => t('Product rating'),                             // Человеко-понятное имя сущности
+            'entity class' => 'Entity',                                 // Класс сущности
+            'controller class' => 'EntityAPIController',                // Контроллер сущности
+            'base table' => 'product_ratings',                          // Таблица, в которой хранится информация об отзывах
+            'entity keys' => array(
+                'id' => 'id',                                           // Название поля, в котором располагаются идентификаторы отзывов
+            ),
+            'module' => 'product_rating',
+        ),
+    );
+}
+
+/**
+ * callback вызова окна адресной книги в оформлении заказа
+ */
+function product_rating_add_callback($pdid, $mode = NULL) {
+    if ($mode == 'ajax') {
+        ctools_include('modal');
+        $form_state = array('ajax' => TRUE, 'title' => t('Preparation rating'));
+        $form_state['build_info']['args'] = array('pid' => $pdid);
+        $output = ctools_modal_form_wrapper('product_rating_add_form', $form_state);
+        if (!empty($form_state['ajax_commands'])) $output = $form_state['ajax_commands'];
+        print ajax_render($output);
+        drupal_exit();
+    }
+    else return drupal_get_form('product_rating_add_form', $pdid);
+}
+/**
+ * форма адресной книги
+ */
+function product_rating_add_form($form, &$form_state, $pdid) {
+    global $user;
+
+    ctools_include('modal');
+
+    $form_state['pdid'] = $pdid;
+
+    // проверка наличия оценки текущим юзером текущего препарата
+    $rid = $rating = 0; $review = '';
+    if (!isset($user->roles[4])) {
+      $query = db_select('product_ratings', 'pr');
+      $query->fields('pr');
+      $query->condition('pr.uid', $user->uid);
+      $query->condition('pr.pdid', $pdid);
+      if ($result = $query->execute()->fetchAll()) {
+        $rating = $result[0]->rating;
+        $review = $result[0]->review;
+        $rid = $result[0]->id;
+      }
+      $form_state['rid'] = $rid;
+    }
+
+    $form = array(
+        '#prefix' => '<div id="rating-form-wrapper">',
+        '#suffix' => '</div>',
+        'form-actions' => array('#type' => 'container', '#attributes' => array('class' => array('form-actions')), '#weight' => '100'),
+    );
+
+    $form['content'] = array(
+        '#type' => 'container',
+    );
+
+    // если открытие формы
+    if (empty($form_state['triggering_element'])) {
+        $form['content']['rating'] = array(
+            '#markup' => '<div class="set-rating">
+            <div class="control-label">Поставьте оценку</div>
+            <input type="radio" id="star5" name="rating" value="5"' . ($rating == 5 ? ' checked="checked"' : '') . ' /><label for="star5" title="Отлично!">5 звёзд</label>
+            <input type="radio" id="star4" name="rating" value="4"' . ($rating == 4 ? ' checked="checked"' : '') . ' /><label for="star4" title="Хорошо">4 звезды</label>
+            <input type="radio" id="star3" name="rating" value="3"' . ($rating == 3 ? ' checked="checked"' : '') . ' /><label for="star3" title="Удовлетворительно">3 звезды</label>
+            <input type="radio" id="star2" name="rating" value="2"' . ($rating == 2 ? ' checked="checked"' : '') . ' /><label for="star2" title="Плохо">2 звезды</label>
+            <input type="radio" id="star1" name="rating" value="1"' . ($rating == 1 ? ' checked="checked"' : '') . ' /><label for="star1" title="Очень плохо">1 звезда</label>
+        </div>
+        ',
+        );
+        $form['content']['text'] = array(
+            '#type' => 'textarea',
+            '#title' => 'Напишите несколько слов',
+            '#cols' => 50,
+            '#rows' => 3,
+            '#default_value' => $review,
+        );
+
+        $form['form-actions']['st_cancel'] = array(
+            '#type' => 'button',
+            '#name' => 'cancel',
+            '#value' => t('Cancel'),
+            '#limit_validation_errors' => array(),
+            '#attributes' => array(
+                'class' => array('button-link'),
+            ),
+            '#ajax' => array(
+                'callback' => 'product_rating_add_form_ajax',
+                'wrapper' => 'rating-form-wrapper',
+            ),
+        );
+        $form['form-actions']['st_submit'] = array(
+            '#type' => 'submit',
+            '#name' => 'submit',
+            '#value' => t('Отправить'),
+            '#ajax' => array(
+                'callback' => 'product_rating_add_form_ajax',
+                'wrapper' => 'rating-form-wrapper',
+            ),
+            '#attributes' => array(
+                'class' => array('pull-right'),
+            ),
+        );
+    }
+    // если нажат submit
+    else {
+        if ($form_state['triggering_element']['#name'] == 'submit') {
+            $form['content']['text'] = array(
+                //'#markup' => ($form_state['reward_added'] ? 'Спасибо! Ваш отзыв принят.<br />Вам начислено ' . $form_state['reward_added'] . ' баллов.' : 'Спасибо! Изменения приняты.'),
+                '#markup' => 'Спасибо! Ваш отзыв принят.',
+            );
+            $form['form-actions']['st_cancel'] = array(
+                '#type' => 'button',
+                '#name' => 'cancel',
+                '#value' => t('Close'),
+                '#limit_validation_errors' => array(),
+                '#ajax' => array(
+                    'callback' => 'product_rating_add_form_ajax',
+                    'wrapper' => 'rating-form-wrapper',
+                ),
+            );
+        }
+    }
+
+    return $form;
+}
+
+/**
+ * validate формы
+ */
+function product_rating_add_form_validate($form, &$form_state) {
+    if (empty($form_state['input']['rating'])) {
+        form_set_error('rating', 'Необходимо задать оценку');
+    } else {
+        $form_state['values']['rating'] = $form_state['input']['rating'];
+    }
+}
+
+/**
+ * submit формы
+ */
+function product_rating_add_form_submit($form, &$form_state) {
+    global $user;
+
+    // сохранить оценку
+    if (empty($form_state['rid'])) {
+        $product_rating = entity_create('product_rating', array('uid' => $user->uid, 'pdid' => $form_state['pdid']));
+    } else {
+        if ($product_rating = entity_load('product_rating', array($form_state['rid']))) {
+            $product_rating = $product_rating[$form_state['rid']];
+        };
+    }
+
+    if ($product_rating) {
+        $product_rating->rating = $form_state['values']['rating'];
+        $product_rating->review = $form_state['values']['text'];
+        $product_rating->date = time();
+        $product_rating->save();
+    }
+
+    $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * ajax submit формы
+ * return $array - набор команд для вывода результата на форму
+ */
+function product_rating_add_form_ajax($form, &$form_state) {
+    // ajax команды можно вернуть только здесь, type=ajax при подготовке формы заменяется type=form
+    if (!empty($form_state['triggering_element'])) {
+        if ($form_state['triggering_element']['#name'] == 'cancel') {
+
+            // посчитать рейтинг и количестко отзывов
+            $rating_avg = $rating_sum = 0;
+            if ($result = product_rating_get_rating_list($form_state['pdid'])) {
+                foreach($result as $product_rating) {
+                    $rating_sum += $product_rating['rating'];
+                }
+                $rating_avg = $rating_sum/count($result);
+            }
+            $commands[] = ajax_command_invoke('#product-rating', 'html', array(theme('product_rating', array('rating' => $rating_avg, 'count' => count($result)))));
+            $commands[] = ajax_command_invoke('#product-rating-popover', 'html', array(theme('product_rating_popover', array('rating_list' => $result))));
+
+            $commands[] = ctools_modal_command_dismiss();
+            $form = array('#type' => 'ajax', '#commands' => $commands);
+        }
+    }
+
+    return $form;
+}
+
+
+function product_rating_preprocess_page(&$vars) {
+    // подключить модальные окна
+    if  (isset($vars['node']->type) && ( $vars['node']->type == 'product_display' || $vars['node']->type == 'product')) {
+        helper_include_modal(array('width' => 600));
+    }
+}
+
+function product_rating_preprocess_node(&$vars) {
+    global $user;
+
+    if ((in_array($vars['view_mode'], array('full', 'teaser')) && ($vars['type'] =='product_display' || $vars['node']->type == 'product'))) {
+        // посчитать рейтинг и количестко отзывов
+        $rating_avg = $rating_sum = 0;
+        if ($result = product_rating_get_rating_list($vars['node']->nid)) {
+            foreach ($result as $rating) {
+                $rating_sum += $rating['rating'];
+            }
+            $rating_avg = $rating_sum / count($result);
+        }
+
+        $vars['rating_list'] = $result;
+        $vars['rating'] = $rating_avg;
+        $vars['rating_count'] = count($result);
+
+        // ссылка на добавление отзыва
+        $rating_links = array();
+        if ($user->uid) {
+            $rating_links[] = '<a href="/product/rating/' . $vars['node']->nid . '/add/nojs' . '" class="add ctools-modal-style ctools-use-modal" title="' . t('Rate product') . '"><i class="fa fa-plus smooth" aria-hidden="true"></i></a>';
+        }
+        // ссылка на список
+        //if ($vars['rating_count']) $rating_links[] = '<a href="/product/rating/' . $vars['node']->nid . '/get-list/nojs' . '" class="get-list use-ajax" title="' . t('List ratings') . '"><i class="fa fa-list smooth" aria-hidden="true"></i></a>';
+        $vars['rating_links'] = implode('', $rating_links);
+
+        // подключить стили и скрипты
+        drupal_add_css(drupal_get_path('module', 'product_rating') . '/css/product_rating.css');
+        drupal_add_js(drupal_get_path('module', 'product_rating') . '/js/product_rating.js');
+    }
+}
+
+/**
+ * callback открытия списка отзывов
+ */
+//function product_rating_get_list_callback($pdid, $op, $mode = NULL) {
+//    if ($mode == 'ajax') {
+//
+//        if ($op == 'show') {
+//            $rating_list = product_rating_get_rating_list($pdid);
+//            $hide_link = '<a href="/product/rating/' . $pdid . '/hide-list/nojs' . '" class="get-list use-ajax" title="' . t('Hide list') . '"><i class="fa fa-list smooth" aria-hidden="true"></i></a>';
+//
+//            $output = array(
+//                ajax_command_invoke('.r-list', 'html', array(theme('product_rating_list', array('rating_list' => $rating_list)))),
+//                ajax_command_replace('.get-list', $hide_link),
+//            );
+//        } else {
+//            $show_link = '<a href="/product/rating/' . $pdid . '/get-list/nojs' . '" class="get-list use-ajax" title="' . t('List ratings') . '"><i class="fa fa-list smooth" aria-hidden="true"></i></a>';
+//            $output = array(
+//                ajax_command_invoke('.r-list', 'html', array('')),
+//                ajax_command_replace('.get-list', $show_link),
+//            );
+//
+//        }
+//        print ajax_render($output);
+//        drupal_exit();
+//    }
+//    else return theme('product_rating_list', array('rating_list' => product_rating_get_rating_list($pdid)));
+//}
+
+/**
+ * функция возвращает список отзывов о товаре
+ */
+function product_rating_get_rating_list($nid, $uid = false) {
+    $rating_list = array();
+
+    $query = db_select('product_ratings', 'pr');
+    $query->fields('pr');
+    $query->condition('pr.pdid', $nid);
+    if ($uid) $query->condition('pr.uid', $uid);
+    if ($result = $query->execute()->fetchAll()) {
+        foreach($result as $rating) {
+            $user = user_load($rating->uid);
+            $rating_list[] = array(
+                'rating' => $rating->rating,
+                'text' => $rating->review,
+                'date' => $rating->date ? format_date($rating->date,'custom','d.m.Y') : '',
+                'user_name' => $user->name,
+            );
+        }
+    }
+
+    return $rating_list;
+}
+
+/**
+ * hook_theme
+ */
+function product_rating_theme() {
+    return array(
+        // ----------  пятизвёздочный  рейтинг ----------------------------------
+        'product_rating' => array(
+            'variables' => array('rating' => NULL, 'count' => NULL),
+        ),
+        // ----------  список отзывов (пятизвёздочный  рейтинг) -----------------
+        'product_rating_list' => array(
+            'variables' => array('rating_list' => NULL),
+        ),
+        // ----------  список отзывов для popover -------------------------------
+        'product_rating_popover' => array(
+            'variables' => array('rating_list' => NULL),
+        ),
+    );
+}
+
+/**
+ * оформление спискаотзывов о товаре в popover
+ */
+function theme_product_rating_popover($vars) {
+    $html = '<div id="product-rating-popover">';
+    if ($rating_list = $vars['rating_list']) {
+        end($rating_list);
+        for ($i = 1; $i < 4; $i++) {
+            $html .= '<div class="review">';
+            $html .= '    <div class="review-rating">' .theme('product_rating', array('rating' => current($rating_list)['rating'])) . '</div>';
+            $html .= '    <div class="review-text">' . (empty(current($rating_list)['text']) ? '<span class="text-muted">Без отзыва</span>' : current($rating_list)['text']) . '</div>';
+            $html .= '</div>';
+            if (!prev($rating_list)) break;
+        }
+    } else {
+        $html .= '<span class="text-muted">Отзывов пока нет, оставьте свой</span>';
+    }
+    $html .= '</div>';
+
+    return $html;
+}
+
+/**
+ * оформление списка отзывов о товаре
+ */
+function theme_product_rating_list($vars) {
+    $html = '';
+    foreach($vars['rating_list'] as $item_r) {
+        $name = '<span class="name"><span>' . drupal_substr($item_r['user_name'], 0, 1) . '</span>' . drupal_substr($item_r['user_name'], 1) . '</span>';
+        $html .= '<li>'
+            . '<div class="r1">' . theme('product_rating', array('rating' => $item_r['rating'])) . ' ' . $name . '<span class="date">' . $item_r['date'] . '</span></div>'
+            . '<div class="r2">' . $item_r['text'] . '</div>'
+        . '</li>';
+    }
+    return '<ul>' . $html . '</ul>';
+}
+
+/**
+ * оформление рейтинга товара
+ */
+function theme_product_rating($vars) {
+    $stars = '';
+    $rating = $vars['rating'];
+    for($i=1; $i<=5; $i++) {
+        if ($i - 0.2 <= $rating) $star = '<i class="fa fa-star" aria-hidden="true"></i>';
+        elseif ($i - 0.9 <= $rating && ($i - 0.2) > $rating ) $star = '<i class="fa fa-star-half-o" aria-hidden="true"></i>';
+        else $star = '<i class="fa fa-star-o" aria-hidden="true"></i>';
+        $stars .= $star;
+    }
+    
+    return '<span id="product-rating"><span class="stars">' . $stars . '</span>' . ($vars['count'] === null ? '' : ' (' . $vars['count'] . ')') . '</span>';
+}
+

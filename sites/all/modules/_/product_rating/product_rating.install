@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * Реализация hook_schema()
+ */
+function product_rating_schema() {
+
+  $schema['product_ratings'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'ID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'User ID',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'pdid' => array(
+        'description' => 'Product Display ID',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'rating' => array(
+        'description' => 'Rating from 1 to 5',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'review' => array(
+        'description' => 'Users review',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'date' => array(
+        'description' => 'The Unix timestamp review was added or updated',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+          'uid'     => array('uid'),
+          'pdid'    => array('pdid'),
+          'rating'  => array('rating'),
+     ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Create the database table if it doesn't exist.
+ */
+function product_rating_update_7002() {
+  if (!db_table_exists('product_ratings')) {
+    drupal_install_schema('product_rating');
+  }
+}

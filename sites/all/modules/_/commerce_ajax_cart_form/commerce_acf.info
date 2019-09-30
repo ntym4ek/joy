@@ -1,0 +1,5 @@
+name = Commerce Ajax Cart Form
+description = Ajaxify commerce cart form
+core = 7.x
+package = Commerce (contrib)
+configure = admin/commerce/config/commerce-acf

@@ -1,0 +1,102 @@
+.rating-block { display: inline-block; }
+
+.rating-block a {
+    color: transparent; font-size: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+.rating-block a:focus { color: transparent; }
+.rating-block:hover a { color: #b3b3b3; }
+.rating-block:hover a:hover { color: #333; }
+
+.btn.btn-rating:focus,
+.btn.btn-rating:hover {
+    color: #000;
+    text-decoration: none;
+}
+
+
+.review { display: flex; }
+.review-rating { flex: 0 0 110px; }
+.review-text  { flex: 1 0 200px; }
+
+.reviews-popup { display: none; }
+
+
+.reviews-title { text-align: right; }
+.reviews-title a { color: #333; margin-left: 10px; }
+
+.reviews-popup .review-rating,
+.popover-content .review-rating {
+    padding-right: 15px;
+}
+.reviews-popup .review-text,
+.popover-content .review-text {
+    border-left: 1px solid #ccc;
+    padding-left: 15px;
+}
+
+
+/* краткое отображение рейтинга (stars) в списке joy */
+.rating-short {
+    color: #aaa; font-size: 12px;
+    position: absolute;
+}
+.teaser .rating-short {
+    top: 20px; right: 30px;
+}
+.teaser.tgrid .rating-short {
+    top: 15px; right: 15px;
+}
+.rating-short .fa { color: #2b8aff; }
+
+/* отображение рейтинга (stars) */
+#product-rating { font-size: 16px; }
+#product-rating .stars {  }
+#product-rating .stars .fa { color: #2b8aff; margin-right: 4px; }
+
+
+
+/* анимация при установке рейтинга */
+.set-rating div {
+    font-weight: 700;
+    margin-left: 10px;
+}
+.set-rating {
+    width: 155px;
+    margin: 0 0 10px -10px;
+}
+/* :not(:checked) is a filter, so that browsers that don’t support :checked don’t
+   follow these rules. Every browser that supports :checked also supports :not(), so
+   it doesn’t make the test unnecessarily selective */
+.set-rating:not(:checked) > input {
+    position:absolute;
+    top: -9999px;
+    clip:rect(0,0,0,0);
+}
+.set-rating:not(:checked) > label {
+    float:right;
+    width:1em;
+    padding:0 .1em;
+    overflow:hidden;
+    white-space: nowrap;
+    cursor:pointer;
+    color: #ddd; font-size: 30px; line-height: 1.2;
+}
+.set-rating:not(:checked) > label:before {
+    content: '★ ';
+}
+.set-rating > input:checked ~ label {
+    color: #f70;
+}
+.set-rating:not(:checked) > label:hover,
+.set-rating:not(:checked) > label:hover ~ label {
+    color: gold;
+}
+.set-rating > input:checked + label:hover,
+.set-rating > input:checked + label:hover ~ label,
+.set-rating > input:checked ~ label:hover,
+.set-rating > input:checked ~ label:hover ~ label,
+.set-rating > label:hover ~ input:checked ~ label {
+    color: #ea0;
+}

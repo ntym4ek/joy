@@ -1,0 +1,300 @@
+<?php
+
+/**
+ * @file
+ * Defines an example shipping method for testing and development.
+ */
+
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ */
+function cdek_commerce_shipping_method_info()
+{
+    $shipping_methods['cdek_shipping_method'] = array(
+        'title' => t('СДЭК shipping method'),
+        'description' => t('Defines shipping method by СДЭК.'),
+    );
+
+    return $shipping_methods;
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ */
+function cdek_commerce_shipping_service_info()
+{
+  $shipping_services['cdek_shipping_service'] = array(
+    'title' => t('СДЭК shipping service'),
+    'display_title' => t('СДЭК'),
+    'shipping_method' => 'cdek_shipping_method',
+    'price_component' => 'cdek',
+    'weight' => 1,
+    'callbacks' => array(
+      'rate' => 'cdek_service_rate_order',
+      'details_form' => 'cdek_service_details_form',
+      'details_form_validate' => 'cdek_service_details_form_validate',
+      'details_form_submit' => 'cdek_service_details_form_submit',
+    ),
+  );
+
+  return $shipping_services;
+}
+
+/**
+ * Shipping service callback: returns a base price array for a shipping service
+ * calculated for the given order.
+ */
+function cdek_service_rate_order($shipping_service, $order)
+{
+    //подключаем файл с классом CalculatePriceDeliveryCdek
+    include_once("includes/CalculatePriceDeliveryCdek.php");
+
+    $rate = array(
+        'amount' => 0,
+        'currency_code' => 'RUB',
+        'data' => array(),
+    );
+
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    // Determine the shipping profile reference field name for the order.
+    $field_name = commerce_physical_order_shipping_field_name($order);
+    $shipping_profile = $order_wrapper->{$field_name}->value();
+
+    if (!empty($shipping_profile->field_data['und'][0]['value'])) {
+        $data = json_decode($shipping_profile->field_data['und'][0]['value'], true);
+        $data = empty($data['cdek']) ? [] : $data['cdek'];
+
+        $city = empty($data['city']) ? '' : $data['city'];
+        $courier = (int)(empty($data['courier']) ? false : true);
+        if ($city) {
+            $weight = commerce_physical_order_weight($order, 'kg')['weight'];
+            $volume = commerce_physical_order_volume($order, 'm')['volume'];
+            $amount = $order_wrapper->commerce_order_total->value()['amount']/100;
+
+            $cache_key = $city . $courier . $weight . $amount;
+            $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, variable_get('commerce_cdek_cache_timeout', 1)); // 86400 - день в кэше
+
+            if (!$cache) {
+                //создаём экземпляр объекта CalculatePriceDeliveryCdek
+                $calc = new CalculatePriceDeliveryCdek();
+
+                //Авторизация. Для получения логина/пароля (в т.ч. тестового) обратитесь к разработчикам СДЭК -->
+                $calc->setAuth('UBjaIOcwj8y2kC7zxZrXrgXLWZ9t35mq', '9t53FnSEEXLlP0fD25QVsaESMJA6SsAv');
+
+                //устанавливаем город-отправитель
+                $calc->setSenderCityId('415');
+                //устанавливаем город-получатель
+                $calc->setReceiverCityId($city);
+
+                //устанавливаем режим доставки (4 - склад-склад)
+                if (!empty($data['profiles'])) {
+                    if ($courier) {
+                        $calc->setTariffId($data['profiles']['courier']['tarif']);
+                    } else {
+                        $calc->setTariffId($data['profiles']['pickup']['tarif']);
+                    }
+                }
+
+                //добавляем места в отправление
+                $calc->addGoodsItemByVolume($weight, $volume);
+
+                if ($calc->calculate() === true) {
+                    $res = $calc->getResult();
+
+                    $rate['amount'] = $res['result']['price'] * 100;
+                    $rate['data']['delivery_time'] = $res['result']['deliveryPeriodMin'] . ($res['result']['deliveryPeriodMin'] == $res['result']['deliveryPeriodMax'] ? '' : '-' . $res['result']['deliveryPeriodMax']) . ' д.';
+                    $rate['data']['cdek'] = $data;
+
+                    $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
+                    if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT*100) {
+                        $rate['amount'] = 0;
+                    }
+
+                    // Cache these rates.
+                    commerce_shipping_rates_cache_set('cdek' . $cache_key, $order, $rate);
+
+                } else {
+                    $err = $calc->getError();
+                    if( isset($err['error']) && !empty($err) ) {
+                        foreach($err['error'] as $e) {
+                            $rate['data']['errors'][] = $e['text'];
+                        }
+                    }
+                }
+            } else {
+                $rate = $cache;
+            }
+        } else $rate['data']['errors'][] = 'ошибка на сервере СДЭК';
+    } else $rate['data']['errors'][] = 'пункт не выбран';
+
+
+    return $rate;
+}
+
+
+/**
+ * Allows modules to alter the options array generated to select a shipping
+ * service on the checkout form.
+ */
+function cdek_commerce_shipping_service_rate_options_alter(&$options, $order)
+{
+    if (isset($order->shipping_rates['cdek_shipping_service'] )) {
+        $line_item = $order->shipping_rates['cdek_shipping_service'];
+        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+        $data = $line_item_wrapper->commerce_unit_price->data->value();
+
+        $carrier_name = t($line_item->line_item_label);
+
+        $cost = '';
+        if (empty($data['errors'])) {
+
+            $currency_code = $line_item_wrapper->commerce_unit_price->currency_code->value();
+            $cost = $line_item_wrapper->commerce_unit_price->amount->value();
+            $delivery_time = 'Доставка: ' . $data['delivery_time'];
+            $message = $delivery_time;
+
+            $cost = $cost ? commerce_currency_format($cost, $currency_code) : t('free');
+        } elseif (!empty($data['errors'])) {
+            $message = 'До пункта выдачи или курьером';
+            $cost = array_shift($data['errors']);
+        }
+
+        $options['cdek_shipping_service'] = '<div class="carrier">' . $carrier_name . '</div>' .
+                                                '<div class="message">' . $message . '</div>' .
+                                                '<div class="cost">' . $cost . '</div>';
+    }
+}
+
+
+/**
+ * Shipping service callback: returns the shipping service details form.
+ */
+function cdek_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
+{
+    $pane_form = array();
+
+    if (!empty($order->shipping_rates['cdek_shipping_service'])) {
+        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates['cdek_shipping_service']);
+        if ($line_item_wrapper->value()) $data = $line_item_wrapper->commerce_unit_price->data->value();
+    }
+
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $weight = commerce_physical_order_weight($order, 'kg')['weight'];
+
+    $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
+
+    $pane_form['order_amount'] = ['#type' => 'hidden', '#value' => $products_amount_base/100, '#attributes' => ['class' => ['cdek-order-amount']]];
+    $pane_form['order_weight'] = ['#type' => 'hidden', '#value' => $weight, '#attributes' => ['class' => ['cdek-order-weight']]];
+
+    // выбор и ссылка на карту
+    $method = '';
+
+    if (empty($data['cdek']['pvz']) && empty($data['cdek']['courier'])) $link = '<a href="#" id="cdek_link"><strong>Выбрать пункт выдачи на карте</strong></a>';
+    if (empty($data['cdek']['courier']) && !empty($data['cdek']['pvz'])) {
+        $method = $data['cdek']['cityName'] . ', ' . $data['cdek']['pvz']['address'] . ' (' . $data['cdek']['id'] . ')';
+        $link = '(<a href="#" id="cdek_link"><strong>изменить пункт выдачи или выбрать доставку курьером</strong></a>)';
+    }
+    if (!empty($data['cdek']['courier']) && empty($data['cdek']['pvz'])) {
+        $method = 'Курьером до двери';
+        $link = '(<a href="#"  id="cdek_link"><strong>получить в пункте выдачи</strong></a>' . ')';
+    }
+
+    // адрес пункта выдачи
+    $pane_form['select'] = [
+        '#markup' => '<div class="col-xs-12 form-item form-type-select form-group">' .
+                        '<label class="control-label">Адрес пункта выдачи</label>' .
+                        '<div><span class="cdek_addr">' . $method . '</span> ' . $link . '</div>' .
+                    '</div>'
+        ];
+
+    if (!empty($data['cdek']['courier'])) {
+        $pane_form['addr'] = [
+            '#title' => 'Адрес',
+            '#type' => 'textfield',
+        ];
+        $pane_form['office'] = [
+            '#title' => 'Квартира/Офис',
+            '#type' => 'textfield',
+        ];
+    }
+
+    $pane_form['username'] = array(
+        '#title' => 'Фамилия, Имя, Отчество',
+        '#type' => 'textfield',
+    );
+    $pane_form['phone'] = array(
+        '#title' => 'Телефон',
+        '#type' => 'textfield',
+        '#attributes' => ['class' => ['masked-phone']],
+    );
+
+    // комментарий к заказу
+    $pane_form['notes'] = array(
+        '#title' => t('Notes to order'),
+        '#type' => 'textarea',
+        '#rows' => 2,
+    );
+    $pane_form['callme'] = array(
+        '#title' => t('Call me to get details about my order and delivery'),
+        '#type' => 'checkbox',
+    );
+
+    return $pane_form;
+}
+
+/**
+ * Shipping service callback: validates the shipping service details.
+ */
+function cdek_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
+{
+    if (isset($details_values['addr']) && drupal_strlen($details_values['addr']) < 8)     {
+        form_set_error(implode('][', array_merge($form_parents, ['addr'])), 'Укажите адрес доставки для курьера.');
+        return false;
+    }
+
+    $fields = array();
+    if (drupal_strlen($details_values['username']) < 8) { $fields[] = 'username'; }
+    if (drupal_strlen($details_values['phone']) < 5) { $fields[] = 'phone'; }
+
+    if ($fields) {
+        $message = 'Поля, выделенные красным, не заполнены или заполнены с ошибкой.';
+        foreach($fields as $field) {
+            form_set_error(implode('][', array_merge($form_parents, array($field))), $message);
+            $message = '';
+        }
+        return false;
+    } else {
+        return true;
+    }
+}
+
+/**
+ * Shipping service callback: increases the shipping line item's unit price if
+ * express delivery was selected.
+ */
+function cdek_service_details_form_submit($details_form, $details_values, $line_item)
+{
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
+    $order_wrapper->field_username = $details_values['username'];
+    $order_wrapper->field_phone = $details_values['phone'];
+    if (!empty($details_values['addr'])) $order_wrapper->commerce_customer_shipping->field_addr = $details_values['addr'];
+    if (!empty($details_values['office'])) $order_wrapper->commerce_customer_shipping->field_office = $details_values['office'];
+    $order_wrapper->commerce_customer_shipping->field_callme = $details_values['callme'];
+    $order_wrapper->commerce_customer_shipping->save();
+    $order_wrapper->save();
+}
+
+
+/**
+ * Implements hook_preprocess_page
+ */
+function cdek_preprocess_page(&$vars)
+{
+    // добавляем скрипт СДЭК
+    if (strpos($_GET['q'], 'checkout') === 0) {
+        drupal_add_js(drupal_get_path('module', 'cdek') . '/widget/widjet.js');
+        drupal_add_js(drupal_get_path('module', 'cdek') . '/js/cdek.js');
+    }
+}

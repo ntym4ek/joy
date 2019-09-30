@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * Implements hook_menu_alter().
+ */
+function ext_wishlist_menu_alter(&$items)
+{
+    $items['user/%user/wishlist/ajax/add/%commerce_product']['page callback'] = 'ext_wishlist_commerce_wishlist_product_add_ajax';
+
+}
+
+/**
+ * Implements hook_form_alter
+ */
+function ext_wishlist_form_alter(&$form, $form_state, $form_id)
+{
+    if (strpos($form_id, 'commerce_cart_add_to_cart_form') === 0) {
+        if (isset($form['add_to_wishlist'])) {
+            $form['add_to_wishlist']['#prefix'] = '<div class="product-wishlist">';
+            $form['add_to_wishlist']['#suffix'] = '</div>';
+        }
+    }
+}
+
+/**
+ * Implements hook_preprocess_page
+ */
+function ext_wishlist_preprocess_page(&$vars)
+{
+    if (menu_get_item()['path'] == 'user/%/wishlist') {
+        drupal_set_title(t('Wish List'));
+    }
+}
+
+/**
+ * Page callback: Ajax product add.
+ *
+ * добавляем обновление иконки с количеством в шапке
+ */
+function ext_wishlist_commerce_wishlist_product_add_ajax($product, $user) {
+    if (!commerce_wishlist_user_has_product_in_wishlist($product->product_id, $user->uid)) {
+        $display_path = '';
+        if ($_GET['destination'] != '') {
+            $display_path = $_GET['destination'];
+        }
+        commerce_wishlist_product_add($product, NULL, $user->uid, $display_path);
+    }
+
+    $link = theme('commerce_wishlist_added_to_wishlist_link', array('user_id' => $user->uid));
+    $commands = array(ajax_command_replace('a#add-wishlist-' . $product->product_id, $link));
+    $commands[] = ajax_command_invoke('#wishlist', 'html', [trim(commerce_helper_wishlist_info_block())]);
+    ajax_deliver(array('#type' => 'ajax', '#commands' => $commands));
+}
+
+
+/**
+ * ------------------------------------------ Разметка для блока списка желаний в header --------------------------------------
+ * @return string
+ */
+function commerce_helper_wishlist_info_block()
+{
+    $qty_html = '';
+    if ($order = commerce_wishlist_order_load()) {
+        $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+        if ($qty = commerce_line_items_quantity($order_wrapper->commerce_line_items, commerce_product_line_item_types())) {
+            $qty_html = '<span class="bubble bubble-red">' . $qty . '</span>';
+        }
+    }
+    return '<i class="far fa-heart">' . $qty_html . '</i>';
+}

@@ -1,0 +1,4 @@
+name = Helper
+description = "Модуль со вспомогательными функциями."
+package = Custom
+core = 7.x

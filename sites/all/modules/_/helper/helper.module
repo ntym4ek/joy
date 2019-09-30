@@ -1,0 +1,706 @@
+<?php
+
+
+/**
+ * Реализация hook_menu()
+ */
+function helper_menu()
+{
+    $items['admin/config/administration/manager'] = array(
+        'title' => 'Настройки содержимого',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('helper_settings'),
+        'access arguments' => array('access manager settings'),
+        'file' => 'includes/helper.admin.inc',
+    );
+    $items['admin/config/administration/carts'] = array(
+        'title' => 'Статистика по корзинам',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('helper_stat_carts_form'),
+        'access arguments' => array('access manager settings'),
+        'file' => 'includes/helper.stat.inc',
+    );
+
+    $items['source/select-region'] = array(
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('helper_select_region_form'),
+        'access arguments' => array('access content'),
+    );
+
+    return $items;
+}
+
+
+function helper_permission() {
+    return array(
+        'access manager settings' => array(
+            'title' => t('Access manager settings'),
+            'description' => t('Access manager settings admin section.'),
+        )
+    );
+}
+
+/**
+ * Реализация hook_theme()
+ */
+function helper_theme() {
+    return array(
+        // оформление полей в строку (не смог найти, есть ли встроенные в drupal bootstrap стили)
+        'inline_fields_bootstrap' => array(
+            'render element' => 'element',
+        ),
+    );
+}
+
+
+/**
+ * ------------------------------------------ Формы (Forms ) ---------------------------------------------
+ */
+
+/**
+ * форма выбора Региона во всплывающем окне
+ */
+function helper_select_region_form($form, &$form_state)
+{
+    $form = [
+        '#attributes' => ['class' => ['select-region-form']],
+    ];
+
+    $form['intro'] = [
+        '#markup' =>    '<div class="sr-intro">' .
+                            '<img src="/sites/all/themes/strada/images/map.jpg">' .
+                            '<h3>Вам показаны товары с доставкой в <span></span></h3>' .
+                        '</div>'
+    ];
+
+    $form['address'] = array(
+        '#type' => 'dadata_address',
+        '#dadata_params' => array(
+            'bounds' => 'city-settlement',
+        ),
+    );
+
+    $form['ok'] = array(
+        '#markup' => '<a href="#" class="btn btn-lg btn-primary autodialog-close">Продолжить с новым регионом</a>',
+    );
+
+    return $form;
+}
+
+
+/**
+ * ------------------------------------------ Изменение форм (Forms alter) ---------------------------------------------
+ */
+
+/**
+ * Implements hook_form_alter().
+ */
+function helper_form_alter(&$form, &$form_state, $form_id)
+{
+    switch ($form_id) {
+        case 'views_exposed_form':
+            if ($form['#id'] == 'views-exposed-form-search-index-page') {
+                $form['submit']['#attributes']['class'][] = 'btn-brand';
+            }
+            break;
+    }
+}
+
+/**
+ * изменение формы добавления Отзыва
+ */
+function helper_form_review_node_form_alter(&$form, &$form_state, $form_id)
+{
+    if ($GLOBALS['user']->uid != 1) {
+        // если не задан Товар о котором оставляется Отзыв
+        if (empty(arg(3)) && empty($form['nid']['#value'])) { drupal_goto('/node/196'); }
+
+        // получаем идентификатор Товара
+        if (empty(arg(3))) {
+            // если это редактирование Отзыва
+            if (empty($form['nid']['#value'])) { drupal_goto('/node/196'); }
+            $review_node_wr = entity_metadata_wrapper('node', $form['nid']['#value']);
+            $product_nid = $review_node_wr->field_pr_product->nid->value();
+        }
+        // в случае добавления нового отзыва
+        else {
+            $product_nid = arg(3);
+
+            if ($GLOBALS['user']->uid == 0) {
+                drupal_set_message('Войдите под своим аккаунтом или зарегистрируйтесь, чтобы оставить отзыв.');
+                drupal_goto('user/login');
+            }
+
+            // проверить наличие отзыва от данного пользователя
+            // и при наличии редирект на его редактирование
+            $review_nid = NULL;
+            $query = db_select('node', 'n');
+            $query->condition('n.uid', $GLOBALS['user']->uid);
+            $query->fields('n', ['nid']);
+            $query->innerJoin('field_data_field_pr_product', 'fp', 'fp.entity_id = n.nid');
+            $query->condition('fp.field_pr_product_target_id', $product_nid);
+            if ($review_nid = $query->execute()->fetchField()) {
+                drupal_goto('node/' . $review_nid . '/edit');
+            }
+        }
+        $node_wr = entity_metadata_wrapper('node', $product_nid);
+
+        // не продолжаем, если Товар не найден
+        if (!$node_wr->value()) {
+            drupal_goto('/node/196');
+        }
+
+        drupal_set_title('Мой отзыв о товаре ' . $node_wr->title->value());
+        $form['product_image'] = ['#markup' => '<img src="' . image_style_url('medium', $node_wr->field_product[0]->field_p_image[0]->file->value()->uri) . '" />'];
+
+        // Дефолтный заголовок
+        $form['title']['#default_value'] = 'Отзыв';
+
+        // статус Не опубликовано
+        $form['options']['status']['#default_value'] = 0;
+
+        // связь Отзыва с Товаром
+        $form['field_pr_product']['und']['#default_value'][] = $product_nid;
+
+        // убираем лишние поля из вывода
+        $form['title']['#access'] = FALSE;
+        $form['field_pr_product']['#access'] = FALSE;
+        if (!_user_has_role('products manager')) {
+            $form['additional_settings']['#access'] = FALSE;
+        } else {
+            $form['revision_information']['#access'] = FALSE;
+            $form['path']['#access'] = FALSE;
+            $form['options']['promote']['#access'] = FALSE;
+            $form['options']['sticky']['#access'] = FALSE;
+        }
+
+        // после сабмита вернуться на страницу описания товара
+        $form['actions']['submit']['#validate'][] = 'helper_form_review_node_form_validate';
+        $form['actions']['submit']['#submit'][] = 'helper_form_review_node_form_submit';
+        $form_state['product_nid'] = $product_nid;
+    }
+}
+
+function helper_form_review_node_form_validate($form, &$form_state)
+{
+    if (empty($form_state['values']['field_pr_mark']['und'][0]['rating']) || ($form_state['values']['field_pr_mark']['und'][0]['rating'] == '-')) {
+        form_set_error('field_pr_mark][und][0][rating', 'Вы забыли поставить оценку товару!'); return false;
+    }
+    // ntrcn только для низких оценок
+    if ($form_state['values']['field_pr_mark']['und'][0]['rating'] <= 3) {
+        if (empty($form_state['values']['field_pr_merits']['und'][0]['value'])
+            && empty($form_state['values']['field_pr_disadvantages']['und'][0]['value'])
+            && empty($form_state['values']['field_pr_comment']['und'][0]['value'])) {
+            form_set_error('field_pr_merits][und][0][value', 'Напишите хоть что-нибудь о товаре :)');
+            return FALSE;
+        }
+    }
+}
+
+function helper_form_review_node_form_submit($form, &$form_state)
+{
+    unset($_SESSION['messages']['status']);
+    drupal_set_message('Спасибо за ваш отзыв! Он будет опубликован после проверки модератором.' );
+    $form_state['redirect'] = url('node/' . $form_state['product_nid']);
+}
+
+/**
+ * ------------------------------------------ Пользователь (User) ------------------------------------------------------
+ */
+
+/**
+ * Implements hook_user_insert().
+ */
+function helper_user_insert( &$edit, &$account, $category = NULL )
+{
+    // при регистрации нового пользователя установить уникальное имя: Пользователь #uid
+    $new_name = t('User ') . $account->uid;
+
+    db_update('users')
+        ->fields(array('name' => $new_name))
+        ->condition('uid', $account->uid)
+        ->execute();
+
+    $edit['name'] = $new_name;
+    $account->name = $new_name;
+
+    // установить флаг рассылки для пользователя
+    $flag = flag_get_flag('email_marketing');
+    if ($flag) {
+        $flag->flag('flag', $account->uid, $account);
+    }
+}
+
+function helper_form_user_login_alter (&$form, $form_state)
+{
+    $form['#attributes']['class'][] = 'user-form-container';
+    $form['name']['#prefix'] = '<div class="user-form">';
+    if (isset($form['actions']['continue_button'])) {
+        $form['user_links'] = $form['actions']['continue_button'];
+        unset($form['actions']['continue_button']);
+    } else {
+        $form['user_links'] = ['#markup' => ''];
+    }
+    $form['actions']['#weight'] = '1';
+    $form['actions']['submit']['#value'] = t('Login');
+
+    $form['user_links']['#weight'] = '10';
+    $form['actions']['forgot'] = ['#markup' => '<a href="/user/password" class="user-forgot">' . t('I forgot my password') .  '</a>'];
+    $form['user_links']['#prefix'] = '</div>' .
+                                    '<div class="user-links">';
+
+    $form['user_links']['#suffix'] = '';
+    if (isset($form['user_links']['#name'])) {
+        $form['user_links']['#prefix'] .= '<h2>' . t('Guest checkout') . '</h2><p>' . t('Continue as guest. No sign up required.') . '</p>';
+        $form['user_links']['#suffix'] = '<div class="divider"></div>';
+    }
+    $form['user_links']['#suffix'] .=    '<h2>' . t('New Customer') . '</h2>' .
+        '<p>' . t('Create an account for a faster, easier checkout.') . '</p>' .
+        '<a href="/user/register" class="btn btn-default">' . t('Sign up') . '</a>' .
+        '</div>';
+
+    // вход/логин по email
+    // http://drupalace.ru/lesson/dobavlyaem-avtorizaciyu-po-emeylu-v-drupal-7
+//    $form['name']['#element_validate'][] = 'helper_user_login_validate';
+
+    $form['name']['#description'] = '';
+    $form['pass']['#description'] = '';
+}
+
+function helper_form_user_register_form_alter (&$form, $form_state)
+{
+    // убираем описания полей
+    unset( $form['account']['mail']['#description'] );
+
+    // убираем имя, при вставке в БД оно будет заменено на "User uid"
+    $form['account']['name']['#type'] = 'hidden';
+    $form['account']['name']['#value'] = 'user_' . user_password();
+
+
+    $form['account']['pass']['#title'] = t('Password');
+    $form['account']['pass']['#type'] = 'password';
+    if (isset($form['actions']['continue_button'])) {
+        $form['user_links'] = $form['actions']['continue_button'];
+        unset($form['actions']['continue_button']);
+    } else {
+        $form['user_links'] = ['#markup' => ''];
+    }
+    $form['#attributes']['class'][] = 'user-form-container';
+    $form['prefix'] = [
+        '#markup' => '<div class="user-form">',
+        '#weight' => -99,
+    ];
+
+    $form['actions']['submit']['#value'] = t('Create an account');
+
+    if (isset($form['fz152_agreement'])) $form['fz152_agreement']['#weight'] = '4';
+    $form['actions']['#weight'] = '8';
+    $form['captcha']['#weight'] = '9';
+    $form['user_links']['#weight'] = '10';
+
+    if (isset($form['captcha']))    $form['captcha']['#suffix'] = '</div><div class="user-links">';
+    else                            $form['actions']['#suffix'] = '</div><div class="user-links">';
+
+    if (isset($form['user_links']['#name'])) {
+        $form['user_links']['#prefix'] = '<h2>' . t('Guest checkout') . '</h2><p>' . t('Continue as guest. No sign up required.') . '</p>';
+    }
+    $form['user_links']['#suffix'] =    '<h2>' . t('Login') . '</h2>' .
+        '<p>' . t('Already have JOY account.') . '</p>' .
+        '<a href="/user/login" class="btn btn-default">' . t('Sign in') . '</a>' .
+        '</div>';
+}
+
+
+function helper_form_user_profile_form_alter (&$form, $form_state)
+{
+    if ($GLOBALS['user']->uid != 1) {
+        $form['timezone']['#access'] = false;
+        $form['locale']['#access'] = false;
+        $form['mimemail']['#access'] = false;
+        $form['account']['#prefix'] = '<br /><h4>' . t('Account info') . '</h4>';
+        $form['field_user_surname']['#prefix'] = '<h4>' . t('Personal info') . '</h4>';
+        $form['flag']['#title'] = 'Подписки';
+    }
+}
+
+///**
+// * Implements hook_form_FORM_ID_alter().
+// */
+//function form_process_password_confirm_custom($element)
+//{
+//    $element['pass1']['#wrapper_attributes']['class'][] = 'active';
+//    return $element;
+//}
+
+/**
+ * ----------------------------------------------- Модальное окно ------------------------------------------------
+ */
+function helper_include_modal($options = array()) {
+    static $added = FALSE;
+    if ($added == FALSE) {
+        $added = TRUE;
+
+        // Include the CTools tools that we need.
+        ctools_include('modal'); ctools_include('ajax'); ctools_modal_add_js();
+
+        // Создаем массив с настройками для модального окна.
+        $style = array(
+            'style' => array(
+                'modalSize' => array(
+                    'type' => empty($options['type']) ? 'fixed': $options['type'],      // Тип модального окна. фиксированный или резиновый. (fixed, dynamic)
+                    'width' => empty($options['width']) ? '400': $options['width'],     // Ширина модального окна.
+                    'height' => empty($options['height']) ? 'auto': $options['height'], // Высота модального окна.
+                ),
+                'modalOptions' => array(
+                    'opacity' => .7,                            // Прозрачность фона.
+                    'background-color' => '#000',               // Цвет фона.
+                ),
+                'closeText' => '',                              // Текст для закрытия модального окна.
+                'loadingText' => '',                            // Текст, отображаемый в момент загрузки модального окна.
+                'animation' => 'fadeIn',
+                'speed' => 'slow',
+                'modalClass' => empty($options['class']) ? '': $options['class'],
+//                'closeImage' => theme('image', array(
+//                    'path' => path_to_theme() . '/images/icons/btn-close-w.png',
+//                    'alt' => 'Закрыть окно',
+//                    'title' => 'Закрыть окно',
+//                )),
+
+            ),
+        );
+
+        // Подключаем настройки для модального окна.
+        drupal_add_js($style, 'setting');
+    }
+}
+
+/**
+ * ------------------------------------------ Path Breadcrumbs -------------------------------------------
+ * динамически формируем Крошку на описание товара
+ */
+function helper_path_breadcrumbs_view_alter(&$breadcrumbs, $path_breadcrumbs, $contexts)
+{
+  // для Описания товара
+  // определить текущую и родительскую категорию товара
+  if ($path_breadcrumbs->machine_name == 'catalog_item' && isset($_GET['cat'])) {
+    $bread = '';
+    $tid = $_GET['cat'];
+    if ($term = taxonomy_term_load($tid)) {
+        $tid_url = drupal_get_path_alias('taxonomy/term/' . $tid);
+        if ($p_term = current(taxonomy_get_parents($tid))) {
+
+            // ссылки на категории
+            $ptid_url = ($p_term->tid == 1) ? 'catalog' : '';
+
+            // название
+            $p_name = ($p_term->tid == 1) ? 'Каталог' : $p_term->name;
+
+            $bread[] = $ptid_url ? '<a href="/' . $ptid_url . '">' . $p_name . '</a>' : $p_name;
+        }
+        $bread[] = '<a href="/' . $tid_url . '">' . $term->name . '</a>';
+        $breadcrumbs = $bread;
+    }
+  }
+
+  // для Подкатегорий
+  if (strpos($breadcrumbs[0], 'Каталог') !== false
+    || strpos($breadcrumbs[0], 'Горизонтальное меню') !== false) {
+      array_shift($breadcrumbs);
+  }
+}
+
+
+/**
+ * ------------------------------------------ Представления (Views) ----------------------------------------------------
+ */
+
+/**
+ * Implements hook_views_pre_view().
+ */
+function helper_views_pre_view($view, &$display_id, &$args)
+{
+    // для Блока Отзывов в Товаре вывести шапку со средним рейтингом
+    if ($view->name == 'product_reviews' && $display_id == 'block') {
+        $nid = str_replace('node/', '', $_GET['q']);
+        if (is_numeric($nid)) {
+            $votes = fivestar_get_votes('node', $nid);
+            $fivestar = !empty($votes['count']['value']) ? field_view_field('node', node_load($nid), 'field_pr_mark','teaser') : '';
+
+            $html =
+                    '<h2>Отзывы и оценки</h2>' .
+                    ($GLOBALS['user']->uid  ? '<a href="/node/add/review/' . $nid . '" class="btn btn-empty btn-primary">Оставить отзыв</a>'
+                                            : '<a href="/user/login?destination=node/add/review/' . $nid . '" class="btn btn-empty btn-primary">Оставить отзыв</a>') .
+                    render($fivestar);
+
+            $view->add_item($display_id, 'header', 'views', 'area', ['content' => $html, 'format' => 'full_html', 'empty' => true]);
+        }
+    }
+
+}
+
+
+/**
+ * ------------------------------------------ Время выполнения блоков и view -------------------------------------------
+ * http://xandeadx.ru/blog/drupal/850
+ * Implements hook_block_list_alter().
+ */
+function helper_block_list_alter(&$blocks) {
+  $GLOBALS['block_build_microtime'] = microtime(TRUE);
+}
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function helper_block_view_alter(&$data, $block) {
+  $block->build_time = microtime(TRUE) - $GLOBALS['block_build_microtime'];
+  $GLOBALS['block_build_microtime'] = microtime(TRUE);
+
+  // изменить заголовки каруселей с товарами на заданные менеджерами
+    if ($block->delta == 'carousel-block') { $data['subject'] = variable_get('carousel_products_1_title', ''); }
+    if ($block->delta == 'carousel-block_1') { $data['subject'] = variable_get('carousel_products_2_title', ''); }
+}
+
+/**
+ * Preprocess function for block.tpl.php.
+ */
+function helper_preprocess_block(&$vars) {
+  if (isset($vars['block']->build_time)) {
+    $build_time = intval($vars['block']->build_time * 100000) / 100;
+    $vars['content'] .= "\n<!-- Block build time: $build_time ms -->\n";
+  }
+}
+/**
+ * http://xandeadx.ru/blog/drupal/848
+ * Implements hook_views_post_render().
+ */
+function helper_views_post_render(&$view, &$output, &$cache) {
+  $execute_time = isset($view->execute_time ) ? intval($view->execute_time * 100000) / 100 : 0;
+  $render_time = intval($view->render_time * 100000) / 100;
+  $output .= "\n<!-- Query time: $execute_time ms, Render time: $render_time ms -->";
+}
+
+
+/**
+ * --------------------------------- Вывод RAW полей во Views (+производительность) ------------------------------------
+ * http://xandeadx.ru/blog/drupal/765
+ * Implements hook_views_data_alter().
+ */
+function helper_views_data_alter(&$data) {
+  foreach ($data as $table_name => $table_info) {
+    foreach ($table_info as $field_name => $field_info) {
+      if (isset($field_info['field']['handler']) && $field_info['field']['handler'] == 'views_handler_field_field') {
+        $field_info['field']['handler'] = 'views_handler_field';
+        $field_info['title'] .= ' (raw)';
+        $field_info['title short'] .= ' (raw)';
+        $data[$table_name][$field_name . '_raw'] = $field_info;
+      }
+    }
+  }
+}
+/**
+ * --------------------------------- Заглушка вместо отсутствующих картинок --------------------------------------------
+ * http://xandeadx.ru/blog/drupal/854
+ * Preprocess function for theme_image_style().
+ */
+function helper_preprocess_image_style(&$vars) {
+  if (strpos($_SERVER['HTTP_HOST'],'.local')) {
+    $vars['path'] = 'public://default_images/no_photo.png';
+  }
+}
+/**
+ * --------------------------------- "Удалить" в локальные задачи материала --------------------------------------------
+ * http://xandeadx.ru/blog/drupal/339
+ * Implements hook_menu_alter()
+ */
+function helper_menu_alter(&$items) {
+  $items['node/%node/delete']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+
+    // убрать закладки со страницы входа
+    // https://eureka.ykyuen.info/2011/01/31/drupal-remove-the-tabs-in-user-registration-form/
+    $items['user']['type'] = MENU_CALLBACK;
+    $items['user/register']['type'] = MENU_CALLBACK;
+    $items['user/password']['type'] = MENU_CALLBACK;
+}
+/**
+ * --------------------------------- Перенести форму способа оплаты под соотв. radiobutton------------------------------
+ * http://xandeadx.ru/blog/drupal/598
+ * Implements hook_form_FORM_ID_alter().
+ */
+function helper_form_commerce_checkout_form_review_alter(&$form) {
+  drupal_add_js(drupal_get_path('module', 'helper') . '/js/payment-description.js');
+}
+
+
+/**
+ * --------------------------------- Темизация -------------------------------------------------------------------------
+ *
+ */
+
+/**
+ * http://frantsuzzz.com/content/vyvod-poley-formy-v-odnu-stroku-bootstrap
+ * theme функция вывода полей в один ряд используя сетку bootstrap (12 клонок)
+ * + корректный вывод сообщений в форме
+ */
+function theme_inline_fields_bootstrap($variables) {
+    $form = $variables['element'];
+    $fields = array();
+
+    //Класс префикса сетки bootstrap
+    $bootstrap_prefix = isset($form['#bootstrap_prefix']) ? $form['#bootstrap_prefix'] : 'col-md-';
+
+    //определим количество элементов в контейнере
+    $max = 12;
+    $bootstrap_size = 1;
+    $count = 0;
+    foreach ($form as $key => $element) {
+        // считаем выводимые элементы, кроме *_messages (элемент с сообщением об ошибке)
+        if (substr($key, 0, 1) != '#' && strpos($key, '_messages') === false) {
+            $count++;
+        }
+    }
+    //размер колонок
+    $bootstrap_size = $max > $count ? floor($max / $count) : 1;
+    //размер последней колонки. Может отличаться от остальных
+    $bootstrap_size_last = $max - ($count - 1) * $bootstrap_size;
+    $this_element = 0;
+    foreach ($form as $key => $element) {
+        // ищем дочерние поля
+        if (substr($key, 0, 1) != '#') {
+            $this_element++;
+            // если при валидации в поле была допущена ошибка, функция добавит к элементу класс error
+            _form_set_class($element, array());
+
+            if (isset($form['#not_div']) && $form['#not_div']) {
+                unset($element['#theme_wrappers']);
+            }
+
+            if (isset($element['#bootstrap_size_this']) && is_numeric($element['#bootstrap_size_this']) && $element['#bootstrap_size_this'] > 0 && $element['#bootstrap_size_this'] <= $max) {
+                $bootstrap_size_this = $element['#bootstrap_size_this'];
+            }
+            else {
+                $bootstrap_size_this = ($this_element == $count) ? $bootstrap_size_last : $bootstrap_size;
+            }
+
+            $fields[] = '<div class="' . $bootstrap_prefix . $bootstrap_size_this . '">' . drupal_render($element) . '</div>';
+        }
+    }
+
+    $form['#children'] = '<div class="row">' . implode('', $fields) . '</div>';
+    return theme('form_element', array('element' => $form));
+}
+
+
+/** ------------------------------------------ Кодировка email -----------------------------------------------------
+ * защита от ботов, парсящих email
+ * кодировка email в кашу с раскодировкой с помощью JS (common.js) на стороне пользователя
+ */
+function email_antibot_encode($email) {
+    // вместо @ - [s1], вместо . - [s2], в имя домена вставить / после 2го символа
+    if (preg_match('!(^.+)@(..)(.*)\.(.+)$!', $email, $email_mtch)) {
+        $email = $email_mtch[1] . '[s1]' . $email_mtch[2] . '/' . $email_mtch[3] . '[s2]' . $email_mtch[4];
+    } else return false;
+
+    return $email;
+}
+
+
+/** ------------------------------------------ Свой виджет для FiveStar -------------------------------------------------
+ */
+
+/**
+ * Implementation of hook_fivestar_widgets().
+ */
+function helper_fivestar_widgets() {
+    $widgets = array(
+        drupal_get_path('module', 'helper') . '/fivestar_widgets/strada/strada.css' => 'Strada Stars',
+    );
+
+    return $widgets;
+}
+
+/** ------------------------------------------ Вспомогательные функции -------------------------------------------------
+ */
+
+/**
+ * Implements hook_menu_get_item_alter().
+ * исправление ошибки Notice: Undefined index: map в функции field_ui_admin_menu_map после предоставления доступа
+ * к админ меню менеджерам
+ * https://www.drupal.org/project/admin_menu/issues/2502695#comment-11002901
+ */
+function helper_menu_get_item_alter(&$router_item, $path, $original_map) {
+    if (empty($router_item['map'])) {
+        $router_item['map'] = NULL;
+    }
+}
+
+/** ------------------------------------------ Вспомогательные функции -------------------------------------------------
+ */
+function mb_ucfirst($str) {
+    return mb_substr(mb_strtoupper($str,'utf-8'),0,1,'utf-8').mb_strtolower(mb_substr($str,1,mb_strlen($str,'utf-8'),'utf-8'),'utf-8');
+}
+
+/**
+ * возвращает число прописью
+ */
+function _num2str($num) {
+    $nul='ноль';
+    $ten=array(
+        array('','один','два','три','четыре','пять','шесть','семь', 'восемь','девять'),
+        array('','одна','две','три','четыре','пять','шесть','семь', 'восемь','девять'),
+    );
+    $a20=array('десять','одиннадцать','двенадцать','тринадцать','четырнадцать' ,'пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать');
+    $tens=array(2=>'двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят' ,'восемьдесят','девяносто');
+    $hundred=array('','сто','двести','триста','четыреста','пятьсот','шестьсот', 'семьсот','восемьсот','девятьсот');
+    $unit=array( // Units
+        array('копейка' ,'копейки' ,'копеек',	 1),
+        array('рубль'   ,'рубля'   ,'рублей'    ,0),
+        array('тысяча'  ,'тысячи'  ,'тысяч'     ,1),
+        array('миллион' ,'миллиона','миллионов' ,0),
+        array('миллиард','милиарда','миллиардов',0),
+    );
+    //
+    list($rub,$kop) = explode('.',sprintf("%015.2f", floatval($num)));
+    $out = array();
+    if (intval($rub)>0) {
+        foreach(str_split($rub,3) as $uk=>$v) { // by 3 symbols
+            if (!intval($v)) continue;
+            $uk = sizeof($unit)-$uk-1; // unit key
+            $gender = $unit[$uk][3];
+            list($i1,$i2,$i3) = array_map('intval',str_split($v,1));
+            // mega-logic
+            $out[] = $hundred[$i1]; # 1xx-9xx
+            if ($i2>1) $out[]= $tens[$i2].' '.$ten[$gender][$i3]; # 20-99
+            else $out[]= $i2>0 ? $a20[$i3] : $ten[$gender][$i3]; # 10-19 | 1-9
+            // units without rub & kop
+            if ($uk>1) $out[]= _morph($v,$unit[$uk][0],$unit[$uk][1],$unit[$uk][2]);
+        } //foreach
+    }
+    else $out[] = $nul;
+    $out[] = _morph(intval($rub), $unit[1][0],$unit[1][1],$unit[1][2]); // rub
+    $out[] = $kop.' '._morph($kop,$unit[0][0],$unit[0][1],$unit[0][2]); // kop
+    return trim(preg_replace('/ {2,}/', ' ', join(' ',$out)));
+}
+/**
+ * Склонение словоформы
+ */
+function _morph($n, $f1, $f2, $f5) {
+    $n = abs(intval($n)) % 100;
+    if ($n>10 && $n<20) return $f5;
+    $n = $n % 10;
+    if ($n>1 && $n<5) return $f2;
+    if ($n==1) return $f1;
+    return $f5;
+}
+
+
+// проверка текущего пользователя на наличие роли
+function _user_has_role($role_name, $acc = NULL)
+{
+    if (!$acc)
+        $acc = $GLOBALS['user'];
+
+    if (is_array($acc->roles) && in_array($role_name, array_values($acc->roles))) {
+        return TRUE;
+    }
+    return FALSE;
+}
