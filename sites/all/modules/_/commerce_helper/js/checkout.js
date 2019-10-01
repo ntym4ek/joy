@@ -123,6 +123,14 @@
             // если расчёт доставки не выполнен, подсветить поле выбора населенного пункта
             if ($('.field-name-field-city').find('input[name*="field_city"]').val() === "") $('.field-name-field-city').addClass('has-error');
 
+            /** -------------------- Обработка нажатия Оформить заказ --------------------------------- */
+            $('.checkout-continue').once(function() {
+                $('.checkout-continue').on('click', function(){
+                    $(this).text('Отправляем заказ...');
+                    // активируем достижение цели в Метрике
+                    ym(47689555, 'reachGoal', 'knopkaPodtverdit');
+                });
+            });
         }
     };
 })(jQuery);

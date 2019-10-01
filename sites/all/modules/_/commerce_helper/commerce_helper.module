@@ -619,12 +619,16 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
     $form['buttons']['continue']['#value'] = t('Confirm order');
     $form['buttons']['continue']['#attributes']['class'][] = 'btn-lg';
     $form['buttons']['continue']['#attributes']['class'][] = 'autofill-button';
-    $form['buttons']['continue']['#attributes']['onclick'][] = "document.querySelector('.checkout-continue').innerText = 'Отправляем заказ...'; ym(47689555, 'reachGoal', 'knopkaPodtverdit'); return true; ";
 
     // при выборе оплаты ЯД валидация не идёт дальше commerce_checkout_form_validate
     // ставим свой валидатор легитимности бесплатной доставки перед ней
     $key = array_search('commerce_checkout_form_validate', $form['buttons']['continue']['#validate']);
     array_splice($form['buttons']['continue']['#validate'], $key, 0, 'commerce_helper_free_shipping_validate');
+
+    // при нажатии Оформить заказ даже при наличии ошибок в форме доставки
+    // line_item выбранной доставки добавляется в заказ
+    // удаляем
+    commerce_shipping_delete_shipping_line_items($form_state['order']);
 
     // сформировать блок Order Summary
     $order_wrapper = entity_metadata_wrapper('commerce_order', $form_state['order']);
@@ -809,8 +813,8 @@ function commerce_helper_commerce_coupon_discount_value_display_alter(&$text, $d
     // Common variables.
     $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
     $offer_wrapper = $discount_wrapper->commerce_discount_offer;
-    $offer_type = $offer_wrapper->type->value();
-    $discount_type = $discount_wrapper->type->value();
+    $offer_type = $offer_wrapper->value()->type;
+    $discount_type = $discount_wrapper->value()->type;
 
     // Savings value implementations on behalf of commerce discount.
     switch ($discount_type) {
