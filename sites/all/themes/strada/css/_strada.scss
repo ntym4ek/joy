@@ -1377,8 +1377,10 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
         .cs-total {
             display: flex; float: none; justify-content: space-between;
         }
-        .cs-delivery .value {
-            .notice { color: $brand-danger; font-size: $font-size-xs; }
+        .cs-delivery .notice {
+            color: $brand-danger; font-size: $font-size-xs;
+            display: block;
+            margin-top: -6px;
         }
         .cs-discount .value { color: $brand-danger; }
         .label { color: $text-muted; font-size: $font-size-small; font-weight: 400; padding: .2em 0; line-height: 1.5; }

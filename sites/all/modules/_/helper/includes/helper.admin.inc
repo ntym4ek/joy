@@ -385,7 +385,7 @@ function helper_settings($form, &$form_state)
 
     $form['shop']['free_shipping_sum'] = array(
         '#type' => 'textfield',
-        '#title' => 'Бесплатная доставка',
+        '#title' => 'Бесплатная доставка от суммы',
         '#description' => 'Минимальная сумма заказа для обнуления стоимости доставки. 0 - отключено',
         '#default_value' => variable_get('free_shipping_sum', 0),
         '#required' => TRUE,
@@ -395,6 +395,14 @@ function helper_settings($form, &$form_state)
         '#title' => 'Сообщение о бесплатной доставке',
         '#description' => 'Сумма остатка до бесплатной доставки при которой выводить сообщение. 1 - выводить при любом остатке, 0 - не выводить никогда',
         '#default_value' => variable_get('free_shipping_show_sum', 0),
+        '#required' => TRUE,
+    );
+
+    $form['shop']['free_shipping_weight'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Бесплатная доставка по весу',
+        '#description' => 'Вес в КГ до которого доставка может быть бесплатной. 0 - вес не учитывается',
+        '#default_value' => variable_get('free_shipping_weight', 0),
         '#required' => TRUE,
     );
 

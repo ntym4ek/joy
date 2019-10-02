@@ -6,7 +6,7 @@ define('CHECKOUT_MIN_ORDER_AMOUNT', 1);
 define('CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT', variable_get('free_shipping_sum', 0));
 // вес в КГ до которого доставка может быть бесплатной
 // при ноле ограничений нет
-define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_weight', 10));
+define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_weight', 0));
 
 /**
  * Implements hook_menu().
