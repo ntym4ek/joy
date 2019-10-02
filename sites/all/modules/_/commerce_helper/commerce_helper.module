@@ -429,7 +429,7 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
 
             // вес заказа
             $weight = commerce_physical_order_weight($form_state['order'], 'kg')['weight'];
-            $weight_text = number_format($weight, 1) . ' кг';
+            $weight_text = number_format($weight, 2) . ' кг';
 
             $header = '<h4>Предварительный итог</h4>';
 
