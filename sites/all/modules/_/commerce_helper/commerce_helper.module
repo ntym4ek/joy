@@ -704,7 +704,7 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
 
     // вес заказа
     $weight = commerce_physical_order_weight($form_state['order'], 'kg')['weight'];
-    $weight_text = number_format($weight, 1) . ' кг';
+    $weight_text = number_format($weight, 2) . ' кг';
 
     $form['summary'] = array(
         '#markup' =>

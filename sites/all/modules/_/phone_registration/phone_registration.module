@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * Implements hook_menu()
+ */
+function phone_registration_menu()
+{
+    $items[''] = array(
+        'title' => '',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('mailing_manual_form'),
+        'access arguments' => array('access manager settings'),
+    );
+
+    return $items;
+}

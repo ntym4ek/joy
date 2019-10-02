@@ -1,0 +1,4 @@
+name = Phone Registration
+description = Регистрация по номеру телефона в дополнение к регистрации по email
+package = Custom
+core = 7.x
