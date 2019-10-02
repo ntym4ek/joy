@@ -68,8 +68,8 @@ function courier_service_rate_order($shipping_service, $order)
 
             $amount = $to_point_cost + $to_door_cost;
 
-            $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
-            if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100) {
+//            $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
+            if (_commerce_helper_allow_free_shipping($order)) {
                 $amount = $to_door_cost;
             } else {
                 // для Владивостока и многих других почему-то до пункта выдачи выдаёт нулевую стоимость

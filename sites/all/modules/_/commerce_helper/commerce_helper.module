@@ -4,6 +4,9 @@ define('CHECKOUT_MIN_ORDER_AMOUNT', 1);
 // сумма от которой начинается бесплатная доставка
 // при ноле доставка считается всегда
 define('CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT', variable_get('free_shipping_sum', 0));
+// вес в КГ до которого доставка может быть бесплатной
+// при ноле ограничений нет
+define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_weight', 10));
 
 /**
  * Implements hook_menu().
@@ -424,32 +427,69 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
 
             $products_qty = commerce_line_items_quantity($order_wrapper->commerce_line_items, commerce_product_line_item_types());
 
+            // вес заказа
+            $weight = commerce_physical_order_weight($form_state['order'], 'kg')['weight'];
+            $weight_text = number_format($weight, 1) . ' кг';
+
             $header = '<h4>Предварительный итог</h4>';
+
+            // доставка
+            $delivery_text = 'платная';
+
             if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT) {
-                if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 > $products_base_amount) {
-                    $free_shipping = 'Ещё немножко! До бесплатной доставки осталось заказать на ' . commerce_currency_format(CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - $products_base_amount, 'RUB');
-                }
-                else {
+                if (_commerce_helper_allow_free_shipping($form_state['order'])) {
                     $free_shipping = 'Вы получили <span class="text-success">бесплатную доставку</span> для Вашего заказа!';
+                    $delivery_text = 'бесплатная';
+                } elseif (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 > $products_base_amount) {
+                    $free_shipping = 'Ещё немножко! До бесплатной доставки осталось заказать на ' . commerce_currency_format(CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - $products_base_amount, 'RUB');
+                    // если есть ограничение по весу, указать
+                    $free_shipping .= (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT ? '<br /><span class="notice">(для заказов весом менее ' . CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT . ' кг)</span>' : '');
+                } elseif (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT <= $weight) {
+                    $delivery_text .= '<br /><span class="notice">превышение по весу</span>';
                 }
                 $back_url = '/';
                 if (!empty($_GET['back']) && $_GET['back'] != 'front') {
                     $back_url = '/' . $_GET['back'];
                 }
 
-                if (variable_get('free_shipping_show_sum', 0)) {
+                if (isset($free_shipping) && variable_get('free_shipping_show_sum', 0)) {
                     if (variable_get('free_shipping_show_sum') == 1 || (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
                         $header = '<div class="cs-free">' . $free_shipping . '<a href="' . $back_url . '" class="btn btn-default">Добавить товары</a></div>';
                     }
                 }
+
             }
+
+
+//            if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT) {
+//                if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 > $products_base_amount) {
+//                    $free_shipping = 'Ещё немножко! До бесплатной доставки осталось заказать на ' . commerce_currency_format(CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - $products_base_amount, 'RUB');
+//                    // если есть ограничение по весу, указать
+//                    $free_shipping .= (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT ? '<br /><span class="notice">(для заказов весом менее ' . CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT . ' кг)</span>' : '');
+//                }
+//                else {
+//                    $free_shipping = 'Вы получили <span class="text-success">бесплатную доставку</span> для Вашего заказа!';
+//                }
+//                $back_url = '/';
+//                if (!empty($_GET['back']) && $_GET['back'] != 'front') {
+//                    $back_url = '/' . $_GET['back'];
+//                }
+//
+//                if (variable_get('free_shipping_show_sum', 0)) {
+//                    if (variable_get('free_shipping_show_sum') == 1 || (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
+//                        $header = '<div class="cs-free">' . $free_shipping . '<a href="' . $back_url . '" class="btn btn-default">Добавить товары</a></div>';
+//                    }
+//                }
+//            }
+
             $form['actions']['summary'] = [
                 '#markup' =>
                     '<div class="cs-header">' . $header . '</div>' .
                     '<div class="checkout-summary">' .
                     '<div class="cs-quantity"><span class="label">' . 'Товары (' . $products_qty . ')</span><span class="value">' . commerce_currency_format($products_base_amount, 'RUB') . '</span></div>' .
                     ($discount_amount < 0 ? '<div class="cs-discount"><span class="label">Скидка</span><span class="value">' . commerce_currency_format($discount_amount, 'RUB') . '</span></div>' : '') .
-//                    '<div class="cs-delivery"><span class="label">Доставка</span><span class="value">не выбрана</span></div>' .
+                    '<div class="cs-weight"><span class="label">Вес</span><span class="value">' . $weight_text . '</span></div>' .
+                    '<div class="cs-delivery"><span class="label">Доставка</span><span class="value">' . $delivery_text . '</span></div>' .
                     '<div class="cs-total"><span class="label">' . t('Total') . '</span><span class="value">' . commerce_currency_format($products_amount, 'RUB') . '</span></div>' .
                     '</div>',
                 '#weight' => -1,
@@ -662,12 +702,17 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
 
     $products_qty = commerce_line_items_quantity($order_wrapper->commerce_line_items, commerce_product_line_item_types());
 
+    // вес заказа
+    $weight = commerce_physical_order_weight($form_state['order'], 'kg')['weight'];
+    $weight_text = number_format($weight, 1) . ' кг';
+
     $form['summary'] = array(
         '#markup' =>
             '<div class="checkout-summary">' .
             '<div class="cs-quantity"><span class="label">' . 'Товары (' . $products_qty . ')</span><span class="value">' . commerce_currency_format($products_amount, 'RUB') . '</span></div>' .
             ($discount_amount < 0 ? '<div class="cs-discount"><span class="label">Скидка</span><span class="value">' . commerce_currency_format($discount_amount, 'RUB') . '</span></div>' : '').
             ($coupon_amount < 0 ? '<div class="cs-discount"><span class="label">Промокод</span><span class="value">' . commerce_currency_format($coupon_amount, 'RUB') . '</span></div>' : '').
+            '<div class="cs-weight"><span class="label">Вес</span><span class="value">' . $weight_text . '</span></div>' .
             '<div class="cs-delivery"><span class="label">' . $shipping_label . '</span><span class="value">' . $delivery_text . '</span></div>' .
             '<div class="cs-total"><span class="label">' . t('Total to pay') . '</span><span class="value">' . commerce_currency_format($total_amount, 'RUB') . '</span></div>' .
             '</div>',
@@ -1302,6 +1347,22 @@ function commerce_helper_commerce_price_component_total_coupons($order)
     }
 
     return $total;
+}
+
+/**
+ * Функция проверяет условия для предоставления бесплатной доставки
+ * @param $order - проверяемый заказ
+ *
+ * @return bool - разрешить/запретить
+ */
+function _commerce_helper_allow_free_shipping($order)
+{
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+    $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
+    $physical_weight = commerce_physical_order_weight($order, 'kg');
+
+    return ((CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100)
+        && (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT == 0 || CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT > $physical_weight['weight']));
 }
 
 

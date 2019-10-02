@@ -53,8 +53,6 @@ function boxberry_service_rate_order($shipping_service, $order)
         'data' => [],
     );
 
-    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-
     $rates = &drupal_static(__FUNCTION__);
     if (!$rates) {
         $rate_request = boxberry_build_rate_request($order);
@@ -65,7 +63,7 @@ function boxberry_service_rate_order($shipping_service, $order)
             $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // день в кэше
 
             if (!$cache) {
-                // при переходе на страницу оформления запрос на расчёт выполняется дважды
+                // при переходе на страницу оформления запрос на расчёт выполняется дважды:
                 // при первом построении формы и автонажатии кнопки Recalc
                 // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
                 if (arg(0) != 'checkout') {
@@ -90,8 +88,9 @@ function boxberry_service_rate_order($shipping_service, $order)
                         if (!empty($response['point_data'])) $rate['data']['address'] = $response['point_data']['Address'];
 
 
-                        $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
-                        if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100) {
+//                        $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
+                        if (_commerce_helper_allow_free_shipping($order)) {
+//                        if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100) {
                             $rate['amount'] = 0;
                         } else {
                             // для Владивостока и многих других почему-то выдаёт нулевую стоимость
@@ -130,7 +129,8 @@ function boxberry_build_rate_request($order)
 
     // базовые данные
     $zipcode = empty($shipping_profile->field_zipcode_calc['und'][0]['value']) ? '' : $shipping_profile->field_zipcode_calc['und'][0]['value'];
-    $weight = 1000; // расчитывать для любого веса, менеджеры будут разбивать на несколько, стоимость разбивки не актуальна
+    $weight = commerce_physical_order_weight($order, 'g')['weight'];
+//    $weight = 1000; // расчитывать для любого веса, менеджеры будут разбивать на несколько, стоимость разбивки не актуальна
     $amount = $order_wr->commerce_order_total->value()['amount']/100;
 
     // возможно пункт уже выбран, нужно получить данные о нём
@@ -219,8 +219,8 @@ function boxberry_service_details_form($pane_form, $pane_values, $checkout_pane,
     }
 
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-//    $weight = commerce_physical_order_weight($order, 'g')['weight'];
-    $weight = 1000; // расчитывать для любого веса, менеджеры будут разбивать на несколько, стоимость разбивки не актуальна
+    $weight = commerce_physical_order_weight($order, 'g')['weight'];
+//    $weight = 1000; // расчитывать для любого веса, менеджеры будут разбивать на несколько, стоимость разбивки не актуальна
 
     $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
 

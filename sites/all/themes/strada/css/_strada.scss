@@ -1320,6 +1320,7 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
     .cs-header {
         border-bottom: 1px solid $divider-color;
         text-align: left;
+        margin-bottom: 16px;
     }
     .cs-free {
         text-align: center;
@@ -1328,6 +1329,7 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
             display: block;
             margin-top: $grid-gutter-width;
         }
+        .notice { color: $text-muted; font-size: $font-size-xs; }
     }
     .commerce_coupon {
         display: flex; flex-wrap: wrap;
@@ -1367,24 +1369,23 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
         }
     }
     .checkout-summary {
-        padding: $grid-gutter-width 0 0 0; margin: 0;
+        margin-bottom: 16px;
         .cs-quantity,
         .cs-delivery,
+        .cs-weight,
         .cs-discount,
         .cs-total {
             display: flex; float: none; justify-content: space-between;
-            margin-bottom: 5px;
         }
         .cs-delivery .value {
-            margin-left: 32px;
-            text-align: right;
-            line-height: 1;
+            .notice { color: $brand-danger; font-size: $font-size-xs; }
         }
         .cs-discount .value { color: $brand-danger; }
-        .label { color: $text-muted; font-size: $font-size-small; font-weight: 400; padding: .2em 0; }
+        .label { color: $text-muted; font-size: $font-size-small; font-weight: 400; padding: .2em 0; line-height: 1.5; }
         .cs-total .label { color: $text-color; font-weight: 800; }
         .cs-total .value { font-weight: 800; font-size: $font-size-large; }
     }
+    .checkout-buttons.form-group { margin: 0; }
     .checkout-continue {
         font-size: $font-size-base;
         width: 100%;
