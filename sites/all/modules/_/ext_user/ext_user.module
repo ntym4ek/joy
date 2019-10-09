@@ -1,0 +1,252 @@
+<?php
+
+/**
+ * hook_module_implements_alter
+ * change hook execution order, commerce_helper - last
+ */
+function ext_user_module_implements_alter(&$implementations, $hook)
+{
+    // Name of the hook.
+    if (in_array($hook, ['form_alter'])) {
+        // ext_user - last
+        $module = 'ext_user';
+        if (isset($implementations[$module])) {
+            $group = $implementations[$module];
+            unset($implementations[$module]);
+            $implementations[$module] = $group;
+        }
+    }
+
+//    if ($hook == 'commerce_order_presave') {
+//        // ext_user - first
+//        $module = 'ext_user';
+//        $group = array($module => $implementations[$module]);
+//        unset($implementations[$module]);
+//        $implementations = $group + $implementations;
+//    }
+}
+
+
+/**
+ * Implements hook_user_insert().
+ */
+function ext_user_user_insert( &$edit, &$account, $category = NULL )
+{
+    // при регистрации нового пользователя установить уникальное имя: Пользователь #uid
+    $new_name = t('User ') . $account->uid;
+
+    db_update('users')
+        ->fields(array('name' => $new_name))
+        ->condition('uid', $account->uid)
+        ->execute();
+
+    $edit['name'] = $new_name;
+    $account->name = $new_name;
+
+    // установить флаг рассылки для пользователя
+    $flag = flag_get_flag('email_marketing');
+    if ($flag) {
+        $flag->flag('flag', $account->uid, $account);
+    }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ext_user_form_user_login_alter (&$form, $form_state)
+{
+    $form['#attributes']['class'][] = 'user-form-container';
+    $form['name']['#prefix'] = '<div class="user-form">';
+    if (isset($form['actions']['continue_button'])) {
+        $form['user_links'] = $form['actions']['continue_button'];
+        unset($form['actions']['continue_button']);
+    } else {
+        $form['user_links'] = ['#markup' => ''];
+    }
+    $form['actions']['#weight'] = '1';
+    $form['actions']['submit']['#value'] = t('Login');
+
+    $form['user_links']['#weight'] = '10';
+    $form['actions']['forgot'] = ['#markup' => '<a href="/user/password" class="user-forgot">' . t('I forgot my password') .  '</a>'];
+    $form['user_links']['#prefix'] = '</div>' .
+        '<div class="user-links">';
+
+    $form['user_links']['#suffix'] = '';
+    if (isset($form['user_links']['#name'])) {
+        $form['user_links']['#prefix'] .= '<h2>' . t('Guest checkout') . '</h2><p>' . t('Continue as guest. No sign up required.') . '</p>';
+        $form['user_links']['#suffix'] = '<div class="divider"></div>';
+    }
+    $form['user_links']['#suffix'] .=    '<h2>' . t('New Customer') . '</h2>' .
+        '<p>' . t('Create an account for a faster, easier checkout.') . '</p>' .
+        '<a href="/user/register" class="btn btn-default">' . t('Sign up') . '</a>' .
+        '</div>';
+
+
+    $form['name']['#description'] = '';
+    $form['pass']['#description'] = '';
+
+    // вход по email/phone
+    if (variable_get('email_registration', false) || variable_get('phone_registration', false)) {
+        if (variable_get('email_registration', false) && variable_get('phone_registration', false)) $form['name']['#title'] = t('E-Mail or mobile phone');
+        elseif (variable_get('email_registration', false)) $form['name']['#title'] = t('E-Mail');
+        elseif (variable_get('phone_registration', false)) $form['name']['#title'] = t('Mobile phone');
+
+        $form['name']['#element_validate'][] = 'ext_user_form_user_login_validate';
+    }
+}
+
+/**
+ * Form element validation handler for the user login form.
+ *
+ * Allows users to authenticate by username OR email.
+ */
+function ext_user_form_user_login_validate($form, &$form_state)
+{
+    $name_input = $form_state['values']['name'];
+
+    // Try loading by email.
+    if ($user = user_load_by_mail($name_input)) {
+        // Set the username for further validation.
+        $form_state['values']['name'] = $user->name;
+        return TRUE;
+    }
+
+    // Try loading by phone.
+    if ($phone = ext_user_normalize_phone($name_input)) {
+        $query = db_select('users', 'u');
+        $query->innerJoin('field_data_field_phone', 'fp', 'fp.entity_id = u.uid');
+        $query->condition('fp.field_phone_value', $phone);
+        $query->fields('u', ['name']);
+        $query->addField('u', 'name');
+        if ($user_name = $query->execute()->fetchField()) {
+            $form_state['values']['name'] = $user_name;
+            return TRUE;
+        }
+    }
+
+    if ($user = user_load_by_mail($name_input)) {
+        // Set the username for further validation.
+        $form_state['values']['name'] = $user->name;
+        return TRUE;
+    }
+
+
+    // Try loading by username.
+    if ($user = user_load_by_name($name_input)) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+function ext_user_normalize_phone($text)
+{
+    // убираем всё лишнее кроме цифр
+    $text = preg_replace('/[^\d]/', '', $text);
+
+    // забираем последние 10
+    preg_match('/(\d{10})$/', $text, $match);
+
+    return empty($match[1]) ? false : $match[1];
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ext_user_form_user_register_form_alter (&$form, $form_state)
+{
+    // убираем описания полей
+    $form['account']['mail']['#description'] = '';
+    $form['account']['mail']['#title'] = 'EMail или телефон';
+
+    // убираем имя, при вставке в БД оно будет заменено на "User uid"
+    $form['account']['name']['#type'] = 'hidden';
+    $form['account']['name']['#value'] = 'user_' . user_password();
+
+    $form['account']['pass']['#title'] = t('Password');
+    $form['account']['pass']['#type'] = 'password';
+    $form['account']['pass']['#description'] = '';
+
+    if (isset($form['actions']['continue_button'])) {
+        $form['user_links'] = $form['actions']['continue_button'];
+        unset($form['actions']['continue_button']);
+    } else {
+        $form['user_links'] = ['#markup' => ''];
+    }
+    $form['#attributes']['class'][] = 'user-form-container';
+    $form['prefix'] = [
+        '#markup' => '<div class="user-form">',
+        '#weight' => -99,
+    ];
+
+    $form['actions']['submit']['#value'] = t('Create an account');
+
+    if (isset($form['fz152_agreement'])) $form['fz152_agreement']['#weight'] = '4';
+    $form['actions']['#weight'] = 8;
+    $form['captcha']['#weight'] = 9;
+    $form['user_links']['#weight'] = 10;
+
+    if (isset($form['captcha']))    $form['captcha']['#suffix'] = '</div><div class="user-links">';
+    else                            $form['actions']['#suffix'] = '</div><div class="user-links">';
+
+    if (isset($form['user_links']['#name'])) {
+        $form['user_links']['#prefix'] = '<h2>' . t('Guest checkout') . '</h2><p>' . t('Continue as guest. No sign up required.') . '</p>';
+    }
+    $form['user_links']['#suffix'] =    '<h2>' . t('Login') . '</h2>' .
+        '<p>' . t('Already have JOY account.') . '</p>' .
+        '<a href="/user/login" class="btn btn-default">' . t('Sign in') . '</a>' .
+        '</div>';
+}
+
+
+function ext_user_form_user_profile_form_alter (&$form, $form_state)
+{
+    if ($GLOBALS['user']->uid != 1) {
+        $form['timezone']['#access'] = false;
+        $form['locale']['#access'] = false;
+        $form['mimemail']['#access'] = false;
+        $form['account']['#prefix'] = '<br /><h4>' . t('Account info') . '</h4>';
+        $form['field_user_surname']['#prefix'] = '<h4>' . t('Personal info') . '</h4>';
+        $form['flag']['#title'] = 'Подписки';
+    }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function ext_user_form_user_admin_settings_alter(&$form, &$form_state)
+{
+    // add new registration methods
+    $form['registration_method'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Registration metods'),
+        '#weight' => 1,
+    );
+    $form['registration_method']['email_registration'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('E-Mail registration'),
+        '#description' => t('Add registration and login with E-Mail.'),
+        '#default_value' => variable_get('email_registration', 0),
+        '#weight' => 0,
+    );
+
+    $form['registration_method']['phone_registration'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Phone registration'),
+        '#description' => t('Add registration and login with phone.'),
+        '#default_value' => variable_get('phone_registration', 0),
+        '#weight' => 1,
+    );
+
+    $form['email_title']['#weight'] = 10;
+    $form['email']['#weight'] = 11;
+}
+
+///**
+// * Implements hook_form_FORM_ID_alter().
+// */
+//function form_process_password_confirm_custom($element)
+//{
+//    $element['pass1']['#wrapper_attributes']['class'][] = 'active';
+//    return $element;
+//}

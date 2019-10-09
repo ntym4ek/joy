@@ -204,133 +204,11 @@ function helper_form_review_node_form_submit($form, &$form_state)
     $form_state['redirect'] = url('node/' . $form_state['product_nid']);
 }
 
-/**
- * ------------------------------------------ Пользователь (User) ------------------------------------------------------
- */
-
-/**
- * Implements hook_user_insert().
- */
-function helper_user_insert( &$edit, &$account, $category = NULL )
-{
-    // при регистрации нового пользователя установить уникальное имя: Пользователь #uid
-    $new_name = t('User ') . $account->uid;
-
-    db_update('users')
-        ->fields(array('name' => $new_name))
-        ->condition('uid', $account->uid)
-        ->execute();
-
-    $edit['name'] = $new_name;
-    $account->name = $new_name;
-
-    // установить флаг рассылки для пользователя
-    $flag = flag_get_flag('email_marketing');
-    if ($flag) {
-        $flag->flag('flag', $account->uid, $account);
-    }
-}
-
-function helper_form_user_login_alter (&$form, $form_state)
-{
-    $form['#attributes']['class'][] = 'user-form-container';
-    $form['name']['#prefix'] = '<div class="user-form">';
-    if (isset($form['actions']['continue_button'])) {
-        $form['user_links'] = $form['actions']['continue_button'];
-        unset($form['actions']['continue_button']);
-    } else {
-        $form['user_links'] = ['#markup' => ''];
-    }
-    $form['actions']['#weight'] = '1';
-    $form['actions']['submit']['#value'] = t('Login');
-
-    $form['user_links']['#weight'] = '10';
-    $form['actions']['forgot'] = ['#markup' => '<a href="/user/password" class="user-forgot">' . t('I forgot my password') .  '</a>'];
-    $form['user_links']['#prefix'] = '</div>' .
-                                    '<div class="user-links">';
-
-    $form['user_links']['#suffix'] = '';
-    if (isset($form['user_links']['#name'])) {
-        $form['user_links']['#prefix'] .= '<h2>' . t('Guest checkout') . '</h2><p>' . t('Continue as guest. No sign up required.') . '</p>';
-        $form['user_links']['#suffix'] = '<div class="divider"></div>';
-    }
-    $form['user_links']['#suffix'] .=    '<h2>' . t('New Customer') . '</h2>' .
-        '<p>' . t('Create an account for a faster, easier checkout.') . '</p>' .
-        '<a href="/user/register" class="btn btn-default">' . t('Sign up') . '</a>' .
-        '</div>';
-
-    // вход/логин по email
-    // http://drupalace.ru/lesson/dobavlyaem-avtorizaciyu-po-emeylu-v-drupal-7
-//    $form['name']['#element_validate'][] = 'helper_user_login_validate';
-
-    $form['name']['#description'] = '';
-    $form['pass']['#description'] = '';
-}
-
-function helper_form_user_register_form_alter (&$form, $form_state)
-{
-    // убираем описания полей
-    unset( $form['account']['mail']['#description'] );
-
-    // убираем имя, при вставке в БД оно будет заменено на "User uid"
-    $form['account']['name']['#type'] = 'hidden';
-    $form['account']['name']['#value'] = 'user_' . user_password();
 
 
-    $form['account']['pass']['#title'] = t('Password');
-    $form['account']['pass']['#type'] = 'password';
-    if (isset($form['actions']['continue_button'])) {
-        $form['user_links'] = $form['actions']['continue_button'];
-        unset($form['actions']['continue_button']);
-    } else {
-        $form['user_links'] = ['#markup' => ''];
-    }
-    $form['#attributes']['class'][] = 'user-form-container';
-    $form['prefix'] = [
-        '#markup' => '<div class="user-form">',
-        '#weight' => -99,
-    ];
-
-    $form['actions']['submit']['#value'] = t('Create an account');
-
-    if (isset($form['fz152_agreement'])) $form['fz152_agreement']['#weight'] = '4';
-    $form['actions']['#weight'] = '8';
-    $form['captcha']['#weight'] = '9';
-    $form['user_links']['#weight'] = '10';
-
-    if (isset($form['captcha']))    $form['captcha']['#suffix'] = '</div><div class="user-links">';
-    else                            $form['actions']['#suffix'] = '</div><div class="user-links">';
-
-    if (isset($form['user_links']['#name'])) {
-        $form['user_links']['#prefix'] = '<h2>' . t('Guest checkout') . '</h2><p>' . t('Continue as guest. No sign up required.') . '</p>';
-    }
-    $form['user_links']['#suffix'] =    '<h2>' . t('Login') . '</h2>' .
-        '<p>' . t('Already have JOY account.') . '</p>' .
-        '<a href="/user/login" class="btn btn-default">' . t('Sign in') . '</a>' .
-        '</div>';
-}
 
 
-function helper_form_user_profile_form_alter (&$form, $form_state)
-{
-    if ($GLOBALS['user']->uid != 1) {
-        $form['timezone']['#access'] = false;
-        $form['locale']['#access'] = false;
-        $form['mimemail']['#access'] = false;
-        $form['account']['#prefix'] = '<br /><h4>' . t('Account info') . '</h4>';
-        $form['field_user_surname']['#prefix'] = '<h4>' . t('Personal info') . '</h4>';
-        $form['flag']['#title'] = 'Подписки';
-    }
-}
 
-///**
-// * Implements hook_form_FORM_ID_alter().
-// */
-//function form_process_password_confirm_custom($element)
-//{
-//    $element['pass1']['#wrapper_attributes']['class'][] = 'active';
-//    return $element;
-//}
 
 /**
  * ----------------------------------------------- Модальное окно ------------------------------------------------
@@ -633,8 +511,6 @@ function helper_menu_get_item_alter(&$router_item, $path, $original_map) {
     }
 }
 
-/** ------------------------------------------ Вспомогательные функции -------------------------------------------------
- */
 function mb_ucfirst($str) {
     return mb_substr(mb_strtoupper($str,'utf-8'),0,1,'utf-8').mb_strtolower(mb_substr($str,1,mb_strlen($str,'utf-8'),'utf-8'),'utf-8');
 }
