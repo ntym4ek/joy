@@ -458,7 +458,9 @@
                 placement: 'bottom',
                 title: 'Служба поддержки',
                 content: function () {
-                    var button = checkTime ('08:00:00', '17:00:00') ? '<br /><br /><a href="tel:" class="btn btn-brand btn-block">Позвонить</a>' : '';
+                    var button = checkTime ('08:00:00', '13:00:00') ?
+                        '<br /><br /><a href="tel:88005502885" class="btn btn-brand btn-block">Позвонить</a>' :
+                        '<br /><br /><button class="btn btn-brand btn-block disabled">Не работает</button>';
                     return 'Время работы:<br />Пн - Пт &nbsp;&nbsp; 08:00 - 17:00<br /><small style="color: #ccc;">(по московскому времени)</small>' + button;
                 },
 
