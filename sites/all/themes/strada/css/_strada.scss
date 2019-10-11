@@ -490,7 +490,8 @@ $navbar-strada-toggle-border-color:       #ddd;
 
     }
 
-    .btn-brand { @include button-variant($btn-brand-color, $btn-brand-bg, $btn-brand-border); }
+    .btn-brand,
+    a.btn-brand { @include button-variant($btn-brand-color, $btn-brand-bg, $btn-brand-border); }
 }
 
 $navbar-alter-bg: $brand-primary;

@@ -83,7 +83,7 @@
                 <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
                 <div class="topbar-phone">
-                    <a href="tel:88005502885">8-800-550-28-85</a>
+                    <a tabindex="0" role="button" id="phone_popover">8-800-550-28-85</a>
                 </div>
 
                 <div class="topbar-menu">
