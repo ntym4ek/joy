@@ -1,5 +1,15 @@
 <?php
 
+
+/**
+ * Implements hook_menu_alter().
+ */
+function ext_user_menu_alter(&$items)
+{
+    $items['user/register']['page arguments'] = array('ext_user_registration_wizard');
+    return $items;
+}
+
 /**
  * hook_module_implements_alter
  * change hook execution order, commerce_helper - last
@@ -77,7 +87,13 @@ function ext_user_form_user_login_alter (&$form, $form_state)
     $form['actions']['submit']['#value'] = t('Login');
 
     $form['user_links']['#weight'] = '10';
-    $form['actions']['forgot'] = ['#markup' => '<a href="/user/password" class="user-forgot">' . t('I forgot my password') .  '</a>'];
+
+    $form['preactions'] = array(
+        '#type' => 'container',
+        '#attributes' => ['class' => ['form-subactions']],
+    );
+
+    $form['preactions']['forgot'] = ['#markup' => '<a href="/user/password">' . t('I forgot my password') .  '</a>'];
     $form['user_links']['#prefix'] = '</div>' .
         '<div class="user-links">';
 
@@ -88,7 +104,7 @@ function ext_user_form_user_login_alter (&$form, $form_state)
     }
     $form['user_links']['#suffix'] .=    '<h2>' . t('New Customer') . '</h2>' .
         '<p>' . t('Create an account for a faster, easier checkout.') . '</p>' .
-        '<a href="/user/register" class="btn btn-default">' . t('Sign up') . '</a>' .
+        '<div class="form-actions"><a href="/user/register" class="btn btn-default">' . t('Sign up') . '</a></div>' .
         '</div>';
 
 
@@ -172,9 +188,38 @@ function ext_user_valid_phone($phone)
 }
 
 /**
+ * menu callback
+ * Замена стандартной формы user_register_form
+ * для добавления второго шага при регистрации:
+ * страница подтверждения телефона кодом из СМС
+ */
+function ext_user_registration_wizard($form, &$form_state)
+{
+    // начальная настройка двухстраничной формы
+    if (empty($form_state['step'])) {
+        $form_state['step'] = 1;
+        $form_state['step_information'] = array(
+            1 => ['form' => 'user_register_form'],
+            2 => ['form' => 'ext_user_registration_code_form'],
+        );
+    }
+    $step = &$form_state['step'];
+
+    // форма согласно текущего шага
+    $form = $form_state['step_information'][$step]['form']($form, $form_state);
+
+    // альтер формы регистрации, т.к. при таком вызове он не срабатывает
+    if ($step == 1) {
+        ext_user_form_user_register_form_alter($form, $form_state);
+    }
+
+    return $form;
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  */
-function ext_user_form_user_register_form_alter (&$form, $form_state)
+function ext_user_form_user_register_form_alter (&$form, &$form_state)
 {
     // если активирована регистрация по email и\или телефону
     // изменить заголовок поля и убрать дублирующие поля
@@ -193,6 +238,10 @@ function ext_user_form_user_register_form_alter (&$form, $form_state)
         $form['account']['mail']['#access'] = false;
         $form['account']['name']['#element_validate'][] = 'ext_user_register_name_validate';
         $form['account']['name']['#description'] = '';
+
+        $form['account']['name']['#default_value'] = empty($form_state['values']['name']) ? '' : $form_state['values']['name'];
+        $form['field_name_first']['und'][0]['value']['#default_value'] = empty($form_state['values']['field_name_first']['und'][0]['value']) ? '' : $form_state['values']['field_name_first']['und'][0]['value'];
+        $form['field_surname']['und'][0]['value']['#default_value'] = empty($form_state['values']['field_surname']['und'][0]['value']) ? '' : $form_state['values']['field_surname']['und'][0]['value'];
     }
 
     $form['account']['pass']['#title'] = t('Password');
@@ -226,17 +275,16 @@ function ext_user_form_user_register_form_alter (&$form, $form_state)
     if (isset($form['user_links']['#name'])) {
         $form['user_links']['#prefix'] = '<h2>' . t('Guest checkout') . '</h2><p>' . t('Continue as guest. No sign up required.') . '</p>';
     }
-    $form['user_links']['#suffix'] =    '<h2>' . t('Login') . '</h2>' .
+    $form['user_links']['#suffix'] = '<h2>' . t('Login') . '</h2>' .
         '<p>' . t('Already have JOY account.') . '</p>' .
-        '<a href="/user/login" class="btn btn-default">' . t('Sign in') . '</a>' .
+        '<div class="form-actions"><a href="/user/login" class="btn btn-default">' . t('Sign in') . '</a></div>' .
         '</div>';
-
 }
 
 /**
  * form element validation callback
  */
-function ext_user_register_name_validate($form, &$form_state)
+function ext_user_register_name_validate($element, &$form_state)
 {
     $enabled_email = variable_get('email_registration', false);
     $its_email = $enabled_email && valid_email_address($form_state['values']['name']);
@@ -258,9 +306,148 @@ function ext_user_register_name_validate($form, &$form_state)
     if ($its_email) $form_state['values']['mail'] = $form_state['values']['name'];
     if ($its_phone) $form_state['values']['field_phone']['und'][0]['value'] = ext_user_normalize_phone($form_state['values']['name']);
 
-    $form_state['values']['name'] = 'user_' . user_password();
     return true;
 }
+
+function ext_user_user_register_validate(&$form, &$form_state)
+{
+    // если регистрация по номеру, то заменить стандартный сабмит
+    // на отправку и проверку кода подтверждения
+    if (!empty($form_state['values']['field_phone']['und'][0]['value'])) {
+        if ($index = array_search('user_register_submit', $form['#submit'])) {
+            $form['#submit'][$index] = 'ext_user_registration_wizard_check_code';
+        }
+    }
+}
+
+
+/**
+ * submit callback, когда введен телефон
+ * отправка код проверки телефона и переход к странице проверки
+ */
+function ext_user_registration_wizard_check_code($form, &$form_state)
+{
+    $code = rand(1001, 9998);
+    $code = 1111;
+
+    //todo послать СМС с кодом
+    $phone = $form_state['values']['field_phone']['und'][0]['value'];
+    $text = 'Код подтверждения на сайте joy-magazin.ru - ' . $code;
+    if (ext_user_send_sms($phone, $text)) {
+        $form_state['code'] = $code;
+
+        $step = &$form_state['step'];
+        $form_state['step_information'][$step]['stored_values'] = $form_state['values'];
+        $form_state['step_information'][$step]['stored_form'] = $form;
+        $step++;
+        $form_state['rebuild'] = TRUE;
+    } else {
+        form_set_error('', 'Сервис отправки SMS пока недоступен. Попробуйте позже или зарегистрируйтесь с помощью E-Mail.');
+    }
+}
+
+function ext_user_send_sms($phone, $text)
+{
+    return true;
+}
+
+/**
+ *  Шаг 2
+ *  форма ввода проверочного кода
+ */
+function ext_user_registration_code_form($form, &$form_state)
+{
+    $form['#attributes']['class'][] = 'user-form-container';
+    $form['prefix'] = [
+        '#markup' => '<div class="user-form">',
+        '#weight' => -99,
+    ];
+
+    $form['code'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Код подтверждения',
+        '#description' => 'Введите полученный код из SMS',
+    );
+
+    $form['subactions'] = array(
+        '#type' => 'container',
+        '#attributes' => ['class' => ['form-subactions']]
+    );
+    $form['subactions']['prev'] = array(
+        '#type' => 'submit',
+        '#value' => t('Back'),
+        '#name' => 'prev',
+        '#attributes' => ['class' => ['btn', 'btn-link']],
+        '#submit' => array('ext_user_registration_wizard_prev'),
+        '#limit_validation_errors' => array(),
+    );
+    $form['subactions']['repeat'] = array(
+        '#type' => 'submit',
+        '#value' => t('Repeat SMS'),
+        '#name' => 'repeat',
+        '#attributes' => ['class' => ['btn', 'btn-link']],
+        '#submit' => array('ext_user_registration_wizard_repeat'),
+        '#limit_validation_errors' => array(),
+    );
+
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['finish'] = array(
+        '#type' => 'submit',
+        '#value' => t('Confirm'),
+        '#attributes' => ['class' => ['btn', 'btn-default']],
+    );
+    $form['actions']['#suffix'] = '</div>';
+
+    $form['#validate'][] = 'ext_user_registration_code_form_validate';
+
+    // при вводе правильного кода - зарегистрировать пользователя
+    $form['#submit'][] = 'user_register_submit';
+
+    return $form;
+}
+
+/**
+ * validate callback формы ввода кода
+ */
+function ext_user_registration_code_form_validate(&$form, &$form_state)
+{
+    // проверка введенного кода
+    if (empty($form_state['values']['code'])) { form_set_error('code', 'Введите код из СМС'); return false; }
+    if ($form_state['values']['code'] != $form_state['code']) { form_set_error('code', 'Неверный код'); return false; }
+
+    // восстанавливаем значения формы регистрации
+    $form_state['values'] = $form_state['step_information'][1]['stored_values'];
+    // user_registration_submit требует наличия значения в $form['#user']
+    $form['#user'] = $form_state['step_information'][1]['stored_form']['#user'];
+}
+
+/**
+ * prev button callback
+ */
+function ext_user_registration_wizard_prev($form, &$form_state)
+{
+    $step = &$form_state['step'];
+    $step--;
+    $form_state['values'] = $form_state['step_information'][$step]['stored_values'];
+    $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * repeat button callback
+ */
+function ext_user_registration_wizard_repeat($form, &$form_state)
+{
+    $code = rand(1001, 9998);
+    $phone = $form_state['step_information'][1]['stored_values']['field_phone']['und'][0]['value'];
+    $text = 'Код подтверждения на сайте joy-magazin.ru - ' . $code;
+    if (ext_user_send_sms($phone, $text)) {
+        drupal_set_message('Новое СМС с кодом отправлено.');
+    }
+
+    $form_state['rebuild'] = TRUE;
+}
+
+
 
 
 function ext_user_form_user_profile_form_alter (&$form, $form_state)

@@ -245,6 +245,12 @@ p:last-child {
     }
 }
 
+.btn.btn-link {
+    &:first-child { padding-left: 0; }
+    &:last-child { padding-right: 0; }
+}
+
+
 // Search form.
 form#search-block-form {
   margin: 0;
