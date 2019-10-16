@@ -10,9 +10,8 @@
                 });
             });
 
-            // Drupal.boxberry_open = function() {
             function boxberry_open() {
-                var city = $("body").attr("data-locality");
+                var city = $.cookie('boxberry_locality') ? JSON.parse($.cookie('boxberry_locality')) : '';
                 var order_amount = $(".boxberry-order-amount").val();
                 var order_weight = $(".boxberry-order-weight").val();
 

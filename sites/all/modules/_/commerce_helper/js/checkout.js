@@ -77,15 +77,15 @@
                     $('.field-name-field-city').addClass('has-error');
                     $('.field-name-field-zipcode-calc').find('input[name*="field_zipcode_calc"]').val('');
                     $('.field-name-field-region').find('input[name*="field_region"]').val('');
-                    $('body').attr('data-locality', '');
+                    $.cookie('boxberry_locality', null);
                 }
                 function updateFields(suggestion) {
                     if (suggestion.data.postal_code) {
                         $('.field-name-field-city').removeClass('has-error');
                         $('.field-name-field-zipcode-calc').find('input[name*="field_zipcode_calc"]').val(suggestion.data.postal_code);
                         $('.field-name-field-region').find('input[name*="field_region"]').val(join([suggestion.data.region, suggestion.data.region_type_full], ' '));
-                        // сохраняем для Boxberry в body (т.к. он не обновляется при пересчёте)
-                        $('body').attr('data-locality', suggestion.unrestricted_value);
+                        // сохраняем для Boxberry (чтобы он не обновляется при пересчёте)
+                        $.cookie('boxberry_locality', JSON.stringify(suggestion.unrestricted_value), {expire: 86400, path: "/checkout"});
                     } else {
                         clearFields();
                     }
