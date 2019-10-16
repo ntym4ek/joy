@@ -726,6 +726,7 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
     $form['commerce_shipping']['recalc']['#ajax']['callback'] = 'commerce_helper_commerce_checkout_form_refresh';
     $form['commerce_shipping']['recalc']['#ajax']['wrapper'] = 'commerce-checkout-ajax-wrapper';
     // обработчик вывода ошибок на элементах формы (автоматически на кнопку не подвесился)
+    $form['commerce_shipping']['recalc']['#validate'][] = 'commerce_helper_recalc_validator';
     $form['commerce_shipping']['recalc']['#validate'][] = 'ifec_form_validator';
 
     // дополнительный обработчик для сохранения состояния заказа
@@ -737,6 +738,16 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
         '#markup' => 'Нажав «Подтвердить заказ», вы соглашаетесь c <a href="/info/rules" target="_blank" rel="nofollow">условиями использования сайта</a>.',
     ];
 
+}
+
+/**
+ * validate callback
+ */
+function commerce_helper_recalc_validator($form, &$form_state)
+{
+    //
+    unset($form_state['storage']['errors']);
+//    form_set_error();
 }
 
 function commerce_helper_commerce_checkout_form_refresh($form, $form_state)
