@@ -141,7 +141,7 @@
                 </div>
 
                 <div class="navbar-cart" role="navigation">
-                    <?php if (!$tsss) print '<a id="cart" href="/cart?back=' . (request_path() ? request_path() : 'front') . '" class="btn btn-link" title="Корзина">' . commerce_helper_cart_info_block() . '</a>'; ?>
+                    <?php if (!$tsss) print '<a id="cart" href="/cart" class="btn btn-link" title="Корзина">' . commerce_helper_cart_info_block() . '</a>'; ?>
                 </div>
 
             </div>

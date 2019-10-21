@@ -457,9 +457,6 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
                     $delivery_text .= '<br /><span class="notice">превышение по весу</span>';
                 }
                 $back_url = '/';
-                if (!empty($_GET['back']) && $_GET['back'] != 'front') {
-                    $back_url = '/' . $_GET['back'];
-                }
 
                 if (isset($free_shipping) && variable_get('free_shipping_show_sum', 0)) {
                     if (variable_get('free_shipping_show_sum') == 1 || (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
