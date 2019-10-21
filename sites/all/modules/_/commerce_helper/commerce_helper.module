@@ -215,7 +215,16 @@ function commerce_helper_preprocess_page(&$vars)
     // добавляем библиотеку ajax (добавление товаров в корзину)
     drupal_add_library('system', 'drupal.ajax');
 
-    // добавляем скрипт для Чекаута
+    // страницы обновляются по AJAX, но если пользователь перешёл на странице по кнопкам
+    // Назад или Вперёд в браузере, то открывается кэшированная страница с данными до обновления по AJAX
+    // запрещаем кэширование этих страниц
+    if (in_array(arg(0), ['cart', 'checkout'])) {
+        // устанавливаем заголовки
+        drupal_add_http_header('Cache-Control', 'no-cache; no-store; must-revalidate');
+        drupal_add_http_header('Expires', '0');
+    }
+
+    // добавляем скрипты
     if (strpos($_GET['q'], 'checkout') === 0) {
         drupal_add_js(drupal_get_path('module', 'commerce_helper') . '/js/checkout.js');
         drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
@@ -448,9 +457,6 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
                     $delivery_text .= '<br /><span class="notice">превышение по весу</span>';
                 }
                 $back_url = '/';
-                if (!empty($_GET['back']) && $_GET['back'] != 'front') {
-                    $back_url = '/' . $_GET['back'];
-                }
 
                 if (isset($free_shipping) && variable_get('free_shipping_show_sum', 0)) {
                     if (variable_get('free_shipping_show_sum') == 1 || (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
@@ -742,12 +748,15 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
 
 /**
  * validate callback
+ *
+ * если пользователь нажала Оформить заказ и в форме нашлись ошибки,
+ * то Recalc не запускает обновление форм,
+ * в том числе деталей доставки и пересчёта стоимости
  */
 function commerce_helper_recalc_validator($form, &$form_state)
 {
-    //
+    // сбрасываем имеющиеся на форме ошибки
     unset($form_state['storage']['errors']);
-//    form_set_error();
 }
 
 function commerce_helper_commerce_checkout_form_refresh($form, $form_state)
