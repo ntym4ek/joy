@@ -452,7 +452,7 @@
             });
 
             /* ------------------------------------- Phone popover ---------------------------------------- */
-            $('[#phone_popover').popover({
+            $('#phone_popover').popover({
                 html: true,
                 trigger: 'focus',
                 placement: 'bottom',
