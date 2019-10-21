@@ -6899,7 +6899,7 @@ body[class*="print"] {
     .navbar .topbar .topbar-phone {
       display: flex; }
     .navbar .topbar .phone-help {
-      font-size: .7em;
+      font-size: .8em;
       line-height: 1.2;
       padding: 0 20px; }
       .navbar .topbar .phone-help .line2 {
