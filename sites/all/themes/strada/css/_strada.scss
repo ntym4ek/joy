@@ -175,10 +175,10 @@ body[class*="print"] {
         .line3 { color: $text-muted; }
     }
     .line-2-1 {
-        .phone-help { padding: 0; }
+        .phone-help { font-size: .7em;  padding: 0; }
         .topbar-phone { justify-content: space-between; }
         a {
-            color: $text-color;
+            color: $text-color; font-size: .9em;
             display: flex; align-items: center;
         }
     }
