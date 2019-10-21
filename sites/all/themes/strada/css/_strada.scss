@@ -138,7 +138,7 @@ body[class*="print"] {
 
     //.line-2 { position: relative; }
     .line-2 {
-        position: absolute; left: 0; right: 0; z-index: 20; top: 27px;
+        position: absolute; left: 0; right: 0; z-index: 20; top: 40px;
         background: white;
         @media #{$mobile} {
             position: static;
@@ -166,6 +166,13 @@ body[class*="print"] {
             &:last-child { padding-right: 0; }
         }
         .topbar-region i { margin-right: 3px; }
+        .topbar-phone { display: flex; }
+        .phone-help {
+            font-size: .7em; line-height: 1.2;
+            padding: 0 20px;
+            .line2 { font-weight: 600; }
+            .line3 { color: $text-muted; }
+        }
     }
 
 

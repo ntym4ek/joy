@@ -83,6 +83,11 @@
                 <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
                 <div class="topbar-phone">
+                    <div class="phone-help">
+                        <div class="line1">Время работы службы поддержки:</div>
+                        <div class="line2">Пн-Пт 08:00 - 17:00</div>
+                        <div class="line3">(по московскому времени)</div>
+                    </div>
                     <a tabindex="0" role="button" id="phone_popover">8-800-550-28-85</a>
                 </div>
 

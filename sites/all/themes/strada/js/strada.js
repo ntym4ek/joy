@@ -304,7 +304,7 @@
                 window.onscroll = function () {
                     var fixedTop = 0;
                     if ($('body').hasClass('admin-menu')) fixedTop = 28;
-                    if ($(window).scrollTop() > 27) {
+                    if ($(window).scrollTop() > 40) {
                         if ($('.line-2').css('position') == 'absolute') {
                             $('.line-2').css('top', fixedTop);
                             $('.line-2').css('position', 'fixed');
@@ -312,7 +312,7 @@
                         }
                     } else {
                         if ($('.line-2').css('position') == 'fixed') {
-                            $('.line-2').css('top', 27);
+                            $('.line-2').css('top', 40);
                             $('.line-2').css('position', 'absolute');
                             $('.line-2').css('box-shadow', 'none');
                         }
