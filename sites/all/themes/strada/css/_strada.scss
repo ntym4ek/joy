@@ -166,15 +166,22 @@ body[class*="print"] {
             &:last-child { padding-right: 0; }
         }
         .topbar-region i { margin-right: 3px; }
-        .topbar-phone { display: flex; }
-        .phone-help {
-            font-size: .8em; line-height: 1.2;
-            padding: 0 20px;
-            .line2 { font-weight: 600; }
-            .line3 { color: $text-muted; }
+    }
+    .topbar-phone { display: flex; }
+    .phone-help {
+        font-size: .8em; line-height: 1.2;
+        padding: 0 20px;
+        .line2 { font-weight: 600; }
+        .line3 { color: $text-muted; }
+    }
+    .line-2-1 {
+        .phone-help { padding: 0; }
+        .topbar-phone { justify-content: space-between; }
+        a {
+            color: $text-color;
+            display: flex; align-items: center;
         }
     }
-
 
     .navbar-header {
         display: flex;

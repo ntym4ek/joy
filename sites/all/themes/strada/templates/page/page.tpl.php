@@ -153,6 +153,17 @@
         </div>
     </div>
 
+    <div class="line-2-1 hidden-sm hidden-md hidden-lg">
+        <div class="topbar-phone">
+            <div class="phone-help">
+                <div class="line1">Время работы службы поддержки:</div>
+                <div class="line2">Пн-Пт 08:00 - 17:00</div>
+                <div class="line3">(по московскому времени)</div>
+            </div>
+            <a href="tel:88005502885">8-800-550-28-85</a>
+        </div>
+    </div>
+
     <?php if (!$tsss): ?>
     <div class="line-3 row hidden-xs">
         <div class="<?php print $container_class; ?>">
