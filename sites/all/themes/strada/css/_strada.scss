@@ -1550,7 +1550,13 @@ form[id^="user-profile-form"] {
     .f-social {
         flex: auto;
 
+        h5 {
+            font-size: 30px; text-transform: uppercase; line-height: 1.5;
+            margin-top: 0;
+        }
+
         .social-links {
+            margin-bottom: 20px;
             a {
                 display: inline-block;
                 border: 2px solid #fff;
@@ -1578,6 +1584,9 @@ form[id^="user-profile-form"] {
                     i { font-size: 20px; line-height: 36px; }
                 }
             }
+        }
+        .support-phone {
+            font-size: 1.5em; font-weight: 600;
         }
 
 
