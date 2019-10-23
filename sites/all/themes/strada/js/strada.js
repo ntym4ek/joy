@@ -3,6 +3,12 @@
  */
 (function ($, Drupal, window, document, undefined) {
 
+    // стандартно behaviors выполняются в порядке добавления в массив либо по алфавиту
+    // и на главной странице Flexslider выполняется позже AJAX, переписывая click event listener
+    // по этой причине аяксифицированные кнопки внутри Flexslider не срабатывают
+    // для решения установлен модуль behaviours_weights и AJAXу поставлен наибольший вес
+    Drupal.behaviors.AJAX.weight = 999;
+
     Drupal.behaviors.strada = {
         attach: function (context, settings) {
 

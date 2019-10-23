@@ -49,7 +49,7 @@ function strada_preprocess_entity(&$vars)
 
         // разрешение на покупку
         $lets_buy = true;
-        if (drupal_is_front_page()) $lets_buy = false;
+//        if (drupal_is_front_page()) $lets_buy = false;
 
         // проверить наличие товара в корзине для вывода значка заполненной корзины
         if ($lets_buy) {
@@ -65,21 +65,21 @@ function strada_preprocess_entity(&$vars)
                     }
                 }
                 if ($has_options) {
-                    $vars['cart_link'] = '<a href="' . $vars['node_url'] . '" class="btn btn-brand btn-sm btn-empty">Выбрать размер</a>';
+                    $vars['cart_link'] = '<div id="product-' . $product_id . '-button"><a href="' . $vars['node_url'] . '" class="btn btn-brand btn-sm btn-empty">Выбрать размер</a></div>';
                 }
                 // если уже добавлен "В корзину | +1"
                 elseif (in_array($product_id, _get_order_product_ids($GLOBALS['user']->uid))) {
                     $vars['cart_link'] =
-                        '<div id="product-' . $product_id . '" class="btn-group" role="group" >' .
+                        '<div id="product-' . $product_id . '-button" class="btn-group" role="group" >' .
                             '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину">В корзину</a>' .
-                            '<a href="/prod/' . $product_id . '/add-to-cart/nojs" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax">+1</a>' .
+                            '<a href="/prod/' . $product_id . '/add-to-cart/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax">+1</a>' .
                         '</div>';
                 }
                 else {
-                    $vars['cart_link'] = '<a href="/prod/' . $product_id . '/add-to-cart/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-add-to-cart use-ajax" title="Добавить в корзину">Купить</a>';
+                    $vars['cart_link'] = '<div id="product-' . $product_id . '-button"><a href="/prod/' . $product_id . '/add-to-cart/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-add-to-cart use-ajax" title="Добавить в корзину">Купить</a></div>';
                 }
             } else {
-                $vars['cart_link'] = '<a href="' . $vars['node_url'] . '" class="btn btn-brand btn-sm btn-empty">Товар ожидается</a>';
+                $vars['cart_link'] = '<div id="product-' . $product_id . '-button"><a href="' . $vars['node_url'] . '" class="btn btn-brand btn-sm btn-empty">Товар ожидается</a></div>';
             }
         }
         $vars['lets_buy'] = $lets_buy;
