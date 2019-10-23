@@ -95,8 +95,8 @@
                     <ul class="dry-list">
                         <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>
                         <li><a href="/info/delivery">Условия бесплатной доставки</a></li>
-                        <li><a href="/info/delivery">Доставка</a></li>
                         <li><a href="/info/payment">Оплата</a></li>
+                        <li><a href="/info/return">Возврат</a></li>
                         <li><a href="/info/about">О компании</a></li>
                     </ul>
                 </div>
