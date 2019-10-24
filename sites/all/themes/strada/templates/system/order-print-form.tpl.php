@@ -35,7 +35,7 @@ foreach ($order_info['products']['items'] as $line_item) {
 $total_amount = 0;
 foreach($total['components'] as $name => $component) {
     // посчитать заказ без доставки
-    if ($name !== 'shipping') {
+    if ($name !== 'base_price' || strpos($name, 'discount')) {
         $total_amount += abs($component['amount']); // скидка идёт с минусом и сложение даёт полную стоимость товара
     }
 
