@@ -32,10 +32,16 @@ foreach ($order_info['products']['items'] as $line_item) {
 
 
 // компоненты итоговой суммы
-foreach($total['components'] as $component) {
+$total_amount = 0;
+foreach($total['components'] as $name => $component) {
+    // посчитать заказ без доставки
+    if ($name !== 'shipping') {
+        $total_amount += $component['amount'];
+    }
+
     $commerce_line_items[] = [['data' => $component['title'], 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($component['amount'], 'RUB'), 'class' => 'text-right']];
 }
-
+if ($total_amount != $total['components']['base_price']['amount']) $commerce_line_items[] = [['data' => 'Сумма без доставки', 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($total_amount, 'RUB'), 'class' => 'text-right']];
 
 
 ?>
