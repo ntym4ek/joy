@@ -36,7 +36,7 @@ $total_amount = 0;
 foreach($total['components'] as $name => $component) {
     // посчитать заказ без доставки
     if ($name !== 'shipping') {
-        $total_amount += $component['amount'];
+        $total_amount += abs($component['amount']); // скидка идёт с минусом и сложение даёт полную стоимость товара
     }
 
     $commerce_line_items[] = [['data' => $component['title'], 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($component['amount'], 'RUB'), 'class' => 'text-right']];
