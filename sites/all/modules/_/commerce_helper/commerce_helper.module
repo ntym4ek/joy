@@ -1498,30 +1498,31 @@ function _get_order_info($order, $including_products = false)
     //оплата
     $balance = $order_wr->commerce_order_total->amount->value();
     $payment_title = $payment_method = $payment_addon = '';
-    $payment_before_shipping = FALSE;
+    $payment_before_shipping = $is_online = FALSE;
     if (!empty($order_wr->value()->data['payment_method'])) {
         $payment_method = $order_wr->value()->data['payment_method'];
         switch ($payment_method) {
             case 'commerce_rbspayment|commerce_payment_commerce_rbspayment':
                 $payment_title = 'Онлайн, через сервис Сбербанка';
                 $payment_before_shipping = TRUE;
+                $is_online = true;
                 break;
 
             case 'ya_commerce_api|commerce_payment_ya_commerce_api':
                 $payment_title = 'Онлайн, через сервис Яндекс.Касса';
                 $payment_before_shipping = TRUE;
+                $is_online = true;
                 commerce_helper_ya_commerce_api_check_order_paid($order_wr->value());
                 break;
 
             case 'pay_on_delivery|commerce_payment_pay_on_delivery':
                 $payment_title = 'Оплата при получении';
-                $payment_before_shipping = FALSE;
                 break;
 
             case 'bank_transfer|commerce_payment_bank_transfer':
-                $payment_title = 'Банковский перевод';
+                $payment_title = 'Банковским переводом';
                 $payment_before_shipping = TRUE;
-                $payment_addon = 'Счёт на оплату можно распечатать по <a href="/checkout/' . $order_wr->order_id->value() . '/complete/invoice" target="_blank">ссылке</a>.';
+                $payment_addon = '<p>Счёт на оплату можно распечатать по <a href="/checkout/' . $order_wr->order_id->value() . '/complete/invoice" target="_blank">ссылке</a>.</p>';
                 break;
         }
 
@@ -1573,6 +1574,7 @@ function _get_order_info($order, $including_products = false)
             'title' => $payment_title,
             'method' => $payment_method,
             'before_shipping' => $payment_before_shipping,
+            'is_online' => $is_online,
             'balance' => $balance, // неоплаченный остаток (или вся сумма)
             'balance_formatted' => commerce_currency_format($balance, 'RUB'),
             'paid_formatted' => commerce_currency_format($order_wr->commerce_order_total->amount->value() - $balance, 'RUB'),

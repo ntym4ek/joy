@@ -46,7 +46,7 @@ function bank_transfer_menu() {
         'title' => t('Bank transfer invoice'),
         'page callback' => 'bank_transfer_show_invoice',
         'page arguments' => array(1),
-        'access arguments' => array('view own commerce_order entities'),
+        'access callback' => true,
         'type' => MENU_CALLBACK,
     );
 

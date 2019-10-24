@@ -20,12 +20,18 @@ if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout')
 $payment_widget = '';
 if ($payment['before_shipping']) {
     if ($payment['balance']) {
-        $payment_widget =   '<div class="well">' .
-            '<h4>Ожидание поступления оплаты</h4>' .
-            '<p>Если Вы уже оплатили заказ, информация об оплате поступит к нам в течение нескольких минут.<br />Обновите страницу, чтобы увидеть поступление оплаты.</p>' .
-            '<p>Если оплата была неудачной, Вы можете попробовать ещё раз.</p>' .
-            '<a href="/user/' . $user['uid'] . '/orders/' . $order_info['id'] . '/pay" class="btn btn-primary">Оплатить заказ</a>' .
-            '</div>';
+        if ($payment['is_online']) {
+            $payment_widget =   '<div class="well">' .
+                                    '<h4>Ожидание поступления оплаты</h4>' .
+                                    '<p>Если Вы уже оплатили заказ онлайн, информация об оплате поступит к нам в течение нескольких минут.<br />Обновите страницу, чтобы увидеть поступление оплаты.</p>' .
+                                    '<p>Если оплата была неудачной, Вы можете попробовать ещё раз.</p>' .
+                                    '<a href="/user/' . $user['uid'] . '/orders/' . $order_info['id'] . '/pay" class="btn btn-primary">Оплатить онлайн</a>' .
+                                '</div>';
+        } else {
+            $payment_widget =   '<div class="well">' .
+                                    '<h4 class="text-warning">Ожидает оплаты</h4>' .
+                                '</div>';
+        }
     } else {
         $payment_widget =   '<div class="well">' .
                                 '<h4 class="text-success">Заказ оплачен</h4>' .
@@ -51,36 +57,36 @@ if ($payment['before_shipping']) {
         <dl class="dl-horizontal">
             <dt>Номер заказа</dt>
             <dd>
-                <div>№ <?php print $order_info['number']; ?></div>
-                <div><p class="text-muted">Для отслеживания в личном кабинете</p></div>
+                <p>№ <?php print $order_info['number']; ?></p>
+                <p class="text-muted">Для отслеживания в личном кабинете</p>
             </dd>
 
             <dt>Доставка</dt>
             <dd>
-                <div><?php print $shipping['title']; ?></div>
-                <div><?php print $shipping['address']; ?></div>
+                <p><?php print $shipping['title']; ?></p>
+                <p><?php print $shipping['address']; ?></p>
             </dd>
 
             <dt>Получатель</dt>
             <dd>
-                <div><?php print $user['name']; ?></div>
-                <div><?php print $user['phone']; ?></div>
-                <div><?php print $user['mail']; ?></div>
-                <div><?php print $shipping['passport']; ?></div>
+                <p><?php print $user['name']; ?></p>
+                <p><?php print $user['phone']; ?></p>
+                <p><?php print $user['mail']; ?></p>
+                <p><?php print $shipping['passport']; ?></p>
             </dd>
 
             <dt>Состав заказа</dt>
             <dd>
-                <div><?php print $items_count; ?></div>
-                <div><?php if (is_array($order_info['weight'])): ?>Вес: <?php print $order_info['weight']['weight'] . ' ' . t($order_info['weight']['unit']); endif; ?><div>
+                <p><?php print $items_count; ?></p>
+                <p><?php if (is_array($order_info['weight'])): ?>Вес: <?php print $order_info['weight']['weight'] . ' ' . t($order_info['weight']['unit']); endif; ?></p>
             </dd>
 
             <dt><?php print $payment_label; ?></dt>
             <dd class="oc-total">
-                <div><?php print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total_formatted']) . '</span>'; ?></div>
-                <div><?php print empty($shipping['cost']) ? '' : ('С учётом ' . $shipping['cost'] . ' за доставку'); ?></div>
-                <div><?php print $payment['title']; ?></div>
-                <div><?php print $payment['addon']; ?></div>
+                <p><?php print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total_formatted']) . '</span>'; ?></p>
+                <p><?php print empty($shipping['cost']) ? '' : ('С учётом ' . $shipping['cost'] . ' за доставку'); ?></p>
+                <p><?php print $payment['title']; ?></p>
+                <p><?php print $payment['addon']; ?></p>
             </dd>
         </dl>
     </div>
