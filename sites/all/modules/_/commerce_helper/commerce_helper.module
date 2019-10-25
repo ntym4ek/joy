@@ -55,6 +55,7 @@ function commerce_helper_menu() {
 function commerce_helper_menu_alter(&$items) {
     // убрать из админки локальную задачу "Simulate checkout completion"
     unset($items['admin/commerce/orders/%commerce_order/edit/checkout']);
+    unset($items['admin/commerce/orders/%commerce_order/edit/refresh']);
 
     // убрать настройки DaData для всех кроме админа
 //    $items['admin/config/user-interface/dadata']['access callback'] = 'commerce_helper_user_has_role';
@@ -302,7 +303,7 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
             $form['field_track_number']['#access'] = false;
 
             $form['order_history']['#access'] = false;
-            $form['commerce_line_items']['und']['actions']['#access'] = false;
+//            $form['commerce_line_items']['und']['actions']['#access'] = false;
             $form['field_flags']['#access'] = false;
             if (isset($form['commerce_customer_shipping']['und']['profiles'][0])) {
                 $form['commerce_customer_shipping']['und']['profiles'][0]['field_boxberry_target']['#access'] = FALSE;
