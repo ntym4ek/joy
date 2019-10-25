@@ -55,7 +55,7 @@ function commerce_dellin_commerce_shipping_service_info() {
         'title' => t('Delovie Linii Shipping Service'),
         'display_title' => t('Delovie Linii'),
         'shipping_method' => 'dellin_shipping_method',
-        'price_component' => 'dellin',
+        'price_component' => 'shipping',
         'weight' => 10,
         'callbacks' => array(
             'rate' => 'commerce_dellin_service_rate_order',

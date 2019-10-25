@@ -84,7 +84,8 @@ function commerce_russianpost_commerce_shipping_service_info() {
       'display_title' => 'Почта России',
       'shipping_method' => 'russianpost',
       'rules_component' => TRUE,
-      'price_component' => $name,
+//      'price_component' => $name,
+      'price_component' => 'shipping',
       'weight' => $service['weight'],
       'callbacks' => array(
         'rate' => 'commerce_russianpost_service_rate_order',

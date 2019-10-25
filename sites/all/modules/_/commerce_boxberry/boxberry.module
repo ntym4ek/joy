@@ -28,7 +28,7 @@ function boxberry_commerce_shipping_service_info()
     'title' => t('Boxberry shipping service'),
     'display_title' => 'Пункт выдачи',
     'shipping_method' => 'boxberry_shipping_method',
-    'price_component' => 'boxberry',
+    'price_component' => 'shipping',
     'weight' => 1,
     'callbacks' => array(
       'rate' => 'boxberry_service_rate_order',

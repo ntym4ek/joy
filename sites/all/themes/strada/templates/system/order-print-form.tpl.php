@@ -33,15 +33,18 @@ foreach ($order_info['products']['items'] as $line_item) {
 
 // компоненты итоговой суммы
 $total_amount = 0;
+$total_rows = [];
 foreach($total['components'] as $name => $component) {
     // посчитать заказ без доставки
-    if ($name == 'base_price' || strpos($name, 'discount') !== false) {
+    if ($name !== 'shipping') {
         $total_amount += $component['amount']; // скидка идёт с минусом и сложение по модулю даёт полную стоимость товара
+        $commerce_line_items[] = [['data' => $component['title'], 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($component['amount'], 'RUB'), 'class' => 'text-right']];
+    } else {
+        $shipping_row = [['data' => $component['title'], 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($component['amount'], 'RUB'), 'class' => 'text-right']];
     }
-
-    $commerce_line_items[] = [['data' => $component['title'], 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($component['amount'], 'RUB'), 'class' => 'text-right']];
 }
-if ($total_amount != $total['components']['base_price']['amount']) $commerce_line_items[] = [['data' => 'Сумма без доставки', 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($total_amount, 'RUB'), 'class' => 'text-right']];
+if ($total_amount != $total['components']['base_price']['amount']) $commerce_line_items[] = [['data' => 'Сумма со скидкой', 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($total_amount, 'RUB'), 'class' => 'text-right']];
+$commerce_line_items[] = $shipping_row;
 
 
 ?>
