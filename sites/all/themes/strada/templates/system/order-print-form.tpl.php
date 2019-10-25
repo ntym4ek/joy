@@ -33,38 +33,39 @@ foreach ($order_info['products']['items'] as $line_item) {
 
 // компоненты итоговой суммы
 $total_amount = 0;
-$total_rows = [];
+$shipping_row = '';
 foreach($total['components'] as $name => $component) {
     // посчитать заказ без доставки
     if ($name !== 'shipping') {
-        $total_amount += $component['amount']; // скидка идёт с минусом и сложение по модулю даёт полную стоимость товара
+        $total_amount += $component['amount'];
         $commerce_line_items[] = [['data' => $component['title'], 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($component['amount'], 'RUB'), 'class' => 'text-right']];
     } else {
         $shipping_row = [['data' => $component['title'], 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($component['amount'], 'RUB'), 'class' => 'text-right']];
     }
 }
+// сумма со скидкой
 if ($total_amount != $total['components']['base_price']['amount']) $commerce_line_items[] = [['data' => 'Сумма со скидкой', 'class' => 'text-right', 'colspan' => 4], ['data' => commerce_currency_format($total_amount, 'RUB'), 'class' => 'text-right']];
-$commerce_line_items[] = $shipping_row;
+// стоимость доставки вывести последней
+if ($shipping_row) $commerce_line_items[] = $shipping_row;
 
 
 ?>
 
-<div class="order-complete" style="background: #fff; padding: 0 20px; min-width: 800px; margin: auto; max-width: 800px; ">
-    <div class="do-not-print" style="padding-top: 50px;"></div>
+<div class="order-complete">
     <div class="row">
-        <div class="col-md-offset-1 col-md-10">
+        <div class="col-md-12">
             <div class="do-not-print"><a href="javascript:window.print()" class="btn btn-info pull-right">Распечатать</a></div>
             <h3>Заказ № <?php print $order_info['number']; ?></h3>
         </div>
     </div>
     <div class="row">
-        <div class="col-md-offset-1 col-md-10">
+        <div class="col-md-12">
             <h3>Список товаров</h3>
             <?php print theme('table', array('rows' => $commerce_line_items)); ?>
         </div>
     </div>
     <div class="row">
-        <div class="col-md-offset-1 col-md-10">
+        <div class="col-md-12">
             <h3>Информация о заказе</h3>
 
             <?php if ($shipping['callme']) print '<h5 class="text-danger">Пользователь просит связаться с ним</h5>'; ?>
@@ -101,5 +102,4 @@ $commerce_line_items[] = $shipping_row;
             </dl>
         </div>
     </div>
-    <div class="do-not-print" style="padding-bottom: 100px;"></div>
 </div>

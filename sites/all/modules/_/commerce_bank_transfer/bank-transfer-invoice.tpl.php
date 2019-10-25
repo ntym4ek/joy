@@ -1,6 +1,6 @@
 <?php //dsm('1'); ?>
-<div class="invoice" style="background: #fff; padding: 30px 60px; min-height: 1000px; width: 1000px;">
-    <div class="do-not-print" style="text-align: right; margin-bottom: 15px;"><a href="javascript:window.print()" class="btn btn-info">Распечатать</a></div>
+<div class="invoice">
+    <div class="do-not-print"><a href="javascript:window.print()" class="btn btn-info pull-right">Распечатать</a></div>
     <table class="table-condensed" style="color:#000; margin-bottom:20px;">
         <tr height="30"><td rowspan="4" width="150"><img src="<?php print $invoice['payment_method']['settings']['rcpt_logo']; ?>"></td><td style="font-size:15px;"><strong><?php print $invoice['payment_method']['settings']['rcpt_name']; ?></strong></td></tr>
         <tr height="30"><td><?php print $invoice['payment_method']['settings']['rcpt_address']; ?></td></tr>
@@ -15,7 +15,7 @@
     </table>
 
     <table class="table-condensed" style="color:#000; margin-bottom:10px;">
-        <tr><td colspan="2" style="font: 18px/20px open_sansbold; text-align:center;">СЧЁТ №: <?php print $invoice['order_id']; ?> от <?php print date("d.m.Y");; ?></td></tr>
+        <tr><td colspan="2" style="font-size: 18px; text-align:center;">СЧЁТ №: <?php print $invoice['order_id']; ?> от <?php print date("d.m.Y");; ?></td></tr>
         <tr><td width="15%">Плательщик:</td><td></td></tr>
         <tr><td width="15%">Грузополучатель:</td><td></td></tr>
     </table>
@@ -41,5 +41,4 @@
         <tr><td style="line-height:30px;" width="20%">Руководитель </td><td style="border-bottom:1px solid #000;" width="30%"><?php print $invoice['payment_method']['settings']['rcpt_boss']; ?></td><td colspan="2" align="center" valign="middle">М.П.</td></tr>
         <tr><td style="line-height:30px;">Гл. бухгалтер </td><td  style="border-bottom:1px solid #000;"><?php print $invoice['payment_method']['settings']['rcpt_buh']; ?></td></tr>
     </table>
-  <div class="do-not-print" style="text-align: right; margin-top: 15px;"><a href="javascript:window.print()" class="btn btn-info">Распечатать</a></div>
 </div>

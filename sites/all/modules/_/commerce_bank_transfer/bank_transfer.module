@@ -60,7 +60,7 @@ function bank_transfer_theme(){
     return array(
         'bank_transfer_invoice' => array(
             'variables' => array( 'invoice' => NULL ),
-            'template' => 'bank_transfer_invoice',
+            'template' => 'bank-transfer-invoice',
         ),
     );
 }
@@ -88,8 +88,9 @@ function bank_transfer_show_invoice($order) {
 
         foreach ($order->commerce_line_items['und'] as $key => $line_item) {
             $item = commerce_line_item_load($line_item['line_item_id']);
-            if ($item->type == 'product')
-                $product = commerce_product_load($item->commerce_product['und'][0]['product_id']);
+            if ($item->type == 'shipping' && $item->commerce_unit_price['und'][0]['amount'] == 0) continue;
+
+            if ($item->type == 'product') $product = commerce_product_load($item->commerce_product['und'][0]['product_id']);
             $vars['line_items'][] = array(
                 'title' => ($item->type == 'product') ? $product->title : t($item->line_item_label),
                 'quantity' => sprintf("%d", ($item->type == 'product') ? $item->quantity : 1),
@@ -244,6 +245,18 @@ function bank_transfer_submit_form_submit($payment_method, $pane_form, $pane_val
     $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
     $transaction->message = t('The payment is pending.');
     commerce_payment_transaction_save($transaction);
+}
+
+
+/**
+ * Preprocess function for theme_html()
+ */
+function bank_transfer_preprocess_html(&$vars)
+{
+    // страница печати счёта, добавить класс
+    if (arg(0) == 'checkout' && arg(2) == 'complete' && arg(3) == 'invoice') {
+        $vars['classes_array'][] = 'page-print';
+    }
 }
 
 /**

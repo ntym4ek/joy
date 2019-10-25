@@ -245,7 +245,7 @@
                 <img class="img-responsive" src="/sites/all/themes/strada/logo_w.png" alt="<?php print t('Home'); ?>" />
             </a>
             <div class="f-info">
-                <div class="f-company">2019 © joy-magazin.ru — интернет-магазин товаров для сада и дома. Все права защищены. Доставка по всей России!</div>
+                <div class="f-company"><? print date("Y"); ?> © joy-magazin.ru — интернет-магазин товаров для сада и дома. Все права защищены. Доставка по всей России!</div>
                 <div class="f-terms"><a href="/info/rules">Пользовательское соглашение</a></div>
             </div>
         </div>
