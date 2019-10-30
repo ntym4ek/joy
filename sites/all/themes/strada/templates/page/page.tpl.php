@@ -97,7 +97,7 @@
                         <li><a href="/info/delivery">Условия бесплатной доставки</a></li>
                         <li><a href="/info/payment">Оплата</a></li>
                         <li><a href="/info/return">Возврат</a></li>
-                        <li><a href="/info/about">О компании</a></li>
+                        <li><a href="/info/how-to-buy">Как купить</a></li>
                     </ul>
                 </div>
             </div>
@@ -259,8 +259,9 @@
             </ul>
         </div>
         <div class="f-how-to">
-            <h5>Как купить</h5>
+            <h5>Помощь</h5>
             <ul class="dry-list">
+                <li><a href="/info/how-to-buy">Как купить</a></li>
                 <li><a href="/info/delivery">Доставка</a></li>
                 <li><a href="/info/payment">Оплата</a></li>
                 <li><a href="/info/promo">Акции</a></li>
