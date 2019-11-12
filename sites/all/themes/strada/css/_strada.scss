@@ -1460,7 +1460,7 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
     margin-bottom: $grid-gutter-width*2;
     @media #{$normal} {
         max-width: 940px;
-        margin: 0 auto;
+        margin: 0 auto $grid-gutter-width*2 auto;
     }
     > div {
         display: flex; flex-wrap: wrap;
