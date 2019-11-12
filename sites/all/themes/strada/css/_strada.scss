@@ -1457,6 +1457,7 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
  * ----------------------------------- User login/register -------------------------------------------------------------
  */
 .user-form-container {
+    margin-bottom: $grid-gutter-width*2;
     @media #{$normal} {
         max-width: 940px;
         margin: 0 auto;
@@ -1472,7 +1473,6 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
             }
         }
         .user-links {
-            margin-bottom: $grid-gutter-width*2;
             p { margin-bottom: 10px; }
         }
         .user-form {
