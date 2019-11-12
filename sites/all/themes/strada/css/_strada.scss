@@ -1471,7 +1471,10 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
                 margin: $grid-gutter-width*2 $grid-gutter-width*2 $grid-gutter-width;
             }
         }
-        .user-links { margin-bottom: $grid-gutter-width*2; }
+        .user-links {
+            margin-bottom: $grid-gutter-width*2;
+            p { margin-bottom: 10px; }
+        }
         .user-form {
             display: flex; flex-wrap: wrap; align-content: flex-start;
             > div { flex: 0 0 100%; }
@@ -1486,6 +1489,8 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
                     max-width: 100%;
                 }
             }
+            .form-group { margin-bottom: $grid-gutter-width; }
+            [id*="add-more-wrapper"] > .form-group { margin-bottom: 0; }
         }
         .user-forgot {
             color: $text-muted; font-weight: 700;

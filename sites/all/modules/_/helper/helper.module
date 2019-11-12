@@ -271,6 +271,7 @@ function helper_form_user_register_form_alter (&$form, $form_state)
 {
     // убираем описания полей
     unset( $form['account']['mail']['#description'] );
+    unset( $form['account']['pass']['#description'] );
 
     // убираем имя, при вставке в БД оно будет заменено на "User uid"
     $form['account']['name']['#type'] = 'hidden';
@@ -294,12 +295,11 @@ function helper_form_user_register_form_alter (&$form, $form_state)
     $form['actions']['submit']['#value'] = t('Create an account');
 
     if (isset($form['fz152_agreement'])) $form['fz152_agreement']['#weight'] = '4';
-    $form['actions']['#weight'] = '8';
-    $form['captcha']['#weight'] = '9';
+    $form['captcha']['#weight'] = '8';
+    $form['actions']['#weight'] = '9';
     $form['user_links']['#weight'] = '10';
 
-    if (isset($form['captcha']))    $form['captcha']['#suffix'] = '</div><div class="user-links">';
-    else                            $form['actions']['#suffix'] = '</div><div class="user-links">';
+    $form['actions']['#suffix'] = '</div><div class="user-links">';
 
     if (isset($form['user_links']['#name'])) {
         $form['user_links']['#prefix'] = '<h2>' . t('Guest checkout') . '</h2><p>' . t('Continue as guest. No sign up required.') . '</p>';
