@@ -1484,6 +1484,7 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
             div[id^=edit-account] { margin-bottom: 0; }
             .captcha {
                 display: flex;
+                margin-bottom: $grid-gutter-width;
                 .g-recaptcha {
                     margin: auto;
                     max-width: 100%;
