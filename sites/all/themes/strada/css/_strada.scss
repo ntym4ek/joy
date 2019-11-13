@@ -106,41 +106,48 @@ div.divider {
 }
 
 /** ------------------------------------- Печать (Print) ------------------------------------------------------------ */
-body.page-print {
-    background-color: #eee;
-    overflow: visible !important;
-    height: 100%; width: 100%;
-}
-.print {
-    height: 100%; width: 100%;
 
-    .region-content {
-        background: #fff;
-        padding: 40px 70px 100px;
-        max-width: 800px;
-        margin: auto;
-    }
-}
+//body.page-print {
+//    background-color: #eee;
+//    //overflow: visible !important;
+//    //height: 100%;
+//    width: 100%;
+//}
+//.print {
+//    width: 100%;
+//
+//    .region-content {
+//        background: #fff;
+//        padding: 40px 70px 100px;
+//        max-width: 800px;
+//        margin: auto;
+//    }
+//}
 @media print {
-    * {
-        background: #fff !important;
-        color: #000 !important;
-        float: none !important;
-        height: auto !important;
+    body {
+        margin: 0;
+        padding: 0 !important;
+        min-width: 768px;
     }
-
-    .print .region-content {
-        padding: 0; margin: 0;
-    }
+    //* {
+    //    background: #fff !important;
+    //    color: #000 !important;
+    //    //float: none !important;
+    //    //height: auto !important;
+    //}
+    //
+    //.print .region-content {
+    //    padding: 0; margin: 0;
+    //}
     a[href]:after {
         content: "";
     }
-    body { font-size: $font-size-xs; }
+    //body { font-size: $font-size-xs; }
     .do-not-print { display: none; }
-    table {
-        //max-width: 100%;
-        margin: 0;
-    }
+    //table {
+    //    //max-width: 100%;
+    //    margin: 0;
+    //}
 }
 
 /** ------------------------------------- Шапка (Header) ------------------------------------------------------------ */
