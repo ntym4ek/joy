@@ -46,6 +46,10 @@ function mailing_cron_queue_info() {
     $queues['manual_mails_queue'] = array(
         'worker callback' => 'mailing_send_manual_mails',
     );
+    $queues['order_complete_mails_queue'] = array(
+        'worker callback' => 'mailing_send_order_complete_mails',
+    );
+
     return $queues;
 }
 
@@ -282,27 +286,12 @@ function mailing_commerce_order_presave($order)
     }
 
     if ($event) {
-        $account = user_load($order->uid);
-        $params['account'] = $account;
-        $params['order_info'] = _get_order_info($order);
-
-        // письмо Пользователю
-//        drupal_mail('mailing', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
-        drupal_mail('mailing', $event, $order->mail, user_preferred_language($account), $params);
-
-        // письмо Менеджеру
-        if ($mail_to_manager) {
-            $params['mail_to_manager'] = $mail_to_manager;
-            $manager_mail = variable_get('support_email', 'help@joy-magazin.ru');
-            if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) $manager_mail = 'mega_comp@mail.ru';
-            drupal_mail('mailing', $event, $manager_mail, user_preferred_language($account), $params);
-
-            // письмо Смирнову
-            if ($event == 'order_creation' && $order->mail != 'support@kccc.ru' && $manager_mail != 'mega_comp@mail.ru') {
-                drupal_mail('mailing', $event, 'ed_smr@kccc.ru', user_preferred_language($account), $params);
-            }
-        }
-
+        // поставить отправку писем в очередь
+        mailing_queue_order_complete_mails([
+            'order' => $order,
+            'event' => $event,
+            'mail_to_manager' => $mail_to_manager,
+        ]);
     }
 }
 
@@ -480,6 +469,40 @@ function mailing_mail($key, &$message, $params)
             $message['body'][] = '' .
                 '<h2>Здравствуйте!</h2>' . $body;
             break;
+    }
+}
+
+/**
+ * отправка писем с уведомлением об оформленном заказе
+ */
+function mailing_queue_order_complete_mails($data)
+{
+    $queue = DrupalQueue::get('order_complete_mails_queue');
+    $queue->createItem($data);
+}
+
+function mailing_send_order_complete_mails($data)
+{
+    $order = $data['order'];
+    $account = user_load($order->uid);
+    $params['account'] = $account;
+    $params['order_info'] = _get_order_info($order);
+
+    // письмо Пользователю
+    //        drupal_mail('mailing', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
+    drupal_mail('mailing', $data['event'], $order->mail, user_preferred_language($account), $params);
+
+    // письмо Менеджеру
+    if ($data['mail_to_manager']) {
+        $params['mail_to_manager'] = $data['mail_to_manager'];
+        $manager_mail = variable_get('support_email', 'help@joy-magazin.ru');
+        if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) $manager_mail = 'mega_comp@mail.ru';
+        drupal_mail('mailing', $data['event'], $manager_mail, user_preferred_language($account), $params);
+
+        // письмо Смирнову
+        if ($data['event'] == 'order_creation' && $order->mail != 'support@kccc.ru' && $manager_mail != 'mega_comp@mail.ru') {
+            drupal_mail('mailing', $data['event'], 'ed_smr@kccc.ru', user_preferred_language($account), $params);
+        }
     }
 }
 
