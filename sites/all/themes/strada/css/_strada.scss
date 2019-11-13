@@ -126,9 +126,13 @@ div.divider {
 @media print {
     body {
         display: block;
-        font-size: $font-size-xs;
-        margin: 0;
+        //font-size: $font-size-xs;
+        margin: 0 1cm;
         padding: 0 !important;
+    }
+    .print {
+        padding: 0!important;
+        margin: 0!important;
     }
     a[href]:after { content: ""; }
     .do-not-print { display: none; }
