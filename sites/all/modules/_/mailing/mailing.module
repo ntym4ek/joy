@@ -228,6 +228,7 @@ function mailing_commerce_order_presave($order)
 
     // определить событие
     $event = '';
+    $params = [];
     $mail_to_manager = false;
     if (strpos($order->original->status, 'checkout_') === 0 && $order->status == 'pending') {
         $event = 'order_creation';
@@ -291,6 +292,7 @@ function mailing_commerce_order_presave($order)
             'order' => $order,
             'event' => $event,
             'mail_to_manager' => $mail_to_manager,
+            'params' => $params,
         ]);
     }
 }
@@ -485,6 +487,7 @@ function mailing_send_order_complete_mails($data)
 {
     $order = $data['order'];
     $account = user_load($order->uid);
+    $params = $data['params'];
     $params['account'] = $account;
     $params['order_info'] = _get_order_info($order);
 
