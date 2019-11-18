@@ -126,10 +126,9 @@ div.divider {
 @media print {
     body {
         display: block;
-        //font-size: $font-size-xs;
-        margin: 0 1cm;
         padding: 0 !important;
     }
+    html body.admin-menu { margin: 0 1cm !important; }
     .print {
         padding: 0!important;
         margin: 0!important;
