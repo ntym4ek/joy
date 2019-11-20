@@ -17,7 +17,9 @@
                 });
 
                 $input.keyup(function() {
-                    Drupal.commerceAcf.quantityChanged(this);
+                    if ($(this).val()) {
+                        Drupal.commerceAcf.quantityChanged(this);
+                    }
                 });
 
                 if ($input.hasClass('quantity-input-disabled')) {
