@@ -414,6 +414,19 @@ function helper_settings($form, &$form_state)
         '#required' => TRUE,
     );
 
+    // todo получить список регионов
+    $options = [];
+
+    $form['shop']['non_free_shipping_regions'] = array(
+        '#type' => 'select',
+        '#title' => 'Платная доставка',
+        '#chosen' => TRUE,
+        '#multiple' => TRUE,
+        '#options' => $options,
+        '#description' => 'Список регионов, для которых не действует бесплатная доставка',
+        '#default_value' => variable_get('non_free_shipping_regions', []),
+    );
+
     $form['#validate'][] = 'helper_settings_images_validate';
     $form['#submit'][] = 'helper_settings_images_submit';
 

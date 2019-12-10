@@ -392,7 +392,7 @@ div.divider {
         > li {
             display: block;
             a { color: #fff; font-size: $font-size-xs; line-height: 2.5; padding: 0 $grid-gutter-width; }
-            &.last a { color: $brand-primary; font-weight: 600; }
+            &.last a { color: $brand-danger; font-weight: 600; }
         }
 
     }
@@ -1403,10 +1403,15 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
         .cs-delivery .notice {
             color: $brand-danger; font-size: $font-size-xs;
             display: block;
-            margin-top: -6px;
+            text-transform: lowercase;
+            a { color: $brand-danger; }
         }
         .cs-discount .value { color: $brand-danger; }
         .label { color: $text-muted; font-size: $font-size-small; font-weight: 400; padding: .2em 0; line-height: 1.5; }
+        .value {
+            text-align: right; line-height: 1;
+            padding: 4px 0 4px $grid-gutter-width;
+        }
         .cs-total .label { color: $text-color; font-weight: 800; }
         .cs-total .value { font-weight: 800; font-size: $font-size-large; }
     }

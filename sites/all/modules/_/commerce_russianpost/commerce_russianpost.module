@@ -161,8 +161,6 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
         'data' => array(),
     );
 
-    $order_wr = entity_metadata_wrapper('commerce_order', $order);
-
     $rates = &drupal_static(__FUNCTION__);
     if (!$rates) {
 
@@ -189,7 +187,7 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
 //                        $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
                         if (empty($response['services']['message']['error'])) {
                             foreach (commerce_russianpost_parse_rate_response($response['services']) as $service_name => $rate) {
-                                if (_commerce_helper_allow_free_shipping($order)) {
+                                if (!_commerce_helper_non_free_shipping($order)) {
                                     $rate['amount'] = 0;
                                 }
                                 $rate['amount'] = ceil($rate['amount'] / 100) * 100;
