@@ -16,7 +16,7 @@ function popup_on_leave_settings()
     $form = array();
     $form['popup_on_leave_enable'] = array(
         '#type' => 'radios',
-        '#title' => t('Enable Popup'),
+        '#title' => 'Всплывающее окно',
         '#default_value' => variable_get('popup_on_leave_enable', 1),
         '#options' => array(
             1 => t('Enabled'),
@@ -25,32 +25,32 @@ function popup_on_leave_settings()
     );
     $form['popup_on_leave_fieldset'] = array(
         '#type' => 'fieldset',
-        '#title' => t('Popup message settings'),
+        '#title' => 'Настройки',
         '#collapsed' => FALSE,
         '#collapsible' => TRUE,
     );
     $form['popup_on_leave_fieldset']['popup_on_leave_width'] = array(
         '#type' => 'textfield',
-        '#title' => t('Window width'),
+        '#title' => 'Ширина окна',
         '#required' => TRUE,
         '#default_value' => variable_get('popup_on_leave_width', 300),
     );
     $form['popup_on_leave_fieldset']['popup_on_leave_height'] = array(
         '#type' => 'textfield',
-        '#title' => t('Window height'),
+        '#title' => 'Высота окна',
         '#required' => TRUE,
         '#default_value' => variable_get('popup_on_leave_height', 300),
     );
     $form['popup_on_leave_fieldset']['popup_on_leave_delay'] = array(
         '#type' => 'textfield',
         '#title' => 'Перерыв',
-        '#description' => 'Период между показами сообщения',
+        '#description' => 'Период в секундах между показами сообщения',
         '#default_value' => variable_get('popup_on_leave_delay', 0),
     );
 
     $form['popup_on_leave_fieldset']['visibility']['path'] = array(
         '#type' => 'fieldset',
-        '#title' => t('Pages'),
+        '#title' => 'Страницы',
         '#collapsible' => TRUE,
         '#collapsed' => FALSE,
         '#group' => 'visibility',
