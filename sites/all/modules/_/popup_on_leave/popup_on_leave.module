@@ -24,7 +24,7 @@ function popup_on_leave_menu()
         'page callback' => 'drupal_get_form',
         'page arguments' => array('popup_on_leave_settings'),
         'file' => 'popup_on_leave.admin.inc',
-        'access arguments' => array('popup on leave administration'),
+//        'access arguments' => array('popup on leave administration'),
     );
 
     // получение сообщения и отправка письма
