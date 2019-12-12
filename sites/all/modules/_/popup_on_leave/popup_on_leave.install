@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Popup message module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function popup_on_leave_install()
+{
+  $t = get_t();
+  drupal_set_message($t('Popup message: Go to "Configuration -> Administration -> Popup message" and set popup message title and body'));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function popup_on_leave_uninstall()
+{
+  variable_del('popup_on_leave_title');
+  variable_del('popup_on_leave_body');
+  variable_del('popup_on_leave_enable');
+  variable_del('popup_on_leave_delay');
+  variable_del('popup_on_leave_check_cookie');
+  variable_del('popup_on_leave_visibility');
+  variable_del('popup_on_leave_visibility_pages');
+}

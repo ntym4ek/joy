@@ -303,8 +303,23 @@ function mailing_commerce_order_presave($order)
 function mailing_mail($key, &$message, $params)
 {
     $order_info = empty($params['order_info']) ? [] : $params['order_info'];
+    $data = empty($params['data']) ? [] : $params['data'];
 
     switch($key) {
+        case 'leave_feedback':
+            $message['subject'] = 'Отзыв на выходе';
+
+            $message['body'][] = '' .
+                '<h2>И снова здравствуйте!</h2>' .
+                '<p>Пользователь заполнил форму при покидании сайта:</p>' .
+                '<strong>Текст:</strong> ' . $data['text'] . '<br />' .
+                '<strong>Имя:</strong> ' . $data['name'] . '<br />' .
+                '<strong>Нужен ответ:</strong> ' .  ($data['checkbox'] == 'false' ? 'нет' : 'да') . '<br />' .
+                '<strong>Email:</strong> ' . ($data['email'] ? $data['email'] : 'нет') . '<br />' .
+                '';
+
+            break;
+
         case 'order_creation':
             if (empty($params['mail_to_manager'])) {
                 $message['subject'] = 'Подтверждение заказа';

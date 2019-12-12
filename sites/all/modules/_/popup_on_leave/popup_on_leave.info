@@ -1,0 +1,5 @@
+name = "Popup On Leave"
+description = Всплывающее окно при выходе с сайта
+core = "7.x"
+package = "custom"
+

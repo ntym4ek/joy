@@ -1,0 +1,89 @@
+#page {
+  -webkit-transition: all .5s ease-in-out;
+  -moz-transition: all .5s ease-in-out;
+  -o-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;  
+}
+.blur {
+    filter: blur(3px);
+    -webkit-filter: blur(3px);
+}
+#popup-message-background {
+  display: none;
+  position: fixed; top: 0; left: 0; z-index: 1000;
+  _position: absolute; /* hack for internet explorer 6*/
+  height: 100%; width: 100%;
+  background: #000;
+}
+
+#popup-message-window { 
+  display: none;
+  position: fixed; z-index: 1001;
+  _position: absolute; /* hack for internet explorer 6*/
+  overflow: hidden;
+  background: url(../images/back.jpg); background-position: center; background-size: cover;
+    border-radius: 15px;
+  -webkit-filter: none; -moz-filter: none; -o-filter: none; -ms-filter: none; filter: none;
+}
+
+
+
+#popup-message-content {
+    display: flex;
+    color: white;
+    justify-content: flex-end;
+    padding: 20px;
+}
+
+.thanx {
+    flex: 0 0 300px;
+    text-align: center;
+    margin-top: 50px;
+}
+
+#popup-message-form {
+    flex: 0 0 400px;
+    background: #33333377;
+    border-radius: 15px;
+    padding: 25px;
+    label {
+        color: #ddd; font-weight: 100; font-size: .9em;
+        margin-left: 15px;
+        width: 100%;
+    }
+    input[type=checkbox] { vertical-align: middle; }
+    input:not([type=checkbox]) {
+        height: 35px;
+        width: 100%;
+    }
+    textarea,
+    input {
+        color: #333; line-height: 1.1;
+        border-radius: 4px; border: none;
+        margin-bottom: 5px; padding: 0 7px;
+    }
+    textarea {
+        height: 60px; width: 100%;
+        padding: 3px 7px;
+    }
+    .field-response {
+        margin-top: 8px;
+        label { margin-left: 5px; }
+    }
+    .field-promo p {
+        margin-bottom: 12px;
+        text-align: center;
+    }
+    .actions { text-align: center; }
+}
+
+#popup-message-close {
+  font-size: 25px; line-height: 1;
+  position: absolute; right: 7px; top: 4px;
+
+  color: #aaa;
+  font-weight: 100;
+  display: block;
+  cursor: pointer;
+    &:hover { color: #fff; }
+}
