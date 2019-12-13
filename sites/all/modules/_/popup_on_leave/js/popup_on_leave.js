@@ -210,6 +210,7 @@ function popup_on_leave_run_popup()
                             // и зареган и и ранее не показывалось
                             // или пользователь не авторизован и истёк период "молчания"
                             popup_on_leave_cookie = parseInt(popup_on_leave_cookie, 10);
+                            if (!popup_on_leave_cookie) popup_on_leave_cookie = 0;
                             if (!popup_on_leave_cookie_count) popup_on_leave_cookie_count = 1;
                             else popup_on_leave_cookie_count = popup_on_leave_cookie_count + 1;
                             var show_popup = (cart_items_count > 0)
