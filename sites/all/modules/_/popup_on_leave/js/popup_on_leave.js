@@ -201,20 +201,25 @@ function popup_on_leave_run_popup()
 
                             var timestamp = (+new Date());
                             var popup_on_leave_cookie = jQuery.cookie("popup_on_leave_displayed");
+                            var popup_on_leave_cookie_count = jQuery.cookie("popup_on_leave_displayed_count");
                             var cart_items_count = parseInt(jQuery(".bubble.bubble-red").html());
                             var is_user_signed_in = Drupal.settings.popup_on_leave.uid > 0,
-                                //delay = Drupal.settings.popup_on_leave.delay ? Drupal.settings.popup_on_leave.delay * 1000 : 0;
-                                delay = 30000;
+                                delay = Drupal.settings.popup_on_leave.delay ? Drupal.settings.popup_on_leave.delay * 1000 : 0;
 
                             // показать если есть товары в корзине
                             // и зареган и и ранее не показывалось
                             // или пользователь не авторизован и истёк период "молчания"
                             popup_on_leave_cookie = parseInt(popup_on_leave_cookie, 10);
-                            var show_popup = (cart_items_count > 0) && ((is_user_signed_in && !popup_on_leave_cookie) || (!is_user_signed_in && (!popup_on_leave_cookie || timestamp > popup_on_leave_cookie + delay)));
+                            if (!popup_on_leave_cookie_count) popup_on_leave_cookie_count = 1;
+                            else popup_on_leave_cookie_count = popup_on_leave_cookie_count + 1;
+                            var show_popup = (cart_items_count > 0)
+                                && ((is_user_signed_in && popup_on_leave_cookie_count < 4) || !is_user_signed_in)
+                                && timestamp > popup_on_leave_cookie + delay;
 
                             if (show_popup) {
                                 popup_on_leave_run_popup();
                                 jQuery.cookie("popup_on_leave_displayed", timestamp, {path: '/'});
+                                jQuery.cookie("popup_on_leave_displayed_count", popup_on_leave_cookie_count, {path: '/'});
                             }
                         }
                     };
