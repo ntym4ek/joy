@@ -19,11 +19,12 @@ function popup_on_leave_menu()
 
     // Settings form.
     $items['admin/config/administration/popup_on_leave'] = array(
-        'title' => 'Popup On Leave',
+        'title' => t('Popup On Leave'),
         'description' => 'Натройки модуля',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('popup_on_leave_settings'),
         'file' => 'popup_on_leave.admin.inc',
+        'access callback' => true,
 //        'access arguments' => array('popup on leave administration'),
     );
 
