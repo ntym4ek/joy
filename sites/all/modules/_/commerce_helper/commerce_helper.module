@@ -419,7 +419,7 @@ function commerce_helper_add_to_cart_form_submit($form, &$form_state){
 
 
 /**
- * -------------------------------- Корзинв (Cart) -------------------------------------------------------------------
+ * -------------------------------- Корзина (Cart) -------------------------------------------------------------------
  */
 function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form, $form_state)
 {
@@ -462,48 +462,28 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
             // доставка
             $delivery_text = 'платная';
 
-            if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT) {
-                if (_commerce_helper_allow_free_shipping($form_state['order'])) {
-                    $free_shipping = 'Вы получили <span class="text-success">бесплатную доставку</span> для Вашего заказа!';
-                    $delivery_text = 'бесплатная';
-                } elseif (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 > $products_base_amount) {
+            if ($reason_to_pay = _commerce_helper_non_free_shipping($form_state['order'])) {
+                if ($reason_to_pay['reason'] == 'amount') {
                     $free_shipping = 'Ещё немножко! До бесплатной доставки осталось заказать на ' . commerce_currency_format(CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - $products_base_amount, 'RUB');
                     // если есть ограничение по весу, указать
                     $free_shipping .= (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT ? '<br /><span class="notice">(для заказов весом менее ' . CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT . ' кг)</span>' : '');
-                } elseif (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT <= $weight) {
-                    $delivery_text .= '<br /><span class="notice">превышение по весу</span>';
+                } elseif ($reason_to_pay['reason'] == 'weight') {
+                    $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
+                } elseif ($reason_to_pay['reason'] == 'region') {
+                    $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
                 }
-                $back_url = '/';
+            } else {
+                $free_shipping = 'Вы получили <span class="text-success">бесплатную доставку</span> для Вашего заказа!';
+                $delivery_text = 'бесплатная';
+            }
+            $back_url = '/';
 
-                if (isset($free_shipping) && variable_get('free_shipping_show_sum', 0)) {
-                    if (variable_get('free_shipping_show_sum') == 1 || (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
-                        $header = '<div class="cs-free">' . $free_shipping . '<a href="' . $back_url . '" class="btn btn-default">Добавить товары</a></div>';
-                    }
+            if (isset($free_shipping) && variable_get('free_shipping_show_sum', 0)) {
+                if (variable_get('free_shipping_show_sum') == 1 || (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
+                    $header = '<div class="cs-free">' . $free_shipping . '<a href="' . $back_url . '" class="btn btn-default">Добавить товары</a></div>';
                 }
-
             }
 
-
-//            if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT) {
-//                if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 > $products_base_amount) {
-//                    $free_shipping = 'Ещё немножко! До бесплатной доставки осталось заказать на ' . commerce_currency_format(CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - $products_base_amount, 'RUB');
-//                    // если есть ограничение по весу, указать
-//                    $free_shipping .= (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT ? '<br /><span class="notice">(для заказов весом менее ' . CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT . ' кг)</span>' : '');
-//                }
-//                else {
-//                    $free_shipping = 'Вы получили <span class="text-success">бесплатную доставку</span> для Вашего заказа!';
-//                }
-//                $back_url = '/';
-//                if (!empty($_GET['back']) && $_GET['back'] != 'front') {
-//                    $back_url = '/' . $_GET['back'];
-//                }
-//
-//                if (variable_get('free_shipping_show_sum', 0)) {
-//                    if (variable_get('free_shipping_show_sum') == 1 || (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
-//                        $header = '<div class="cs-free">' . $free_shipping . '<a href="' . $back_url . '" class="btn btn-default">Добавить товары</a></div>';
-//                    }
-//                }
-//            }
 
             $form['actions']['summary'] = [
                 '#markup' =>
@@ -719,6 +699,10 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
         $delivery_text = array_shift($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors']);
     } else {
         $delivery_text = $shipping_amount ? commerce_currency_format($shipping_amount, 'RUB') : t('free', [], ['context' => 'Checkout delivery cost']);
+    }
+
+    if ($reason_to_pay = _commerce_helper_non_free_shipping($form_state['order'])) {
+        $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
     }
 
     $total_amount += $shipping_amount;
@@ -1387,19 +1371,58 @@ function commerce_helper_commerce_price_component_total_coupons($order)
 }
 
 /**
- * Функция проверяет условия для предоставления бесплатной доставки
+ * Функция проверяет условия для платной доставки
  * @param $order - проверяемый заказ
  *
- * @return bool - разрешить/запретить
+ * @return mixed - причина платной/false
  */
-function _commerce_helper_allow_free_shipping($order)
+function _commerce_helper_non_free_shipping($order)
 {
     $order_wr = entity_metadata_wrapper('commerce_order', $order);
     $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
     $physical_weight = commerce_physical_order_weight($order, 'kg');
 
-    return ((CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100)
-        && (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT == 0 || CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT > $physical_weight['weight']));
+    // получить платные регионы и сделать привязку
+    $non_free_regions_tids = variable_get('non_free_shipping_regions', []);
+    $non_free_regions = [];
+    if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
+        $tree = taxonomy_get_tree($vid);
+        foreach ($tree as $term) {
+            if (in_array($term->tid, $non_free_regions_tids)) $non_free_regions[] = $term->name;
+        }
+    }
+
+    $non_free = false;
+    $field_name = commerce_physical_order_shipping_field_name($order);
+    if ($shipping_profile = $order_wr->{$field_name}->value()) {
+        $shipping_profile = $order_wr->{$field_name}->value();
+        $region = $shipping_profile->field_region['und'][0]['value'];
+        if (in_array($region, $non_free_regions)) {
+            $non_free = TRUE;
+        }
+    }
+
+    $reason = [];
+    if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base < CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100) {
+        $reason = [
+            'reason' => 'amount',
+            'text' => '<a href="/info/delivery">Недостаточная сумма заказа</a>'
+        ];
+    }
+    if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT == 0 && CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT <= $physical_weight['weight']) {
+        $reason = [
+            'reason' => 'weight',
+            'text' => '<a href="/info/delivery">Превышение по весу</a>'
+        ];
+    }
+    if ($non_free) {
+        $reason = [
+            'reason' => 'region',
+            'text' => '<a href="/info/delivery">Платный регион</a>'
+        ];
+    }
+
+    return $reason ? $reason : false;
 }
 
 
@@ -1408,7 +1431,8 @@ function _commerce_helper_allow_free_shipping($order)
  * @param $uid
  * @return array|mixed
  */
-function _get_order_product_ids($uid) {
+function _get_order_product_ids($uid)
+{
     $pids = &drupal_static(__FUNCTION__);
 
     // заполнить массив id товаров в корзине

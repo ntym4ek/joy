@@ -88,9 +88,7 @@ function boxberry_service_rate_order($shipping_service, $order)
                         if (!empty($response['point_data'])) $rate['data']['address'] = $response['point_data']['Address'];
 
 
-//                        $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
-                        if (_commerce_helper_allow_free_shipping($order)) {
-//                        if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100) {
+                        if (!_commerce_helper_non_free_shipping($order)) {
                             $rate['amount'] = 0;
                         } else {
                             // для Владивостока и многих других почему-то выдаёт нулевую стоимость

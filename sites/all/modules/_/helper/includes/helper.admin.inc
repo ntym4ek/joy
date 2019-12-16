@@ -414,6 +414,24 @@ function helper_settings($form, &$form_state)
         '#required' => TRUE,
     );
 
+    // получить список регионов
+    $options = [];
+    if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
+        $tree = taxonomy_get_tree($vid);
+        foreach ($tree as $term) {
+            $options[$term->tid] = $term->name;
+        }
+    }
+    $form['shop']['non_free_shipping_regions'] = array(
+        '#type' => 'select',
+        '#title' => 'Платная доставка',
+        '#chosen' => TRUE,
+        '#multiple' => TRUE,
+        '#options' => $options,
+        '#description' => 'Список регионов, для которых не действует бесплатная доставка',
+        '#default_value' => variable_get('non_free_shipping_regions', []),
+    );
+
     $form['#validate'][] = 'helper_settings_images_validate';
     $form['#submit'][] = 'helper_settings_images_submit';
 
