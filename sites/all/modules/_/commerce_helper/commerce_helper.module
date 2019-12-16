@@ -1382,9 +1382,17 @@ function _commerce_helper_non_free_shipping($order)
     $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
     $physical_weight = commerce_physical_order_weight($order, 'kg');
 
-    // todo получить платные регионы и сделать привязку
+    // получить платные регионы и сделать привязку
+    $non_free_regions_tids = variable_get('non_free_shipping_regions', []);
+    $non_free_regions = [];
+    if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
+        $tree = taxonomy_get_tree($vid);
+        foreach ($tree as $term) {
+            if (in_array($term->tid, $non_free_regions_tids)) $non_free_regions[] = $term->name;
+        }
+    }
+
     $non_free = false;
-    $non_free_regions = variable_get('non_free_shipping_regions', ['Кировская область']);
     $field_name = commerce_physical_order_shipping_field_name($order);
     if ($shipping_profile = $order_wr->{$field_name}->value()) {
         $shipping_profile = $order_wr->{$field_name}->value();
@@ -1423,7 +1431,8 @@ function _commerce_helper_non_free_shipping($order)
  * @param $uid
  * @return array|mixed
  */
-function _get_order_product_ids($uid) {
+function _get_order_product_ids($uid)
+{
     $pids = &drupal_static(__FUNCTION__);
 
     // заполнить массив id товаров в корзине

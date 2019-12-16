@@ -414,9 +414,14 @@ function helper_settings($form, &$form_state)
         '#required' => TRUE,
     );
 
-    // todo получить список регионов
+    // получить список регионов
     $options = [];
-
+    if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
+        $tree = taxonomy_get_tree($vid);
+        foreach ($tree as $term) {
+            $options[$term->tid] = $term->name;
+        }
+    }
     $form['shop']['non_free_shipping_regions'] = array(
         '#type' => 'select',
         '#title' => 'Платная доставка',
