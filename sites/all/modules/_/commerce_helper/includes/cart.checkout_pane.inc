@@ -121,12 +121,6 @@ function cart_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
             }
         }
 
-        // вывести предупреждение о недоборе минимальной суммы заказа
-        if ($order_total < CHECKOUT_MIN_ORDER_AMOUNT) {
-            $moa_message = 'Чтобы мы могли принять Ваш заказ, сумма должна быть не менее ' . CHECKOUT_MIN_ORDER_AMOUNT . ' рублей.';
-            form_set_error('', $moa_message);
-        }
-
         // вывести в корзине вес и объём товара
         $physical = '<div class="physical-total">' . t('Weight') . ': ' . (empty($weight) ? '- ' : '<span class="value">' . $weight['weight'] . '</span> ' . t($weight['unit'])) . '&nbsp;&nbsp;&nbsp;' . t('Volume') . ': <span class="value">' . (float)number_format($volume['volume'], 4) . '</span> ' . t('m<span class="sup">3</span>') . '</div>';
         $total = '<div class="order-total">' . commerce_currency_format($order_total, $balance['currency_code'], NULL, FALSE) . '</div>';
@@ -180,13 +174,8 @@ function cart_ajax_refresh ($form, $form_state) {
 /**
  * Checkout pane callback: validation callback.
  */
-function cart_pane_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
-    $order = commerce_order_load($order->order_id);
-    if ($order->commerce_order_total['und'][0]['amount'] < CHECKOUT_MIN_ORDER_AMOUNT*100) {
-// вывод сообщения есть в конструкторе формы
-//      form_set_error('commerce_cart', 'Чтобы мы могли принять Ваш заказ, сумма должна быть не менее ' . CHECKOUT_MIN_ORDER_AMOUNT . ' рублей.');
-        return FALSE;
-    }
+function cart_pane_checkout_form_validate($form, &$form_state, $checkout_pane, $order)
+{
     return TRUE;
 }
 

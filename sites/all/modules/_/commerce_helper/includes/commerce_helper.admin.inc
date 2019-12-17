@@ -41,23 +41,68 @@ function commerce_helper_settings($form, &$form_state)
         '#required' => TRUE,
     );
 
+
     // получить список регионов
-    $options = [];
+    $regions = [];
     if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
         $tree = taxonomy_get_tree($vid);
         foreach ($tree as $term) {
-            $options[$term->tid] = $term->name;
+            $regions[$term->tid] = $term->name;
         }
     }
-    $form['non_free_shipping_regions'] = array(
+
+    // вкладки с настройками регионов
+    $form['vertical_tabs'] = array('#type' => 'vertical_tabs');
+
+    $form['fieldset1'] = array('#type' => 'fieldset', '#title' => 'Тарифная зона 1', '#group' => 'vertical_tabs');
+    $form['fieldset1']['zone1_amount'] = array(
+        '#type' => 'textfield',
+        '#size' => 10,
+        '#title' => 'Бесплатно от суммы',
+        '#default_value' => variable_get('zone1_amount', 0),
+    );
+    $form['fieldset1']['zone1_regions'] = array(
         '#type' => 'select',
-        '#title' => 'Платная доставка',
+        '#title' => 'Регионы',
         '#chosen' => TRUE,
         '#multiple' => TRUE,
-        '#options' => $options,
-        '#description' => 'Список регионов, для которых не действует бесплатная доставка',
-        '#default_value' => variable_get('non_free_shipping_regions', []),
+        '#options' => $regions,
+        '#description' => 'Список регионов, для которых не действует бесплатная доставка. Если список пустой, то условия будут действовать для всех регионов не вошедших в Зону 2 и 3.',
+        '#default_value' => variable_get('zone1_regions', []),
     );
+
+    $form['fieldset2'] = array('#type' => 'fieldset', '#title' => 'Тарифная зона 2', '#group' => 'vertical_tabs');
+    $form['fieldset2']['zone2_amount'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Бесплатно от суммы',
+        '#default_value' => variable_get('zone2_amount', 0),
+    );
+    $form['fieldset2']['zone2_regions'] = array(
+        '#type' => 'select',
+        '#title' => 'Регионы',
+        '#chosen' => TRUE,
+        '#multiple' => TRUE,
+        '#options' => $regions,
+        '#description' => 'Список регионов, для которых не действует бесплатная доставка',
+        '#default_value' => variable_get('zone2_regions', []),
+    );
+
+    $form['fieldset3'] = array('#type' => 'fieldset', '#title' => 'Тарифная зона 3', '#group' => 'vertical_tabs');
+    $form['fieldset3']['zone3_amount'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Бесплатно от суммы',
+        '#default_value' => variable_get('zone3_amount', 0),
+    );
+    $form['fieldset3']['zone3_regions'] = array(
+        '#type' => 'select',
+        '#title' => 'Регионы',
+        '#chosen' => TRUE,
+        '#multiple' => TRUE,
+        '#options' => $regions,
+        '#description' => 'Список регионов, для которых не действует бесплатная доставка',
+        '#default_value' => variable_get('zone3_regions', []),
+    );
+
 
     return system_settings_form($form);
 }
