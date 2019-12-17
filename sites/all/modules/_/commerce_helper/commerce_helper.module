@@ -45,6 +45,14 @@ function commerce_helper_menu() {
         'access arguments' => array('edit own commerce_order entities'),
         'type' => MENU_LOCAL_ACTION,
     );
+    $items['admin/config/administration/shop'] = array(
+        'title' => 'Настройки магазина',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('commerce_helper_settings'),
+        'access arguments' => array('access manager settings'),
+        'file' => 'includes/commerce_helper.admin.inc',
+    );
+
 
     return $items;
 }
