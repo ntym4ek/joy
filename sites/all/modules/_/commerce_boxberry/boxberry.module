@@ -59,8 +59,8 @@ function boxberry_service_rate_order($shipping_service, $order)
 
         if ($rate_request['zipcode']) {
             $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
-//                $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400)); // день в кэше
-            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // день в кэше
+            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400)); // день в кэше
+//            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // день в кэше
 
             if (!$cache) {
                 // при переходе на страницу оформления запрос на расчёт выполняется дважды:
@@ -126,15 +126,14 @@ function boxberry_build_rate_request($order)
     $shipping_profile = $order_wr->{$field_name}->value();
 
     // базовые данные
-    $zipcode = empty($shipping_profile->field_zipcode_calc['und'][0]['value']) ? '' : $shipping_profile->field_zipcode_calc['und'][0]['value'];
+    $data = json_decode($shipping_profile->field_data['und'][0]['value'], true);
+    $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
     $weight = commerce_physical_order_weight($order, 'g')['weight'];
-//    $weight = 1000; // расчитывать для любого веса, менеджеры будут разбивать на несколько, стоимость разбивки не актуальна
     $amount = $order_wr->commerce_order_total->value()['amount']/100;
 
     // возможно пункт уже выбран, нужно получить данные о нём
-    $target_point = null;
-    if (!empty($shipping_profile->field_data['und'][0]['value'])) {
-        $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+    $target_point = empty($data['region']['data']['boxberry_id']) ? null : $data['region']['data']['boxberry_id'];
+    if (!empty($data['boxberry'])) {
         $target_point = empty($data['boxberry']['id']) ? '' : $data['boxberry']['id'];
 
         // удаление старых неактуальных данных, занесенных Сдэком в старом формате
@@ -161,7 +160,8 @@ function boxberry_build_rate_request($order)
 function boxberry_api_request($data)
 {
     // стоимость доставки
-    $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=DeliveryCosts&weight=' . $data['weight'] . '&zip=' . $data['zipcode'] . '&ordersum=' . $data['amount'];
+//    $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=DeliveryCosts&weight=' . $data['weight'] . '&zip=' . $data['zipcode'] . '&ordersum=' . $data['amount'];
+    $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=DeliveryCosts&weight=' . $data['weight'] . '&target=' . $data['target_point'] . '&ordersum=' . $data['amount'];
     $handle = fopen($url, "rb"); $contents = stream_get_contents($handle); fclose($handle);
     $response['cost_data'] = json_decode($contents, TRUE);
 

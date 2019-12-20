@@ -6,12 +6,13 @@
             $('#boxberry_link').once(function () {
                 $('#boxberry_link').bind('click', function () {
                     boxberry_open();
-
                 });
             });
 
             function boxberry_open() {
-                var city = $.cookie('boxberry_locality') ? JSON.parse($.cookie('boxberry_locality')) : '';
+                // var city = $.cookie('boxberry_locality') ? JSON.parse($.cookie('boxberry_locality')) : '';
+                var user_region = JSON.parse($.cookie('user_region'));
+                var city = user_region.value;
                 var order_amount = $(".boxberry-order-amount").val();
                 var order_weight = $(".boxberry-order-weight").val();
 
@@ -19,16 +20,10 @@
             }
 
             function callback_function(result) {
-                var data = {};
-                try {
-                    data = JSON.parse($(".field-name-field-data textarea").val());
-                }
-                catch(error) {}
-                data.boxberry = result;
-                $(".field-name-field-data textarea").val(JSON.stringify(data));
-
+                $.cookie('user_boxberry', JSON.stringify(result), {path: "/"});
+                // для валидации на сервере
                 $('.boxberry-set').val('1');
-
+                // обновление страницы
                 $("[id^='edit-commerce-shipping-recalc']").click();
             }
 

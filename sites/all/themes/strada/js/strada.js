@@ -1,6 +1,8 @@
 /**
  *
  */
+var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
+
 (function ($, Drupal, window, document, undefined) {
     Drupal.behaviors.strada = {
         attach: function (context, settings) {
@@ -32,7 +34,9 @@
                         // для класса view-item
                         // и для вручную проставленного класса ajax-host
                         var $host = $(this.element).closest('.view-item');
-                        if ($host.length == 0) { $host = $(this.element).closest('.ajax-host'); }
+                        if ($host.length == 0) {
+                            $host = $(this.element).closest('.ajax-host');
+                        }
                         if ($host.length == 0) {
                             $host = $('body');
                             host_offset = pageYOffset;
@@ -104,7 +108,6 @@
 
                 radio.addClass('active');
                 radios.find('.radio').each(function() {
-                    var a = $(this);
                     if (this != radio[0]) {
                         $(this).removeClass('active');
                     }
@@ -112,15 +115,15 @@
 
             });
 
-            /** ------------------------------------------ Регион (автоопределение) -------------------------------------------- */
-            //$.cookie('user_region', null);
+            /** ------------------- Регион (автоопределение) -------------------------------------------- */
+            //$.cookie('user_region', null, {path: "/"});
 
             // если в шапке присутствует выбор региона
             if ($('#user_region').is('a')) {
 
                 // если кука в неправильном формате - сбросить
                 var user_region = JSON.parse($.cookie('user_region'));
-                if (user_region && user_region.data == undefined) {
+                if (user_region && user_region.data === undefined) {
                     $.cookie('user_region', null, {path: "/"});
                 }
 
@@ -129,33 +132,9 @@
                     _set_user_region(JSON.parse($.cookie('user_region')));
                 }
                 else {
-                    detect();
+                    Drupal.getCityByIp();
                 }
 
-                function detect() {
-                    detectAddress()
-                        .done(function (response) {
-                            if (response.location) {
-                                $.cookie('user_region', JSON.stringify(response.location), {path: "/"});
-                                _set_user_region(response.location);
-                            }
-                        })
-                        .fail(function (jqXHR, textStatus, errorThrown) {
-                            console.log(textStatus);
-                            console.log(errorThrown);
-                        });
-                }
-
-                function detectAddress() {
-                    var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
-                    var serviceUrl = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/iplocate/address";
-                    var params = {
-                        type: "GET",
-                        contentType: "application/json",
-                        headers: {"Authorization": "Token " + token}
-                    };
-                    return $.ajax(serviceUrl, params);
-                }
 
                 function _set_user_region(location) {
                     $("#user_region").html(location.data.settlement ? location.data.settlement : location.data.city);
@@ -164,7 +143,6 @@
 
                 /** ------------------------------------------ Регион (форма выбора) -------------------------------------------- */
                 // based on JQuery UI attached by autodialog module
-                //
                 $('.select-region').once(function () {
                     $('.select-region').bind('click', function () {
                         // инициализация и открытие диалога
@@ -208,6 +186,10 @@
                         $('.select-region-close').bind('click', function () {
                             $dialog.dialog('destroy');
                             $dialog.remove();
+                            // для корзины после смены региона - обновить
+                            if (window.location.pathname === "/cart") {
+                                window.location.reload();
+                            }
                         });
 
                         Drupal.attachBehaviors($dialog);
@@ -236,45 +218,11 @@
                 city.suggestions(options);
             }
 
-            Drupal.formatResult = function(value, currentValue, suggestion) {
-                var addressValue = makeAddressString(suggestion.data);
-                suggestion.value = addressValue;
-
-                return addressValue;
-            };
-
-            Drupal.removeDistricts = function (suggestions) {
-                return suggestions.filter(function (suggestion) {
-                    return suggestion.data.city_district === null;
-                });
-            };
-
             function updateRegion(location) {
                 $.cookie('user_region', JSON.stringify(location), {path: "/"});
                 _set_user_region(location);
             }
 
-            function join(arr /*, separator */) {
-                var separator = arguments.length > 1 ? arguments[1] : ", ";
-                return arr.filter(function (n) {
-                    return n
-                }).join(separator);
-            }
-
-            // составление строки списка
-            function makeAddressString(address) {
-                var not = [];
-                if ((address.settlement || address.city) && address.region != address.city) not.unshift([join([address.region_type, address.region], " ")]);
-                if (address.area) not.unshift(join([address.area_type, address.area], " "));
-
-                var city = join([address.city_type, address.city], " ");
-                var main = address.settlement ? join([address.settlement_type, address.settlement], " ") : city;
-
-                if (address.settlement) not.unshift(join([address.area_type, address.area], " "));
-
-                return '<div class="main">' + main + '</div>' +
-                    '<div class="not">' + join(not) + '</div>';
-            }
 
 
             /* ------------------------------------------ Анимация добавления в корзину ----------------------------- */
@@ -474,6 +422,123 @@
                 return (t >= b && t <= e);
             }
         }
+    };
+
+
+    /** -------------------- функции для работы с DaData ---------------------------------------------------------------- */
+    /* --------------------- геолокация --------------------------------------------- */
+    Drupal.getCityByIp = function () {
+        detectAddress()
+            .done(function (response) {
+                if (response.location) {
+                    $.cookie('user_region', JSON.stringify(response.location), {path: "/"});
+                    Drupal.loadDelivery(response.location);
+                    _set_user_region(response.location);
+                }
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                console.log(textStatus + ': ' + errorThrown);
+            });
+    };
+    function detectAddress() {
+        var serviceUrl = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/iplocate/address";
+        var params = {
+            type: "GET",
+            contentType: "application/json",
+            headers: {"Authorization": "Token " + token}
+        };
+        return $.ajax(serviceUrl, params);
+    }
+
+
+    /* --------------------- определить коды Доставок --------------------------------- */
+    Drupal.loadDelivery = function (suggestion) {
+        fetchDelivery(suggestion.data.kladr_id)
+            .done(function(response) {
+                if (response.suggestions.length) {
+                    var user_region = JSON.parse($.cookie('user_region'));
+                    $.extend(user_region.data, response.suggestions[0].data);
+                    $.cookie('user_region', JSON.stringify(user_region), {path: "/"});
+                }
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                console.log(textStatus + ': ' + errorThrown);
+            });
+    };
+    function fetchDelivery(kladr_id) {
+        var serviceUrl = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/delivery";
+        var request = {"query": kladr_id};
+        var params = {
+            type: "POST",
+            contentType: "application/json",
+            headers: {"Authorization": "Token " + token},
+            data: JSON.stringify(request)
+        };
+        return $.ajax(serviceUrl, params);
+    }
+
+    /* --------------------- определить индекс ---------------------------------------- */
+    Drupal.getPostalCode = function (suggestion) {
+        var promise = $.Deferred();
+        suggest(suggestion.unrestricted_value, 1).done(function(response) {
+            if (response.suggestions.length) {
+                promise.resolve(response.suggestions[0]);
+            }
+        });
+        return promise;
+    };
+    function suggest(query, count) {
+        var serviceUrl = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address";
+        var request = {
+            query: query,
+            count: count
+        };
+        var params = {
+            type: "POST",
+            contentType: "application/json",
+            headers: {
+                Authorization: "Token " + token
+            },
+            data: JSON.stringify(request)
+        };
+        return $.ajax(serviceUrl, params);
+    }
+
+    /* --------------------- форматирование ---------------------------------------- */
+    Drupal.formatResult = function(value, currentValue, suggestion) {
+        var addressValue = makeAddressString(suggestion.data);
+        suggestion.value = addressValue;
+
+        return addressValue;
+    };
+
+    // составление строки списка
+    function makeAddressString(address) {
+        var not = [];
+        if ((address.settlement || address.city) && address.region != address.city) not.unshift([join([address.region_type, address.region], " ")]);
+        if (address.area) not.unshift(join([address.area_type, address.area], " "));
+
+        var city = join([address.city_type, address.city], " ");
+        var main = address.settlement ? join([address.settlement_type, address.settlement], " ") : city;
+
+        if (address.settlement) not.unshift(join([address.area_type, address.area], " "));
+
+        return '<div class="main">' + main + '</div>' +
+            '<div class="not">' + join(not) + '</div>';
+    }
+
+    function join(arr /*, separator */) {
+        var separator = arguments.length > 1 ? arguments[1] : ", ";
+        return arr.filter(function (n) {
+            return n
+        }).join(separator);
+    }
+
+    /* --------------------- удалить районы ---------------------------------------- */
+    Drupal.removeDistricts = function (suggestions) {
+        return suggestions.filter(function (suggestion) {
+            return suggestion.data.city_district === null;
+        });
     };
 
 })(jQuery, Drupal, this, this.document);

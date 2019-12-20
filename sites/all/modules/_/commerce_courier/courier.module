@@ -57,31 +57,26 @@ function courier_service_rate_order($shipping_service, $order)
 
     $field_name = commerce_physical_order_shipping_field_name($order);
     $shipping_profile = $order_wr->{$field_name}->value();
+    $data = json_decode($shipping_profile->field_data['und'][0]['value'], true);
 
-    if (!empty($shipping_profile->field_zipcode_calc['und'][0]['value'])) {
-        if (!empty($shipping_profile->field_data['und'][0]['value'])) {
-            $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+    if (isset($data['boxberry']['response'])) {
+        // если стоит 1, стоимость ставить от BB
+        $to_door_cost = variable_get('courier_delivery_cost', 150) == 1 ? $data['boxberry']['response']['cost_data']['price_service'] : variable_get('courier_delivery_cost', 150);
+        $to_point_cost = $data['boxberry']['response']['cost_data']['price_base'];
 
-            if (isset($data['boxberry']['response'])) {
-                // если стоит 1, стоимость ставить от BB
-                $to_door_cost = variable_get('courier_delivery_cost', 150) == 1 ? $data['boxberry']['response']['cost_data']['price_service'] : variable_get('courier_delivery_cost', 150);
-                $to_point_cost = $data['boxberry']['response']['cost_data']['price_base'];
+        $amount = $to_point_cost + $to_door_cost;
 
-                $amount = $to_point_cost + $to_door_cost;
-
-                if (!_commerce_helper_non_free_shipping($order)) {
-                    $amount = $to_door_cost;
-                }
-                else {
-                    // для Владивостока и многих других почему-то до пункта выдачи выдаёт нулевую стоимость
-                    if ($to_point_cost == 0) {
-                        $rate['data']['errors'][] = 'ошибка при расчёте стоимости';
-                        return FALSE;
-                    }
-                }
-                $rate['amount'] = ceil($amount) * 100;
+        if (!_commerce_helper_non_free_shipping($order)) {
+            $amount = $to_door_cost;
+        }
+        else {
+            // для Владивостока и многих других почему-то до пункта выдачи выдаёт нулевую стоимость
+            if ($to_point_cost == 0) {
+                $rate['data']['errors'][] = 'ошибка при расчёте стоимости';
+                return FALSE;
             }
         }
+        $rate['amount'] = ceil($amount) * 100;
     }
 
     return $rate['amount'] ? $rate : false;

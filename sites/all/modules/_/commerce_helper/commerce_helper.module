@@ -7,6 +7,8 @@
 // при ноле ограничений нет
 define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_weight', 0));
 
+include "includes/commerce_helper.region.inc";
+
 /**
  * Implements hook_menu().
  */
@@ -95,6 +97,25 @@ function commerce_helper_module_implements_alter(&$implementations, $hook)
     }
 }
 
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_helper_theme() {
+    return array(
+        // шаблон страницы об оформленном заказе
+        'commerce_checkout_completion_message' => array(
+            'template' => 'templates/commerce-checkout-completion-message',
+            'variables' => array('order' => NULL),
+        ),
+        // шаблон для печати содержимого заказа
+        'order_print_form' => array(
+            'variables' => array('order_id' => NULL),
+            'template' => 'order-print-form',
+        ),
+    );
+}
+
 /**
  * Implements hook_cron().
  */
@@ -118,24 +139,6 @@ function commerce_helper_cron() {
             watchdog('commerce_cart', 'Удалено ' . count($order_ids) . ' анонимных корзин', NULL);
         }
     }
-}
-
-/**
- * Implements hook_theme().
- */
-function commerce_helper_theme() {
-    return array(
-        // шаблон страницы об оформленном заказе
-        'commerce_checkout_completion_message' => array(
-            'template' => 'templates/commerce-checkout-completion-message',
-            'variables' => array('order' => NULL),
-        ),
-        // шаблон для печати содержимого заказа
-        'order_print_form' => array(
-            'variables' => array('order_id' => NULL),
-            'template' => 'order-print-form',
-        ),
-    );
 }
 
 /**
@@ -1385,61 +1388,73 @@ function commerce_helper_commerce_price_component_total_coupons($order)
  */
 function _commerce_helper_non_free_shipping($order)
 {
-    $order_wr = entity_metadata_wrapper('commerce_order', $order);
-    $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
-    $physical_weight = commerce_physical_order_weight($order, 'kg');
+    $reason = &drupal_static(__FUNCTION__);
 
-    // причина отказа в бесплатной доставке
-    $reason = [];
+    if (!$reason) {
+        $order_wr = entity_metadata_wrapper('commerce_order', $order);
+        $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
+        $physical_weight = commerce_physical_order_weight($order, 'kg');
 
-    // получить платные регионы и сделать привязку
-    // по зонам
-    if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
-        $tree = taxonomy_get_tree($vid);
+        // причина отказа в бесплатной доставке
+        $reason = [];
 
-        // выбран ли Регион
-        $field_name = commerce_physical_order_shipping_field_name($order);
-        if ($shipping_profile = $order_wr->{$field_name}->value()) {
-            $shipping_profile = $order_wr->{$field_name}->value();
-            $region = $shipping_profile->field_region['und'][0]['value'];
+        // получить платные регионы и сделать привязку
+        // по зонам
+        if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
+            $tree = taxonomy_get_tree($vid);
 
-            // три тарифные Зоны
-            foreach ([3, 2, 1] as $zindex) {
-                $non_free_amount = variable_get('zone' . $zindex . '_amount', 0);
+            // Регион пользователя
+            $region = '';
+            $field_name = commerce_physical_order_shipping_field_name($order);
+            if (isset($_COOKIE['user_region']) && $cookie = json_decode($_COOKIE['user_region'], TRUE)) {
+                // в первую очередь проверяем куки
+                // так как регион могли сменить за пределами чекаута
+                $region = $cookie['data']['region'] . ' ' . $cookie['data']['region_type_full'];
+            }
+            elseif ($shipping_profile = $order_wr->{$field_name}->value()) {
+                $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+                $region = $data['region']['data']['region'] . ' ' . $data['region']['data']['region_type_full'];
+            }
 
-                // если сумма не попадает в бесплатный промежуток Тарифной Зоны
-                if ($products_amount_base < $non_free_amount * 100) {
+            if ($region) {
+                // три тарифные Зоны
+                foreach ([3, 2, 1] as $zindex) {
+                    $non_free_amount = variable_get('zone' . $zindex . '_amount', 0);
 
-                    $non_free_regions = [];
-                    if ($non_free_regions_tids = variable_get('zone' . $zindex . '_regions', [])) {
-                        // получить список всех регионов текущей Зоны
-                        foreach ($tree as $term) {
-                            if (in_array($term->tid, $non_free_regions_tids)) {
-                                $non_free_regions[] = $term->name;
+                    // если сумма не попадает в бесплатный промежуток Тарифной Зоны
+                    if ($products_amount_base < $non_free_amount * 100) {
+
+                        $non_free_regions = [];
+                        if ($non_free_regions_tids = variable_get('zone' . $zindex . '_regions', [])) {
+                            // получить список всех регионов текущей Зоны
+                            foreach ($tree as $term) {
+                                if (in_array($term->tid, $non_free_regions_tids)) {
+                                    $non_free_regions[] = $term->name;
+                                }
                             }
                         }
-                    }
-                    // если регион попадает в заданный список Тарифной Зоны
-                    // или регионы в Зоне 1 не заданы, то для оставшихся
-                    if (($non_free_regions && in_array($region, $non_free_regions))
-                        || (!$non_free_regions && $zindex == 1)) {
-                        $reason = [
-                            'reason' => 'amount',
-                            'amount' => $non_free_amount,
-                            'text' => '<a href="/info/delivery">Недостаточная сумма заказа</a>'
-                        ];
-                        break;
+                        // если регион попадает в заданный список Тарифной Зоны
+                        // или регионы в Зоне 1 не заданы, то для оставшихся
+                        if (($non_free_regions && in_array($region, $non_free_regions))
+                            || (!$non_free_regions && $zindex == 1)) {
+                            $reason = [
+                                'reason' => 'amount',
+                                'amount' => $non_free_amount,
+                                'text' => '<a href="/info/delivery">почему доставка платная?</a>'
+                            ];
+                            break;
+                        }
                     }
                 }
             }
         }
-    }
 
-    if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT == 0 && CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT <= $physical_weight['weight']) {
-        $reason = [
-            'reason' => 'weight',
-            'text' => '<a href="/info/delivery">Превышение по весу</a>'
-        ];
+        if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT == 0 && CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT <= $physical_weight['weight']) {
+            $reason = [
+                'reason' => 'weight',
+                'text' => '<a href="/info/delivery">почему доставка платная?</a>'
+            ];
+        }
     }
 
     return $reason ? $reason : false;
