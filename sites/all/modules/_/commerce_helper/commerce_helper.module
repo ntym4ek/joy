@@ -1448,7 +1448,7 @@ function _commerce_helper_non_free_shipping($order)
             }
         }
 
-        if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT == 0 && CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT > $physical_weight['weight']) {
+        if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT != 0 && $physical_weight['weight'] > CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT) {
             $reason = [
                 'reason' => 'weight',
                 'text' => '<a href="/info/delivery">почему доставка платная?</a>'
