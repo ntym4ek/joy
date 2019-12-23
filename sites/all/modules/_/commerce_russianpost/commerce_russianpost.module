@@ -184,7 +184,6 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
                     $response = commerce_russianpost_api_request($rate_request, t('Requesting shipping rates for package in Order @order_number', ['@order_number' => $order->order_number]));
 
                     if ($response) {
-//                        $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
                         if (empty($response['services']['message']['error'])) {
                             foreach (commerce_russianpost_parse_rate_response($response['services']) as $service_name => $rate) {
                                 if (!_commerce_helper_non_free_shipping($order)) {

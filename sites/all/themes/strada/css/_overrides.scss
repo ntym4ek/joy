@@ -406,7 +406,7 @@ table.sticky-header {
 .form-group .description {
   color: $gray-light;
   font-size: 12px;
-  margin: 2px 0 0;
+  //margin: 2px 0 0;          отключено, пустое поле будет давать выступы
   padding: 0;
 }
 .panel-heading {

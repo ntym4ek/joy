@@ -116,8 +116,6 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
             });
 
             /** ------------------- Регион (автоопределение) -------------------------------------------- */
-            //$.cookie('user_region', null, {path: "/"});
-
             // если в шапке присутствует выбор региона
             if ($('#user_region').is('a')) {
 
@@ -129,16 +127,14 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
 
                 // определение региона
                 if ($.cookie('user_region')) {
-                    _set_user_region(JSON.parse($.cookie('user_region')));
+                    var user_region = JSON.parse($.cookie('user_region'));
+                    $("#user_region").html(user_region.data.settlement ? user_region.data.settlement : user_region.data.city);
                 }
                 else {
-                    Drupal.getCityByIp();
+                    Drupal.getCityByIp().done(onSelect);
                 }
 
 
-                function _set_user_region(location) {
-                    $("#user_region").html(location.data.settlement ? location.data.settlement : location.data.city);
-                }
 
 
                 /** ------------------------------------------ Регион (форма выбора) -------------------------------------------- */
@@ -148,8 +144,8 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
                         // инициализация и открытие диалога
                         var city = "";
                         if ($.cookie('user_region')) {
-                            var location = JSON.parse($.cookie('user_region'));
-                            city = location.data.settlement ? location.data.settlement : location.data.city
+                            var user_region = JSON.parse($.cookie('user_region'));
+                            city = user_region.data.settlement ? user_region.data.settlement : user_region.data.city
                         }
 
                         var html = '<div class="select-region-form">\n' +
@@ -211,18 +207,23 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
                     bounds: "city-settlement",
                     formatResult: Drupal.formatResult,
                     onSuggestionsFetch: Drupal.removeDistricts,
-                    onSelect: updateRegion,
+                    onSelect: onSelect,
                     scrollOnFocus: false // убирает проблему с дрожанием экрана на iphone
                 };
 
                 city.suggestions(options);
             }
 
-            function updateRegion(location) {
-                $.cookie('user_region', JSON.stringify(location), {path: "/"});
-                _set_user_region(location);
+            function onSelect(suggestion) {
+                // ждём выполнения всех запросов и пишем куку
+                $.when(Drupal.loadDelivery(suggestion), Drupal.getPostalCode(suggestion))
+                    .done(function(arg1, arg2) {
+                        $.extend(suggestion.data, arg1.data, arg2.data);
+                        $.cookie('user_region', JSON.stringify(suggestion), {path: "/"});
+                        var user_region = JSON.parse($.cookie('user_region'));
+                        $("#user_region").html(user_region.data.settlement ? user_region.data.settlement : user_region.data.city);
+                    });
             }
-
 
 
             /* ------------------------------------------ Анимация добавления в корзину ----------------------------- */
@@ -428,17 +429,12 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
     /** -------------------- функции для работы с DaData ---------------------------------------------------------------- */
     /* --------------------- геолокация --------------------------------------------- */
     Drupal.getCityByIp = function () {
+        var promise = $.Deferred();
         detectAddress()
             .done(function (response) {
-                if (response.location) {
-                    $.cookie('user_region', JSON.stringify(response.location), {path: "/"});
-                    Drupal.loadDelivery(response.location);
-                    _set_user_region(response.location);
-                }
-            })
-            .fail(function (jqXHR, textStatus, errorThrown) {
-                console.log(textStatus + ': ' + errorThrown);
+                if (response) { promise.resolve(response.location); }
             });
+        return promise;
     };
     function detectAddress() {
         var serviceUrl = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/iplocate/address";
@@ -453,17 +449,12 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
 
     /* --------------------- определить коды Доставок --------------------------------- */
     Drupal.loadDelivery = function (suggestion) {
+        var promise = $.Deferred();
         fetchDelivery(suggestion.data.kladr_id)
             .done(function(response) {
-                if (response.suggestions.length) {
-                    var user_region = JSON.parse($.cookie('user_region'));
-                    $.extend(user_region.data, response.suggestions[0].data);
-                    $.cookie('user_region', JSON.stringify(user_region), {path: "/"});
-                }
-            })
-            .fail(function (jqXHR, textStatus, errorThrown) {
-                console.log(textStatus + ': ' + errorThrown);
+                if (response.suggestions.length) { promise.resolve(response.suggestions[0]); } else promise.resolve({});
             });
+        return promise;
     };
     function fetchDelivery(kladr_id) {
         var serviceUrl = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/delivery";
@@ -480,11 +471,10 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
     /* --------------------- определить индекс ---------------------------------------- */
     Drupal.getPostalCode = function (suggestion) {
         var promise = $.Deferred();
-        suggest(suggestion.unrestricted_value, 1).done(function(response) {
-            if (response.suggestions.length) {
-                promise.resolve(response.suggestions[0]);
-            }
-        });
+        suggest(suggestion.unrestricted_value, 1)
+            .done(function(response) {
+                if (response.suggestions.length) { promise.resolve(response.suggestions[0]); } else promise.resolve({});
+            });
         return promise;
     };
     function suggest(query, count) {

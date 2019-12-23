@@ -59,8 +59,8 @@ function boxberry_service_rate_order($shipping_service, $order)
 
         if ($rate_request['zipcode']) {
             $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
-            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400)); // день в кэше
-//            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // день в кэше
+//            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400)); // день в кэше
+            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // день в кэше
 
             if (!$cache) {
                 // при переходе на страницу оформления запрос на расчёт выполняется дважды:
@@ -78,15 +78,17 @@ function boxberry_service_rate_order($shipping_service, $order)
                         $order_wr = entity_metadata_wrapper('commerce_order', $order);
                         $field_name = commerce_physical_order_shipping_field_name($order);
 
-                        $data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
-                        $data['boxberry']['response'] = $response;
-                        $order_wr->{$field_name}->field_data = json_encode($data);
+                        // сохраняем стоимость доставки
+                        $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+                        $field_data['boxberry'] = $response;
+                        $order_wr->{$field_name}->field_data = json_encode($field_data);
                         $order_wr->{$field_name}->save();
 
                         $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
                         $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
-                        if (!empty($response['point_data'])) $rate['data']['address'] = $response['point_data']['Address'];
-
+                        if (!empty($field_data['boxberry']['point_data'])) {
+                            $rate['data']['address'] = $field_data['boxberry']['point_data']['address'];
+                        }
 
                         if (!_commerce_helper_non_free_shipping($order)) {
                             $rate['amount'] = 0;
@@ -126,24 +128,27 @@ function boxberry_build_rate_request($order)
     $shipping_profile = $order_wr->{$field_name}->value();
 
     // базовые данные
-    $data = json_decode($shipping_profile->field_data['und'][0]['value'], true);
-    $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
-    $weight = commerce_physical_order_weight($order, 'g')['weight'];
-    $amount = $order_wr->commerce_order_total->value()['amount']/100;
+    $zipcode = $weight = $amount = $target_point = '';
+    if (isset($shipping_profile->field_data['und'][0]['value'])) {
+        $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+        $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
+        $weight = commerce_physical_order_weight($order, 'g')['weight'];
+        $amount = $order_wr->commerce_order_total->value()['amount'] / 100;
 
-    // возможно пункт уже выбран, нужно получить данные о нём
-    $target_point = empty($data['region']['data']['boxberry_id']) ? null : $data['region']['data']['boxberry_id'];
-    if (!empty($data['boxberry'])) {
-        $target_point = empty($data['boxberry']['id']) ? '' : $data['boxberry']['id'];
+        // возможно пункт уже выбран, нужно получить данные о нём
+        $target_point = empty($data['region']['data']['boxberry_id']) ? NULL : $data['region']['data']['boxberry_id'];
+        if (!empty($data['boxberry'])) {
+            $target_point = empty($data['boxberry']['point']['id']) ? '' : $data['boxberry']['point']['id'];
 
-        // удаление старых неактуальных данных, занесенных Сдэком в старом формате
-        if (isset($data['profiles'])) {
-            $shipping_profile_wr = $order_wr->{$field_name};
-            $shipping_profile_wr->field_data->set(NULL);
-            $shipping_profile_wr->save();
+            // удаление старых неактуальных данных, занесенных Сдэком в старом формате
+            if (isset($data['profiles'])) {
+                $shipping_profile_wr = $order_wr->{$field_name};
+                $shipping_profile_wr->field_data->set(NULL);
+                $shipping_profile_wr->save();
 
-            $rate['data']['errors'][] = 'выбрать пункт';
-            return $rate;
+                $rate['data']['errors'][] = 'выбрать пункт';
+                return $rate;
+            }
         }
     }
 
@@ -160,15 +165,17 @@ function boxberry_build_rate_request($order)
 function boxberry_api_request($data)
 {
     // стоимость доставки
-//    $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=DeliveryCosts&weight=' . $data['weight'] . '&zip=' . $data['zipcode'] . '&ordersum=' . $data['amount'];
-    $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=DeliveryCosts&weight=' . $data['weight'] . '&target=' . $data['target_point'] . '&ordersum=' . $data['amount'];
+    $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=DeliveryCosts' .
+        '&weight=' . $data['weight'] .
+        ($data['zipcode'] ? '&zip=' . $data['zipcode'] : '') .
+        ($data['target_point'] ? '&target=' . $data['target_point'] : '') .
+        '&ordersum=' . $data['amount'];
     $handle = fopen($url, "rb"); $contents = stream_get_contents($handle); fclose($handle);
     $response['cost_data'] = json_decode($contents, TRUE);
 
     // описание точки
     if ($data['target_point']) {
         $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=PointsDescription&code=' . $data['target_point'];
-//        $url = 'http://api.boxberry.de/json.php?token=93542.rjpqabfe&method=PointsDescription&code=' . $data['target_point'];
         $handle = fopen($url, "rb");
         $contents = stream_get_contents($handle);
         fclose($handle);

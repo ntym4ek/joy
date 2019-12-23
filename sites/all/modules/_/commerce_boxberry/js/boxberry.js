@@ -10,7 +10,6 @@
             });
 
             function boxberry_open() {
-                // var city = $.cookie('boxberry_locality') ? JSON.parse($.cookie('boxberry_locality')) : '';
                 var user_region = JSON.parse($.cookie('user_region'));
                 var city = user_region.value;
                 var order_amount = $(".boxberry-order-amount").val();
@@ -20,8 +19,11 @@
             }
 
             function callback_function(result) {
-                $.cookie('user_boxberry', JSON.stringify(result), {path: "/"});
-                // для валидации на сервере
+                var data = JSON.parse($(".field-name-field-data textarea").val());
+                if (!data.boxberry) data.boxberry = {};
+                data.boxberry.point_data = result;
+                $(".field-name-field-data textarea").val(JSON.stringify(data));
+
                 $('.boxberry-set').val('1');
                 // обновление страницы
                 $("[id^='edit-commerce-shipping-recalc']").click();

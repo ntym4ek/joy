@@ -22,7 +22,7 @@
                     bounds: "city-settlement",
                     formatResult: Drupal.formatResult,
                     onSuggestionsFetch: Drupal.removeDistricts,
-                    onSelect: select,
+                    onSelect: onSelect,
                     scrollOnFocus: false, // убирает проблему с дрожанием экрана на iphone
                     onSelectNothing: nothingSelected,
                 };
@@ -32,10 +32,9 @@
                 $('body').once(function () {
                     if ($.cookie('user_region')) {
                         // проверить наличие куки с регионом
-                        var location = JSON.parse($.cookie('user_region'));
+                        var user_region = JSON.parse($.cookie('user_region'));
                         if (!$('.commerce-checkout-form-checkout .has-error').is('div')) {
-                            city.suggestions().setSuggestion(location);
-                            updateFields(location);
+                            updatePage(user_region);
                         }
                     }
                 });
@@ -43,14 +42,23 @@
 
 
                 // обработчик на выбор населенного пункта
-                function select(suggestion) {
-                    if (suggestion.data.postal_code) {
-                        updatePage(suggestion);
-                    } else {
-                        Drupal.getPostalCode(suggestion).done(function(result) {
-                            updatePage(result);
-                        });
+                function onSelect(suggestion) {
+                    // массив запросов, выполнение которых нужно дождаться
+                    var promises_arr = [];
+                    if (!suggestion.data.postal_code) {
+                        promises_arr.push(Drupal.getPostalCode(suggestion));
                     }
+                    promises_arr.push(Drupal.loadDelivery(suggestion));
+
+                    // действие по окончании выполнения запросов
+                    $.when.apply($, promises_arr)
+                        .done(function(arg1, arg2) {
+                            arg1 = arg1 ? arg1.data : {};
+                            arg2 = arg2 ? arg2.data : {};
+                            $.extend(suggestion.data, arg1, arg2);
+                            updatePage(suggestion);
+                        });
+
                 }
 
                 // обработчик, когда ничего не выбрано из списка
@@ -60,29 +68,51 @@
                     // актуально при Автозаполнеии в браузере
                     var city = $(this).suggestions();
                     if (city.suggestions[0] !== undefined) {
-                        select(city.suggestions[0]);
+                        onSelect(city.suggestions[0]);
                     }
                 }
 
                 // выбор региона для страницы Чекаута
                 function updatePage(suggestion) {
                     $.cookie('user_region', JSON.stringify(suggestion), {path: "/"});
-                    // если сменили город, то очистить поле с данными пункта выдачи
-                    $.cookie('user_boxberry', null, {path: "/"});
                     city.suggestions().setSuggestion(suggestion);
                     updateFields(suggestion);
                 }
 
-                function clearFields() {
-                    $('.field-name-field-city').find('input[name*="field_city"]').val('');
-                    $('.field-name-field-city').addClass('has-error');
-                }
                 function updateFields(suggestion) {
+                    var field_data = $(".field-name-field-data textarea").val();
+                    var data = {};
+                    if (field_data) {
+                        data = JSON.parse(field_data);
+                    }
+
+                    // если сменили город, очистить поле с данными пункта выдачи при несовпадении
+                    if (data.boxberry) {
+                        if (data.region.data.kladr_id != suggestion.data.kladr_id) {
+                            delete data.boxberry;
+                            $(".field-name-field-data textarea").val(JSON.stringify(data));
+                        }
+                    }
+
+                    // без индекса адрес не принимаем
                     if (suggestion.data.postal_code) {
                         $('.field-name-field-city').removeClass('has-error');
+
+                        data.region = suggestion;
+                        $(".field-name-field-data textarea").val(JSON.stringify(data));
+                        $(".field-name-field-region input").val(suggestion.data.region_with_type);
+                        $(".field-name-field-zipcode-calc input").val(suggestion.data.postal_code);
                     } else {
-                        clearFields();
+                        $('.field-name-field-city').addClass('has-error').find('input[name*="field_city"]').val('');
+
+                        delete data.region;
+                        $(".field-name-field-data textarea").val(JSON.stringify(data));
+                        $(".field-name-field-region input").val("");
+                        $(".field-name-field-region input").val("");
+                        $(".field-name-field-zipcode-calc input").val("");
                     }
+
+
                     // обновляем форму
                     $(':input[id^="edit-commerce-shipping-recalc"]').click();
                 }

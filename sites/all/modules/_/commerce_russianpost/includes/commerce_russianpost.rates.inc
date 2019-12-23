@@ -32,8 +32,12 @@ function commerce_russianpost_build_rate_request($order)
     // Determine the shipping profile reference field name for the order.
     $field_name = commerce_physical_order_shipping_field_name($order);
     $shipping_profile = $order_wrapper->{$field_name}->value();
-    $data = json_decode($shipping_profile->field_data['und'][0]['value'], true);
-    $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
+
+    $zipcode = '';
+    if (isset($shipping_profile->field_data['und'][0]['value'])) {
+        $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+        $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
+    }
 
     // Calculate order total (products only) and convert it to RUB.
     $order_total = commerce_line_items_total($order_wrapper->commerce_line_items, array('product'));

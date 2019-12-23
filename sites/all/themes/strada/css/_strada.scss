@@ -1449,6 +1449,7 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
     .commerce-line-item-views-form .view-items,
     .commerce-checkout-form-checkout .ch-form-container {
         padding-right: $grid-gutter-width*3;
+        padding-bottom: 60px;
     }
 }
 
