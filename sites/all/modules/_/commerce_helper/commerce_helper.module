@@ -1,8 +1,5 @@
 <?php
 
-// сумма от которой начинается бесплатная доставка
-// при ноле доставка считается всегда
-//define('CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT', variable_get('free_shipping_sum', 0));
 // вес в КГ до которого доставка может быть бесплатной
 // при ноле ограничений нет
 define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_weight', 0));
@@ -1397,10 +1394,20 @@ function _commerce_helper_non_free_shipping($order)
         // причина отказа в бесплатной доставке
         $reason = [];
 
+        // если параметры не заданы, всё платно
+        $non_free_amount = variable_get('zone1_amount', 0);
+        if ($non_free_amount === 0) {
+            return [
+                'reason' => 'no_free',
+                'amount' => $non_free_amount,
+                'text' => '<a href="/info/delivery">почему доставка платная?</a>'
+            ];
+        }
+
         // получить платные регионы и сделать привязку
         // по зонам
         if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
-            $tree = taxonomy_get_tree($vid);
+            $tree = taxonomy_get_tree($vid, 0, null, TRUE);
 
             // Регион пользователя
             $region = '';
@@ -1408,11 +1415,11 @@ function _commerce_helper_non_free_shipping($order)
             if (isset($_COOKIE['user_region']) && $cookie = json_decode($_COOKIE['user_region'], TRUE)) {
                 // в первую очередь проверяем куки
                 // так как регион могли сменить за пределами чекаута
-                $region = $cookie['data']['region'] . ' ' . $cookie['data']['region_type_full'];
+                $region = $cookie['data']['region_kladr_id'];
             }
             elseif ($shipping_profile = $order_wr->{$field_name}->value()) {
                 $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
-                $region = $data['region']['data']['region'] . ' ' . $data['region']['data']['region_type_full'];
+                $region = $data['region']['data']['region_kladr_id'];
             }
 
             if ($region) {
@@ -1421,14 +1428,14 @@ function _commerce_helper_non_free_shipping($order)
                     $non_free_amount = variable_get('zone' . $zindex . '_amount', 0);
 
                     // если сумма не попадает в бесплатный промежуток Тарифной Зоны
-                    if ($products_amount_base < $non_free_amount * 100) {
+                    if ($products_amount_base < $non_free_amount * 100){
 
                         $non_free_regions = [];
                         if ($non_free_regions_tids = variable_get('zone' . $zindex . '_regions', [])) {
                             // получить список всех регионов текущей Зоны
                             foreach ($tree as $term) {
                                 if (in_array($term->tid, $non_free_regions_tids)) {
-                                    $non_free_regions[] = $term->name;
+                                    $non_free_regions[] = $term->field_kladr['und'][0]['value'];
                                 }
                             }
                         }
@@ -1448,7 +1455,7 @@ function _commerce_helper_non_free_shipping($order)
             }
         }
 
-        if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT != 0 && $physical_weight['weight'] > CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT) {
+        if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT != 0 && $physical_weight['weight'] >= CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT) {
             $reason = [
                 'reason' => 'weight',
                 'text' => '<a href="/info/delivery">почему доставка платная?</a>'

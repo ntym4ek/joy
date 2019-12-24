@@ -426,7 +426,7 @@ function mailing_mail($key, &$message, $params)
                 '<p>Совсем недавно в магазине Joy Вы положили товары в корзину, но так и не оформили заказ.<br />' .
                 'Мы сохранили их для Вас.</p>' .
                 '<p>В любое время Вы сможете продолжить покупки или завершить оформление заказа.<br />' .
-                (variable_get('free_shipping_sum', 0) ? 'А при покупке от ' . variable_get('free_shipping_sum') . ' рублей мы доставим ваш заказ бесплатно.' : '') . '</p>' .
+//                (variable_get('free_shipping_sum', 0) ? 'А при покупке от ' . variable_get('free_shipping_sum') . ' рублей мы доставим ваш заказ бесплатно.' : '') . '</p>' .
                 '<p>Если у Вас возникли какие-то вопросы при оформлении заказа или нужна консультация по товару, позвоните по бесплатному номеру 8-800-550-28-85 и мы обязательно поможем.</p>' .
                 '<br />' .
                 '<div style="text-align: center;"><a href="' . $GLOBALS['base_root'] . '" style="display: inline-block; background: #0a6526; border-radius: 4px; color: #fff; padding: 8px 15px; text-decoration: none; ">Продолжить покупки</a></div>';

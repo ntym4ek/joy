@@ -10,13 +10,6 @@
  */
 function commerce_helper_settings($form, &$form_state)
 {
-    $form['free_shipping_sum'] = array(
-        '#type' => 'textfield',
-        '#title' => 'Бесплатная доставка от суммы',
-        '#description' => 'Минимальная сумма заказа для обнуления стоимости доставки. 0 - отключено',
-        '#default_value' => variable_get('free_shipping_sum', 0),
-        '#required' => TRUE,
-    );
     $form['free_shipping_show_sum'] = array(
         '#type' => 'textfield',
         '#title' => 'Сообщение о бесплатной доставке',
@@ -67,7 +60,7 @@ function commerce_helper_settings($form, &$form_state)
         '#chosen' => TRUE,
         '#multiple' => TRUE,
         '#options' => $regions,
-        '#description' => 'Список регионов, для которых не действует бесплатная доставка. Если список пустой, то условия будут действовать для всех регионов не вошедших в Зону 2 и 3.',
+        '#description' => 'Список регионов, для которых действует условие бесплатной доставки. Если список пустой, то условия будут действовать для всех регионов не вошедших в Зону 2 и 3.',
         '#default_value' => variable_get('zone1_regions', []),
     );
 
@@ -83,7 +76,7 @@ function commerce_helper_settings($form, &$form_state)
         '#chosen' => TRUE,
         '#multiple' => TRUE,
         '#options' => $regions,
-        '#description' => 'Список регионов, для которых не действует бесплатная доставка',
+        '#description' => 'Список регионов, для которых действует условие бесплатной доставки.',
         '#default_value' => variable_get('zone2_regions', []),
     );
 
@@ -99,7 +92,7 @@ function commerce_helper_settings($form, &$form_state)
         '#chosen' => TRUE,
         '#multiple' => TRUE,
         '#options' => $regions,
-        '#description' => 'Список регионов, для которых не действует бесплатная доставка',
+        '#description' => 'Список регионов, для которых действует условие бесплатной доставки.',
         '#default_value' => variable_get('zone3_regions', []),
     );
 

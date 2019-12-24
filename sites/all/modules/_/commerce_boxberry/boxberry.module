@@ -80,7 +80,8 @@ function boxberry_service_rate_order($shipping_service, $order)
 
                         // сохраняем стоимость доставки
                         $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
-                        $field_data['boxberry'] = $response;
+                        if (empty($field_data['boxberry'])) $field_data['boxberry'] = [];
+                        $field_data['boxberry'] = array_merge($field_data['boxberry'], $response);
                         $order_wr->{$field_name}->field_data = json_encode($field_data);
                         $order_wr->{$field_name}->save();
 

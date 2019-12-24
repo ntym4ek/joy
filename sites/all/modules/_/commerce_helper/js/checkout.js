@@ -88,7 +88,7 @@
 
                     // если сменили город, очистить поле с данными пункта выдачи при несовпадении
                     if (data.boxberry) {
-                        if (data.region.data.kladr_id != suggestion.data.kladr_id) {
+                        if (!data.region || data.region.data.kladr_id != suggestion.data.kladr_id) {
                             delete data.boxberry;
                             $(".field-name-field-data textarea").val(JSON.stringify(data));
                         }
