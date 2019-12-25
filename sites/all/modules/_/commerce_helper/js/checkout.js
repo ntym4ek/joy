@@ -22,7 +22,7 @@
                     bounds: "city-settlement",
                     formatResult: Drupal.formatResult,
                     onSuggestionsFetch: Drupal.removeDistricts,
-                    onSelect: updatePage,
+                    onSelect: onSelect,
                     scrollOnFocus: false, // убирает проблему с дрожанием экрана на iphone
                     onSelectNothing: nothingSelected,
                 };
@@ -31,74 +31,90 @@
                 // один раз определить значение для данной страницы
                 $('body').once(function () {
                     if ($.cookie('user_region')) {
-                        // проверить наличие куки с регионом для страницы чекаута
-                        var location = JSON.parse($.cookie('user_region'));
+                        // проверить наличие куки с регионом
+                        var user_region = JSON.parse($.cookie('user_region'));
                         if (!$('.commerce-checkout-form-checkout .has-error').is('div')) {
-                            if (location.data.postal_code !== undefined && location.data.postal_code !== null) {
-                                city.suggestions().setSuggestion(location);
-                                updateFields(location);
-                            } else {
-                                clearFields();
-                                $.cookie('user_region', null);
-                                // попробовать установить глобальный для сайта регион
-                                if (location = JSON.parse($.cookie('user_region'))) {
-                                    if (location.data.postal_code !== undefined && location.data.postal_code !== null) {
-                                        city.suggestions().setSuggestion(location);
-                                        updateFields(location);
-                                    }
-                                }
-                            }
+                            updatePage(user_region);
                         }
                     }
                 });
 
+
+
+                // обработчик на выбор населенного пункта
+                function onSelect(suggestion) {
+                    // массив запросов, выполнение которых нужно дождаться
+                    var promises_arr = [];
+                    if (!suggestion.data.postal_code) {
+                        promises_arr.push(Drupal.getPostalCode(suggestion));
+                    }
+                    promises_arr.push(Drupal.loadDelivery(suggestion));
+
+                    // действие по окончании выполнения запросов
+                    $.when.apply($, promises_arr)
+                        .done(function(arg1, arg2) {
+                            arg1 = arg1 ? arg1.data : {};
+                            arg2 = arg2 ? arg2.data : {};
+                            $.extend(suggestion.data, arg1, arg2);
+                            updatePage(suggestion);
+                        });
+
+                }
+
+                // обработчик, когда ничего не выбрано из списка
+                // выбрать первый вариант
                 function nothingSelected(aux) {
                     // если ничего не выбрано, но есть подсказки, вставить первую
                     // актуально при Автозаполнеии в браузере
                     var city = $(this).suggestions();
                     if (city.suggestions[0] !== undefined) {
-                        updatePage(city.suggestions[0]);
+                        onSelect(city.suggestions[0]);
                     }
                 }
 
                 // выбор региона для страницы Чекаута
                 function updatePage(suggestion) {
-                    // ставис короткую куку в день на эту страницу
-                    $.cookie('user_region', JSON.stringify(suggestion), {expire: 86400, path: "/checkout"});
-                    // если сменили город, то очистить поле с данными
-                    $(".field-name-field-data textarea").val('');
-
+                    $.cookie('user_region', JSON.stringify(suggestion), {path: "/"});
                     city.suggestions().setSuggestion(suggestion);
                     updateFields(suggestion);
                 }
 
-                function clearFields() {
-                    $('.field-name-field-city').find('input[name*="field_city"]').val('');
-                    $('.field-name-field-city').addClass('has-error');
-                    $('.field-name-field-zipcode-calc').find('input[name*="field_zipcode_calc"]').val('');
-                    $('.field-name-field-region').find('input[name*="field_region"]').val('');
-                    $.cookie('boxberry_locality', null);
-                }
                 function updateFields(suggestion) {
+                    var field_data = $(".field-name-field-data textarea").val();
+                    var data = {};
+                    if (field_data) {
+                        data = JSON.parse(field_data);
+                    }
+
+                    // если сменили город, очистить поле с данными пункта выдачи при несовпадении
+                    if (data.boxberry) {
+                        if (!data.region || data.region.data.kladr_id != suggestion.data.kladr_id) {
+                            delete data.boxberry;
+                            $(".field-name-field-data textarea").val(JSON.stringify(data));
+                        }
+                    }
+
+                    // без индекса адрес не принимаем
                     if (suggestion.data.postal_code) {
                         $('.field-name-field-city').removeClass('has-error');
-                        $('.field-name-field-zipcode-calc').find('input[name*="field_zipcode_calc"]').val(suggestion.data.postal_code);
-                        $('.field-name-field-region').find('input[name*="field_region"]').val(join([suggestion.data.region, suggestion.data.region_type_full], ' '));
-                        // сохраняем для Boxberry (чтобы он не обновляется при пересчёте)
-                        $.cookie('boxberry_locality', JSON.stringify(suggestion.unrestricted_value), {expire: 86400, path: "/checkout"});
+
+                        data.region = suggestion;
+                        $(".field-name-field-data textarea").val(JSON.stringify(data));
+                        $(".field-name-field-region input").val(suggestion.data.region_with_type);
+                        $(".field-name-field-zipcode-calc input").val(suggestion.data.postal_code);
                     } else {
-                        clearFields();
+                        $('.field-name-field-city').addClass('has-error').find('input[name*="field_city"]').val('');
+
+                        delete data.region;
+                        $(".field-name-field-data textarea").val(JSON.stringify(data));
+                        $(".field-name-field-region input").val("");
+                        $(".field-name-field-region input").val("");
+                        $(".field-name-field-zipcode-calc input").val("");
                     }
+
 
                     // обновляем форму
                     $(':input[id^="edit-commerce-shipping-recalc"]').click();
-                }
-
-                function join(arr /*, separator */) {
-                    var separator = arguments.length > 1 ? arguments[1] : ", ";
-                    return arr.filter(function (n) {
-                        return n
-                    }).join(separator);
                 }
             }
 
