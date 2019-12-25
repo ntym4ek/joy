@@ -1551,7 +1551,7 @@ function _get_order_info($order, $including_products = false)
 
                 $shipping['cost'] = commerce_currency_format($item_wr->commerce_total->amount->value() / 100, $item_wr->commerce_total->currency_code->value(), NULL, FALSE);
             }
-            else {
+            elseif ($item_wr->type->value() == 'product') {
                 $count++;
             }
         }
