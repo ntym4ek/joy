@@ -121,20 +121,16 @@
 
                 <div class="navbar-search">
                     <?php if (!$tsss): ?>
-<!--                    <form action="/search" id="search-api-header">-->
-<!--                        <div class="input-group">-->
-<!--                            <input type="text" class="form-control" placeholder="Я хочу купить..." name="s" value="--><?php //print $search_value; ?><!--">-->
-<!--                            <span class="input-group-btn">-->
-<!--                                <button class="btn btn-brand" type="submit">Найти</button>-->
-<!--                            </span>-->
-<!--                        </div>-->
-<!--                    </form>-->
-                    <?php
-                        $search_page = entity_load_single('search_api_page', 1);
-                        $search_form = drupal_get_form('search_api_page_search_form', $search_page);
-                        print drupal_render($search_form);
-                        ?>
-                    <?php endif; ?>
+                        <div class="navbar-search-mobile"><a class="btn btn-link"><i class="far fa-search"></i></a></div>
+                        <div class="navbar-search-pane">
+                            <div class="navbar-search-pane-close"><a class="btn btn-link"><i class="fal fa-times"></i></a></div>
+                        <?php
+                            $search_page = entity_load_single('search_api_page', 1);
+                            $search_form = drupal_get_form('search_api_page_search_form', $search_page);
+                            print drupal_render($search_form);
+                            ?>
+                        <?php endif; ?>
+                        </div>
                 </div>
 
                 <div class="navbar-user" role="navigation">

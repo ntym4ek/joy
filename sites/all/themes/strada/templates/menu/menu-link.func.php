@@ -64,7 +64,7 @@ function strada_menu_link__menu_main(array $variables)
         if ($depth == 1) {
             $attributes['class'][] = 'dropdown';
             $attributes['id'] = 'dropdown';
-            $options['attributes']['class'][] = 'dropdown-toggle btn btn-brand';
+            $options['attributes']['class'][] = 'dropdown-toggle btn btn-link';
             $options['attributes']['data-toggle'] = 'dropdown';
         }
     }

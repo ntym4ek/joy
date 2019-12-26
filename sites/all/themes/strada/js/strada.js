@@ -400,6 +400,15 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
                 }
             });
 
+            /* ------------------------------------- мобильная строка поиска ------------------------------ */
+            $('.navbar-search-mobile a').on('click', function(){
+                $('.navbar-search .navbar-search-pane').addClass('open');
+            });
+            $('.navbar-search-pane-close a').on('click', function(){
+                $('.navbar-search .navbar-search-pane').removeClass('open');
+            });
+
+
             /* ------------------------------------- Phone popover ---------------------------------------- */
             $('#phone_popover').popover({
                 html: true,
