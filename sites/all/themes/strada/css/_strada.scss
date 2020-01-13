@@ -279,6 +279,11 @@ div.divider {
             }
         }
 
+        //@media #{$mobile} {
+        //    .navbar-cart,
+        //    .navbar-user,
+        //    .navbar-wishlist { display: none; }
+        //}
     }
 
     .main-menu {
@@ -1195,6 +1200,7 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
  * ----------------------------------- Checkout -
  */
 .commerce-checkout-form-checkout {
+    margin-top: $grid-gutter-width*2;
     h4 {
         font-weight: 700;
         margin: 40px 0 20px 0;

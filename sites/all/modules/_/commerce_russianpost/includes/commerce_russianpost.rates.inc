@@ -22,8 +22,7 @@ function commerce_russianpost_build_rate_request($order)
     $api_key = variable_get('commerce_russianpost_api_key', '');
 
     $rate_request = array(
-        'site' => $customer_number,
-        'email' => $api_key,
+        'key' => $api_key,
     );
 
     // если выполняется запрос доступных сервисов

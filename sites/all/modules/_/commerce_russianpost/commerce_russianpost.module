@@ -253,7 +253,7 @@ function commerce_russianpost_api_request($params = array(), $message = '') {
         $queryString .= '&t=' . rawurlencode($params['postal-code']);
         $queryString .= '&w=' . $params['weight'] . '&v=' . $params['content-value'];
         $queryString .= isset($params['expected-mailing-date']) ? '&d=' . $params['expected-mailing-date'] : '';
-        $queryString .= '&st=' . $params['site'] . '&ml=' . $params['email'];
+        $queryString .= '&key=' . $params['key'];
         $queryString .= '&o=php&cs=utf-8';
 
         // Формируем URL запроса.

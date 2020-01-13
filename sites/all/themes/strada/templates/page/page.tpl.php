@@ -115,12 +115,14 @@
                     </a>
                 </div>
 
+                <?php if (!$tsss): ?>
                 <div class="navbar-menu" role="navigation">
-                    <?php if (!$tsss) print render($main_menu); ?>
+                    <?php print render($main_menu); ?>
                 </div>
+                <?php endif; ?>
 
+                <?php if (!$tsss): ?>
                 <div class="navbar-search">
-                    <?php if (!$tsss): ?>
                         <div class="navbar-search-mobile"><a class="btn btn-link"><i class="far fa-search"></i></a></div>
                         <div class="navbar-search-pane">
                             <div class="navbar-search-pane-close"><a class="btn btn-link"><i class="fal fa-times"></i></a></div>
@@ -128,22 +130,28 @@
                             $search_page = entity_load_single('search_api_page', 1);
                             $search_form = drupal_get_form('search_api_page_search_form', $search_page);
                             print drupal_render($search_form);
-                            ?>
-                        <?php endif; ?>
+                        ?>
                         </div>
                 </div>
+                <?php endif; ?>
 
+                <?php if (!$tsss): ?>
                 <div class="navbar-user" role="navigation">
                     <?php print render($user_menu); ?>
                 </div>
+                <?php endif; ?>
 
+                <?php if (!$tsss): ?>
                 <div class="navbar-wishlist" role="navigation">
-                    <?php if (!$tsss) print '<a id="wishlist" href="/user/' . $GLOBALS['user']->uid . '/wishlist' . '" class="btn btn-link" title="Отложенные товары">' . commerce_helper_wishlist_info_block() . '</a>'; ?>
+                    <?php print '<a id="wishlist" href="/user/' . $GLOBALS['user']->uid . '/wishlist' . '" class="btn btn-link" title="Отложенные товары">' . commerce_helper_wishlist_info_block() . '</a>'; ?>
                 </div>
+                <?php endif; ?>
 
+                <?php if (!$tsss): ?>
                 <div class="navbar-cart" role="navigation">
-                    <?php if (!$tsss) print '<a id="cart" href="/cart" class="btn btn-link" title="Корзина">' . commerce_helper_cart_info_block() . '</a>'; ?>
+                    <?php print '<a id="cart" href="/cart" class="btn btn-link" title="Корзина">' . commerce_helper_cart_info_block() . '</a>'; ?>
                 </div>
+                <?php endif; ?>
 
             </div>
         </div>
