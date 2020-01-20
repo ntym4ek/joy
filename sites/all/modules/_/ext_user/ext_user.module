@@ -1,5 +1,6 @@
 <?php
 
+require 'includes/ext_user.sms_gate.inc';
 
 /**
  * Implements hook_menu_alter().
@@ -333,8 +334,7 @@ function ext_user_registration_wizard_check_code($form, &$form_state)
 
     // послать СМС с кодом
     $phone = $form_state['values']['field_phone']['und'][0]['value'];
-    $text = 'JOY-MAGAZIN. Код подтверждения: ' . $code;
-    if (ext_user_send_sms($phone, $text, 'register')) {
+    if (ext_user_sms_gate_sms('user_code', ['phone' => $phone, 'code' => $code])) {
         $form_state['code'] = $code;
 
         $step = &$form_state['step'];
@@ -347,41 +347,7 @@ function ext_user_registration_wizard_check_code($form, &$form_state)
     }
 }
 
-/**
- * отправка смс пользователю
- */
-function ext_user_send_sms($phone, $text, $tag = null)
-{
-    $api_token = 'ru2zkdh4xnxqto9ixfvactad59zqea9zh0w0w2dddqb4awfzfce185x28dx22pox';
 
-    $request = [
-        'messages' => [
-            0 => [
-                "recipient" => $phone,
-                "text" => $text
-            ]
-        ],
-    ];
-
-    if ($tag) $request['tags'][] = $tag;
-
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => "https://lcab.talk-me.ru/json/v1.0/sms/send/text",
-        CURLOPT_POST => true,
-        CURLOPT_HTTPHEADER => [
-            "X-Token: " . $api_token,
-            "Content-Type: application/json"
-        ],
-        CURLOPT_POSTFIELDS => json_encode($request),
-        CURLOPT_RETURNTRANSFER => true
-    ]);
-
-    if ($result = curl_exec($ch)) {
-        $response = json_decode($result, TRUE);
-        return $response['success'];
-    } else return false;
-}
 
 /**
  *  Шаг 2
@@ -471,8 +437,8 @@ function ext_user_registration_wizard_repeat($form, &$form_state)
 {
     $code = rand(1001, 9998);
     $phone = $form_state['step_information'][1]['stored_values']['field_phone']['und'][0]['value'];
-    $text = 'Код подтверждения на сайте joy-magazin.ru - ' . $code;
-    if (ext_user_send_sms($phone, $text)) {
+    if (ext_user_sms_gate_sms('user_code', ['phone' => $phone, 'code' => $code])) {
+        $form_state['code'] = $code;
         drupal_set_message('Новое СМС с кодом отправлено.');
     }
 

@@ -20,14 +20,14 @@ function mailing_menu()
  */
 function mailing_cron()
 {
-    //if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+    if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
         // добавляем задания для рассылки уведомлений о брошенных Корзинах
         mailing_queue_cart_orphan_mails();
         // добавляем задания для рассылки уведомлений на Отзыв о товарах
         mailing_queue_order_review_mails();
         // добавляем задания для рассылки уведомлений на Отзыв о сервисе
         mailing_queue_shop_review_mails();
-    //}
+    }
 }
 
 /**
@@ -214,7 +214,7 @@ function mailing_commerce_order_presave($order)
 
     if (empty($order->original)) return;
 
-    // перенести из Rules отправку писем на оформление заказа и смену статуса
+    // todo перенести из Rules отправку писем на оформление заказа и смену статуса
     // варианты писем
     // 1. оформление заказа Анонимом
     // 2. оформление заказа Зарегистрированным
@@ -289,6 +289,9 @@ function mailing_commerce_order_presave($order)
         // письмо Пользователю
 //        drupal_mail('mailing', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
         drupal_mail('mailing', $event, $order->mail, user_preferred_language($account), $params);
+
+        // смс пользователю
+        ext_user_sms_gate_sms($event, $params);
 
         // письмо Менеджеру
         if ($mail_to_manager) {
