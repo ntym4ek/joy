@@ -279,6 +279,8 @@ function ext_user_form_user_register_form_alter (&$form, &$form_state)
         '<p>' . t('Already have JOY account.') . '</p>' .
         '<div class="form-actions"><a href="/user/login" class="btn btn-default">' . t('Sign in') . '</a></div>' .
         '</div>';
+
+    $form['#validate'][] = 'ext_user_user_register_validate';
 }
 
 /**
@@ -300,7 +302,7 @@ function ext_user_register_name_validate($element, &$form_state)
 
     // проверка на наличие тлф в БД
     if (ext_user_user_load_by_phone(ext_user_normalize_phone($form_state['values']['name']))) {
-        form_set_error('name', t('This phone number is already registerd.'));
+        form_set_error('name', t('This phone number is already registered.'));
     }
 
     if ($its_email) $form_state['values']['mail'] = $form_state['values']['name'];
@@ -328,12 +330,11 @@ function ext_user_user_register_validate(&$form, &$form_state)
 function ext_user_registration_wizard_check_code($form, &$form_state)
 {
     $code = rand(1001, 9998);
-    $code = 1111;
 
-    //todo послать СМС с кодом
+    // послать СМС с кодом
     $phone = $form_state['values']['field_phone']['und'][0]['value'];
-    $text = 'Код подтверждения на сайте joy-magazin.ru - ' . $code;
-    if (ext_user_send_sms($phone, $text)) {
+    $text = 'JOY-MAGAZIN. Код подтверждения: ' . $code;
+    if (ext_user_send_sms($phone, $text, 'register')) {
         $form_state['code'] = $code;
 
         $step = &$form_state['step'];
@@ -346,9 +347,40 @@ function ext_user_registration_wizard_check_code($form, &$form_state)
     }
 }
 
-function ext_user_send_sms($phone, $text)
+/**
+ * отправка смс пользователю
+ */
+function ext_user_send_sms($phone, $text, $tag = null)
 {
-    return true;
+    $api_token = 'ru2zkdh4xnxqto9ixfvactad59zqea9zh0w0w2dddqb4awfzfce185x28dx22pox';
+
+    $request = [
+        'messages' => [
+            0 => [
+                "recipient" => $phone,
+                "text" => $text
+            ]
+        ],
+    ];
+
+    if ($tag) $request['tags'][] = $tag;
+
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => "https://lcab.talk-me.ru/json/v1.0/sms/send/text",
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            "X-Token: " . $api_token,
+            "Content-Type: application/json"
+        ],
+        CURLOPT_POSTFIELDS => json_encode($request),
+        CURLOPT_RETURNTRANSFER => true
+    ]);
+
+    if ($result = curl_exec($ch)) {
+        $response = json_decode($result, TRUE);
+        return $response['success'];
+    } else return false;
 }
 
 /**
