@@ -245,6 +245,12 @@ p:last-child {
     }
 }
 
+.btn.btn-link {
+    &:first-child { padding-left: 0; }
+    &:last-child { padding-right: 0; }
+}
+
+
 // Search form.
 form#search-block-form {
   margin: 0;
@@ -333,10 +339,11 @@ fieldset .panel-heading a.panel-title {
         .form-control { display: block; }
     }
 }
-.form-group { margin-bottom: $grid-gutter-width*1.5; }
+//.form-group { margin-bottom: $grid-gutter-width*1.5; } в форме входа и регистрации слишком большие интервалы
 .form-group fieldset { margin-bottom: $grid-gutter-width*1.5; }
 
 .form-group:last-child.form-group:not(:first-child),
+.form-group > [id*=-add-more-wrapper] > .form-group,
 .panel:last-child {
   margin-bottom: 0;
 }
@@ -459,16 +466,16 @@ table tr.error {
 .form-group.error,
 .form-group.has-error {
   background: none;
+    margin-bottom: $grid-gutter-width/4;
   label, .control-label {
-    color: $state-danger-text;
-    font-weight: 600;
+    color: $text-muted;
+    //font-weight: 400;
   }
   input, textarea, select, .uneditable-input {
     color: $input-color;
   }
   .help-block, .help-inline {
     color: $text-muted;
-      position: absolute;
   }
 }
 

@@ -1492,7 +1492,9 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
         margin: 0 auto $grid-gutter-width*2 auto;
     }
     > div {
-        display: flex; flex-wrap: wrap;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
         h2 { font-weight: 700; }
         .user-form,
         .user-links {
@@ -1510,7 +1512,6 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
             .field-name-field-name-first,
             .field-name-field-surname { flex: 0 0 50%; }
             .field-name-field-name-first { padding-right: $grid-gutter-width; }
-            div[id^=edit-account] { margin-bottom: 0; }
             .captcha {
                 display: flex;
                 margin-bottom: $grid-gutter-width;
@@ -1522,22 +1523,32 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
             .form-group { margin-bottom: $grid-gutter-width; }
             [id*="add-more-wrapper"] > .form-group { margin-bottom: 0; }
         }
-        .user-forgot {
-            color: $text-muted; font-weight: 700;
-            display: block;
-            margin-top: $grid-gutter-width;
+        //.user-forgot {
+        //    color: $text-muted; font-weight: 700;
+        //    display: block;
+        //    margin-top: $grid-gutter-width;
+        //}
+        .form-subactions {
+            display: flex; justify-content: space-between;
+            a, button {
+                color: $text-muted; font-weight: 600; font-size: $font-size-small;
+                text-transform: uppercase;
+            }
+            margin-bottom: 0;
         }
-        a, button, .form-actions {
-            text-transform: uppercase;
-            width: 100%;
+        .form-actions {
+            a, button {
+                text-transform: uppercase;
+                width: 100%;
+            }
         }
         @media #{$tablet} {
             .user-form {
-                flex: 1 1 50%;
+                flex: 0 1 50%;
                 padding-right: $grid-gutter-width;
             }
             .user-links {
-                flex: 1 1 50%;
+                flex: 0 1 50%;
                 padding-left: $grid-gutter-width;
                 border-left: 1px solid $divider-color;
             }

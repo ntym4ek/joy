@@ -20,14 +20,14 @@ function mailing_menu()
  */
 function mailing_cron()
 {
-    //if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+    if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
         // добавляем задания для рассылки уведомлений о брошенных Корзинах
         mailing_queue_cart_orphan_mails();
         // добавляем задания для рассылки уведомлений на Отзыв о товарах
         mailing_queue_order_review_mails();
         // добавляем задания для рассылки уведомлений на Отзыв о сервисе
         mailing_queue_shop_review_mails();
-    //}
+    }
 }
 
 /**
@@ -287,13 +287,30 @@ function mailing_commerce_order_presave($order)
     }
 
     if ($event) {
-        // поставить отправку писем в очередь
-        mailing_queue_order_complete_mails([
-            'order' => $order,
-            'event' => $event,
-            'mail_to_manager' => $mail_to_manager,
-            'params' => $params,
-        ]);
+        $account = user_load($order->uid);
+        $params['account'] = $account;
+        $params['order_info'] = _get_order_info($order);
+
+        // письмо Пользователю
+//        drupal_mail('mailing', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
+        drupal_mail('mailing', $event, $order->mail, user_preferred_language($account), $params);
+
+        // смс пользователю
+        ext_user_sms_gate_sms($event, $params);
+
+        // письмо Менеджеру
+        if ($mail_to_manager) {
+            $params['mail_to_manager'] = $mail_to_manager;
+            $manager_mail = variable_get('support_email', 'help@joy-magazin.ru');
+            if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) $manager_mail = 'mega_comp@mail.ru';
+            drupal_mail('mailing', $event, $manager_mail, user_preferred_language($account), $params);
+
+            // письмо Смирнову
+            if ($event == 'order_creation' && $order->mail != 'support@kccc.ru' && $manager_mail != 'mega_comp@mail.ru') {
+                drupal_mail('mailing', $event, 'ed_smr@kccc.ru', user_preferred_language($account), $params);
+            }
+        }
+
     }
 }
 
