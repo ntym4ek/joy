@@ -69,6 +69,9 @@ function ext_user_user_insert( &$edit, &$account, $category = NULL )
     if ($flag) {
         $flag->flag('flag', $account->uid, $account);
     }
+
+    // отправить СМС о регистрации
+    ext_user_sms_gate_sms('user_new', ['account' => $account]);
 }
 
 /**
@@ -367,7 +370,7 @@ function ext_user_registration_code_form($form, &$form_state)
     $form['code'] = array(
         '#type' => 'textfield',
         '#title' => 'Код подтверждения',
-        '#description' => 'Введите полученный код из SMS',
+        '#description' => 'Введите код, полученный в SMS',
     );
 
     $form['subactions'] = array(
@@ -507,12 +510,3 @@ function ext_user_form_user_admin_settings_alter(&$form, &$form_state)
     $form['email_title']['#weight'] = 10;
     $form['email']['#weight'] = 11;
 }
-
-///**
-// * Implements hook_form_FORM_ID_alter().
-// */
-//function form_process_password_confirm_custom($element)
-//{
-//    $element['pass1']['#wrapper_attributes']['class'][] = 'active';
-//    return $element;
-//}

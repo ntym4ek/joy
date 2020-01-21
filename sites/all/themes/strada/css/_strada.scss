@@ -1522,19 +1522,15 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
             }
             .form-group { margin-bottom: $grid-gutter-width; }
             [id*="add-more-wrapper"] > .form-group { margin-bottom: 0; }
-        }
-        //.user-forgot {
-        //    color: $text-muted; font-weight: 700;
-        //    display: block;
-        //    margin-top: $grid-gutter-width;
-        //}
-        .form-subactions {
-            display: flex; justify-content: space-between;
-            a, button {
-                color: $text-muted; font-weight: 600; font-size: $font-size-small;
-                text-transform: uppercase;
+
+            .form-subactions {
+                display: flex; justify-content: space-between;
+                a, button {
+                    color: $text-muted; font-weight: 600; font-size: $font-size-small;
+                    text-transform: uppercase;
+                }
+                margin-bottom: 0;
             }
-            margin-bottom: 0;
         }
         .form-actions {
             a, button {
