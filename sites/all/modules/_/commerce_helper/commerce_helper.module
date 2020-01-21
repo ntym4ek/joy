@@ -1531,28 +1531,30 @@ function _get_order_info($order, $including_products = false)
     $shipping_profile_wr = $order_wr->commerce_customer_shipping;
     if ($shipping_profile_wr->value()) {
         foreach ($order_wr->commerce_line_items as $item_wr) {
-            if ($including_products && $item_wr->type->value() == 'product') {
-                $products[] = _get_line_item_info($item_wr->value());
-            }
-            if ($item_wr->type->value() == 'shipping') {
-                $shipping_method = $item_wr->commerce_shipping_service->value();
-
-                // если есть данные, помимо стандартных
-                $function = $shipping_method . '_info';
-                if (function_exists($function)) {
-                    $shipping = $function($item_wr->value(), $shipping_profile_wr->value());
+            if ($item_wr->value()) {
+                if ($including_products && $item_wr->type->value() == 'product') {
+                    $products[] = _get_line_item_info($item_wr->value());
                 }
-                if (!$shipping) {
-                    $shipping = [
-                        'title' => t($item_wr->line_item_label->value()),
-                        'method' => $item_wr->commerce_shipping_service->value(),
-                    ];
-                }
+                if ($item_wr->type->value() == 'shipping') {
+                    $shipping_method = $item_wr->commerce_shipping_service->value();
 
-                $shipping['cost'] = commerce_currency_format($item_wr->commerce_total->amount->value() / 100, $item_wr->commerce_total->currency_code->value(), NULL, FALSE);
-            }
-            elseif ($item_wr->type->value() == 'product') {
-                $count++;
+                    // если есть данные, помимо стандартных
+                    $function = $shipping_method . '_info';
+                    if (function_exists($function)) {
+                        $shipping = $function($item_wr->value(), $shipping_profile_wr->value());
+                    }
+                    if (!$shipping) {
+                        $shipping = [
+                            'title' => t($item_wr->line_item_label->value()),
+                            'method' => $item_wr->commerce_shipping_service->value(),
+                        ];
+                    }
+
+                    $shipping['cost'] = commerce_currency_format($item_wr->commerce_total->amount->value() / 100, $item_wr->commerce_total->currency_code->value(), NULL, FALSE);
+                }
+                elseif ($item_wr->type->value() == 'product') {
+                    $count++;
+                }
             }
         }
         if (empty($shipping['address'])) {
