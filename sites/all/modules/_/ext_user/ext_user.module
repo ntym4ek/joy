@@ -177,7 +177,10 @@ function ext_user_user_load_by_phone($phone)
 function ext_user_normalize_phone($phone)
 {
     // убираем всё лишнее кроме цифр
-    return preg_replace('/[^\d]/', '', $phone);
+    $phone = preg_replace('/[^\d]/', '', $phone);
+    // заменить первую 8 на 7
+    $phone = preg_replace('/8(\d{10})/', '7$1', $phone);
+    return $phone;
 }
 
 function ext_user_valid_phone($phone)
@@ -447,7 +450,9 @@ function ext_user_registration_wizard_repeat($form, &$form_state)
 
 
 
-
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function ext_user_form_user_profile_form_alter (&$form, $form_state)
 {
     if ($GLOBALS['user']->uid != 1) {
@@ -457,6 +462,18 @@ function ext_user_form_user_profile_form_alter (&$form, $form_state)
         $form['account']['#prefix'] = '<br /><h4>' . t('Account info') . '</h4>';
         $form['field_user_surname']['#prefix'] = '<h4>' . t('Personal info') . '</h4>';
         $form['flag']['#title'] = 'Подписки';
+    }
+    $form['account']['mail']['#required'] = false;
+    $form['field_phone']['#element_validate'][] = 'ext_user_profile_phone_validate';
+}
+
+function ext_user_profile_phone_validate($element, &$form_state)
+{
+    if ($form_state['values']['field_phone']['und'][0]['value']) {
+        // проверка на наличие тлф в БД
+        if (ext_user_user_load_by_phone(ext_user_normalize_phone($form_state['values']['field_phone']['und'][0]['value']))) {
+            form_set_error('field_phone][und][0][value', t('This phone number is already registered.'));
+        }
     }
 }
 

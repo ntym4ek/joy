@@ -32,7 +32,7 @@ function ext_user_sms_gate_sms($event, $params)
             break;
 
         case 'user_new':
-            $text = 'Вы успешно зарегистрированы в интернет-магазине joy-magazin.ru';
+            $text = 'JOY-MAGAZIN. Вы успешно зарегистрированы.';
             $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
             break;
 
