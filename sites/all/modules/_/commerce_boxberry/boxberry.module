@@ -316,11 +316,11 @@ function boxberry_preprocess_page(&$vars)
 function boxberry_shipping_service_info($item, $shipping_profile)
 {
     $component_data = empty($item->commerce_total['und'][0]['data']) ? [] : $item->commerce_total['und'][0]['data'];
-    $point_data = empty($shipping_profile->field_data['und'][0]['value']) ? null : json_decode($shipping_profile->field_data['und'][0]['value'], true);
+    $field_data = empty($shipping_profile->field_data['und'][0]['value']) ? null : json_decode($shipping_profile->field_data['und'][0]['value'], true);
     $point_id = empty($shipping_profile->field_boxberry_target['und'][0]['value']) ? null : $shipping_profile->field_boxberry_target['und'][0]['value'];
 
-    if (!$point_id && !empty($point_data['boxberry'])) {
-        $point_id = $point_data['boxberry']['id'];
+    if (!$point_id && !empty($field_data['boxberry'])) {
+        $point_id = $field_data['boxberry']['point_data']['id'];
     }
 
     return [
