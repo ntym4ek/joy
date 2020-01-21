@@ -38,7 +38,7 @@ function ext_user_sms_gate_sms($event, $params)
 
         case 'order_creation':
             if (!empty($params['order_info'])) {
-                $text = 'JOY-MAGAZIN. Код подтверждения: ' . $params['order_info']['id'];
+                $text = 'JOY-MAGAZIN. Ваш заказ № ' . $params['order_info']['id'] . ' принят в обработку.';
                 $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
             }
             break;
@@ -67,6 +67,7 @@ function ext_user_sms_gate_sms($event, $params)
  */
 function ext_user_sms_gate_process_send_sms($phone, $text, $tag = null)
 {
+    return true;
     // токен из ЛК Talk-Me
     $api_token = 'ru2zkdh4xnxqto9ixfvactad59zqea9zh0w0w2dddqb4awfzfce185x28dx22pox';
 
