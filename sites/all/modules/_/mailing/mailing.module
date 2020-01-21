@@ -293,7 +293,9 @@ function mailing_commerce_order_presave($order)
 
         // письмо Пользователю
 //        drupal_mail('mailing', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
-        drupal_mail('mailing', $event, $order->mail, user_preferred_language($account), $params);
+        if (!empty($order->mail)) {
+            drupal_mail('mailing', $event, $order->mail, user_preferred_language($account), $params);
+        }
 
         // смс пользователю
         ext_user_sms_gate_sms($event, $params);
