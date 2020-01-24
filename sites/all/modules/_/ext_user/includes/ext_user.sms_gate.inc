@@ -67,7 +67,6 @@ function ext_user_sms_gate_sms($event, $params)
  */
 function ext_user_sms_gate_process_send_sms($phone, $text, $tag = null)
 {
-    return true;
     // токен из ЛК Talk-Me
     $api_token = 'ru2zkdh4xnxqto9ixfvactad59zqea9zh0w0w2dddqb4awfzfce185x28dx22pox';
 
