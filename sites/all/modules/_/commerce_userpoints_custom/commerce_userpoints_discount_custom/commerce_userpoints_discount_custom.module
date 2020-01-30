@@ -626,39 +626,43 @@ function _commerce_userpoints_discount_custom_update_cart_view($order_id) {
 }
 
 // Gt in for for a specific code.
-function _commerce_userpoints_discount_custom_get_info($order, $code = NULL) {
-  $currencies = commerce_userpoints_custom_currencies();
-  $default_currency = reset($currencies);
+function _commerce_userpoints_discount_custom_get_info($order, $code = NULL)
+{
+    $currencies = commerce_userpoints_custom_currencies();
+    $default_currency = reset($currencies);
 
-  if (isset($code)) {
-    $current_code = $code;
-    $current_tid = $currencies[$code]['tid'];
-  }
-  else {
-    $current_code = $default_currency['code'];
-    $current_tid = $default_currency['tid'];
-  }
+    if (isset($code)) {
+        $current_code = $code;
+        $current_tid = $currencies[$code]['tid'];
+    }
+    else {
+        $current_code = $default_currency['code'];
+        $current_tid = $default_currency['tid'];
+    }
 
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
     $order_total = $order_wrapper->commerce_order_total->value();
 
-  $worth_of_a_point = commerce_currency_convert(1, $current_code, $order_total['currency_code']);
-  $worth_of_order = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], $current_code);
+    $worth_of_a_point = commerce_currency_convert(1, $current_code, $order_total['currency_code']);
+//    $worth_of_order = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], $current_code);
 
-  $order_applicable_points = commerce_userpoints_discount_custom_get_applicable_order_discount($order);
-  $amount_applied = abs(commerce_price_component_total($order_total, 'userpoints')['amount']);
+    $order_applicable_points = commerce_userpoints_discount_custom_get_applicable_order_discount($order);
+    $amount_applied = commerce_currency_convert(abs(commerce_price_component_total($order_total, 'userpoints')['amount']), $order_total['currency_code'], $current_code);
 
-  $arguments = array(
-    '%points' => $worth_of_a_point,
-    '@order_currency' => commerce_currency_format($worth_of_a_point, $order_total['currency_code']),
-//    '@count_needed' => commerce_currency_format($worth_of_order, $current_code),
-    '@points_applied' => commerce_currency_convert($amount_applied, $order_total['currency_code'], $current_code),
-    '@points_order_applicable' => $order_applicable_points,
-    '@points_available' => userpoints_get_current_points(NULL, $current_tid),
-//    '@total_count_needed' => commerce_currency_format(commerce_currency_convert($order_applicable_points, $order_total['currency_code'], $current_code), $current_code),
-  ) + userpoints_translation();
+    $points_available = userpoints_get_current_points(NULL, $current_tid);
 
-  return $arguments;
+    $upt = userpoints_translation();
+    $arguments = array(
+            '%points' => $worth_of_a_point,
+            '@order_currency' => commerce_currency_format($worth_of_a_point, $order_total['currency_code']),
+            '@points_applied' => $amount_applied,
+            '@points_applied_txt' => format_plural($amount_applied,'@count !point', '@count !points', $upt),
+            '@points_order_applicable' => $order_applicable_points,
+            '@points_available' => $points_available,
+            '@points_available_txt' => format_plural($points_available,'@count !point', '@count !points', $upt),
+        ) + $upt;
+
+    return $arguments;
 }
 
 function _commerce_userpoints_discount_custom_update_use_links($order, $code) {

@@ -75,7 +75,7 @@ function commerce_userpoints_discount_custom_pane_checkout_form($form, &$form_st
 
     $arguments = _commerce_userpoints_discount_custom_get_info($order, $default_currency['code']);
     if ($arguments['@points_applied'] == 0) {
-        $descr = t('You have @points_available !points. <a href="/info/userpointss">Use rules</a>', $arguments);
+        $descr = t('You have @points_available_txt. <a href="/info/userpoints">Use rules</a>', $arguments);
     } else {
         // вывести примененное количество со ссылкой на удаление
         $pane_form['redeemed_points'] = array(
@@ -91,7 +91,7 @@ function commerce_userpoints_discount_custom_pane_checkout_form($form, &$form_st
             '#prefix' => '<div class="table-responsive"><table><tr><td>Применено</td><td>' . $arguments['@points_applied'] . '</td><td>',
             '#suffix' => '</td></tr></table></div>',
         );
-        $descr = t('@points_applied !points applied. @points_available !points available.', $arguments);
+        $descr = t('@points_applied_txt applied. @points_available_txt available.', $arguments);
     }
 
     $pane_form['info'] = array(
