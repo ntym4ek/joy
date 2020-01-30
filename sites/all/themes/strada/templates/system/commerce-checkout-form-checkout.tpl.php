@@ -7,8 +7,10 @@
 <div class="ch-info-container">
     <?php print render($form['cart_contents']); ?>
     <?php print render($form['commerce_coupon']); ?>
+    <?php print render($form['commerce_userpoints_discount_custom']); ?>
     <?php print render($form['summary']); ?>
     <?php print render($form['buttons']); ?>
     <?php print render($form['fz152_agreement']); ?>
 </div>
+
 <?php echo drupal_render_children($form); ?>

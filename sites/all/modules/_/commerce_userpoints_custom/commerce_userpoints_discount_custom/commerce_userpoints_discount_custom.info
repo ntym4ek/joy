@@ -1,0 +1,11 @@
+name = Commerce Userpoints Discount Custom
+description = Allow commerce customer to create a line item using userpoints points
+package = Custom
+core = 7.x
+
+dependencies[] = userpoints
+dependencies[] = commerce_line_item
+dependencies[] = commerce_userpoints_custom
+
+configure = admin/commerce/config/commerce-userpoints/discount
+

@@ -607,7 +607,7 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
         $form['account']['#prefix'] = '<h4>' . t('Contact information') . '</h4>';
     }
 
-    $form['cart_contents']['#prefix'] = '<h4>' . t('Order contents') . '<a href="/cart">Изменить</a></h4>';
+    $form['cart_contents']['#prefix'] = '<h4>' . t('Order contents') . '<a href="/cart">' . t('Change') . '</a></h4>';
 
     $form['customer_profile_shipping']['#prefix'] = '<h4>' . t('Destination region') . '</h4>';
 
@@ -639,6 +639,7 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
     $form['commerce_payment']['payment_details'] = [];
     if (isset($form['commerce_payment']['commerce_payment_messages'])) unset($form['commerce_payment']['commerce_payment_messages']);
 
+    /** -------------------------------------------- настройка Commerce Coupons ---------------------------------------------------- */
     unset($form['commerce_coupon']['coupon_code']['#title']);
     $form['commerce_coupon']['coupon_code']['#attributes']['placeholder'] = 'Промокод на скидку';
     $form['commerce_coupon']['coupon_add']['#ajax']['callback'] = 'commerce_helper_commerce_checkout_form_refresh';
@@ -662,6 +663,10 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
 
     }
 
+    /** -------------------------------------------- настройка Commerce Userpoints ---------------------------------------------------- */
+
+
+
     $form['buttons']['#type'] = 'container';
     $form['buttons']['cancel']['#access'] = false;
     $form['buttons']['continue']['#value'] = t('Confirm order');
@@ -683,6 +688,7 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
 
     $order_total = $order_wrapper->commerce_order_total->value();
     $products_amount = commerce_price_component_total($order_total, 'base_price')['amount'];
+    $userpoints_amount = commerce_price_component_total($order_total, 'userpoints')['amount'];
     $discount_amount = commerce_helper_commerce_price_component_total_discounts($form_state['order'])['amount'];
     $coupon_amount = commerce_helper_commerce_price_component_total_coupons($form_state['order'])['amount'];
     $total_amount = commerce_price_component_total($order_total)['amount'];
@@ -722,6 +728,7 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
         '#markup' =>
             '<div class="checkout-summary">' .
             '<div class="cs-quantity"><span class="label">' . 'Товары (' . $products_qty . ')</span><span class="value">' . commerce_currency_format($products_amount, 'RUB') . '</span></div>' .
+            ($userpoints_amount < 0 ? '<div class="cs-discount"><span class="label">Баллы</span><span class="value">' . commerce_currency_format($userpoints_amount, 'RUB') . '</span></div>' : '').
             ($discount_amount < 0 ? '<div class="cs-discount"><span class="label">Скидка</span><span class="value">' . commerce_currency_format($discount_amount, 'RUB') . '</span></div>' : '').
             ($coupon_amount < 0 ? '<div class="cs-discount"><span class="label">Промокод</span><span class="value">' . commerce_currency_format($coupon_amount, 'RUB') . '</span></div>' : '').
             '<div class="cs-weight"><span class="label">Вес</span><span class="value">' . $weight_text . '</span></div>' .
@@ -1300,17 +1307,17 @@ function commerce_helper_commerce_price_component_total_discounts($order)
     }
 
     // получить список купонов, скидки по которым не будем учитывать
-    $coupons_arr = [];
+    $exclude_arr = ['userpoints'];
     if ($order_wr->commerce_coupons->value()) {
         foreach ($order_wr->commerce_coupons as $coupon_wr) {
-            $coupons_arr[] = current($coupon_wr->commerce_discount_reference->value())->name;
+            $exclude_arr[] = current($coupon_wr->commerce_discount_reference->value())->name;
         }
     }
 
     // Loop over each component.
     foreach ($order_total['data']['components'] as $key => $component) {
         // не учитывать скидки по купонам
-        foreach($coupons_arr as $coupon_name) {
+        foreach($exclude_arr as $coupon_name) {
             if (strpos($component['name'], $coupon_name) !== false) continue 2;
         }
         // If we're totalling all components or this one matches the requested type...

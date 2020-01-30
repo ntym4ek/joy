@@ -12,10 +12,6 @@ function cart_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
         $lid = str_replace('delete-line-item-', '', $form_state['triggering_element']['#name']);
         $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $lid);
         $line_item_wrapper->delete();
-
-        // чистим кеш сохраненных расчётов - не нужно, тк кэш индивидуален для суммы-веса, а он изменился
-//        cache_clear_all('russianpost_service_rate', 'cache', TRUE);
-//        cache_clear_all('transport_service_rate', 'cache', TRUE);
     }
 
     $checkout_form = array(
@@ -27,11 +23,6 @@ function cart_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
         '#suffix' => '</div>',
     );
 
-
-//    $checkout_form['table']['header'] = array(
-//        '#type' => 'value',
-//        '#value' => array('Товар', 'Количество', 'Цена', 'Сумма', 'Действие'),
-//    );
 
     if ($order_wrapper->commerce_line_items->count()) {
 

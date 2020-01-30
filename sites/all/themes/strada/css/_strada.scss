@@ -1383,15 +1383,29 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
         }
         .notice { color: $text-muted; font-size: $font-size-xs; }
     }
+    .commerce_userpoints_discount_custom {
+        display: flex; flex-wrap: wrap; align-items: flex-start;
+        .form-item-commerce-userpoints-discount-custom-amount {
+            flex: 1 1 100px;
+            margin-bottom: 0;
+            input {
+                border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0;
+                font-size: $font-size-small;
+            }
+        }
+        .btn-info {
+            flex: 1 1 40px;
+            font-size: $font-size-small; line-height: 1.74;
+            border-top-left-radius: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+        }
+        .commerce-userpoints-info {
+            color: $text-muted;
+            font-size: $font-size-xs;
+            padding: 5px 10px;
+        }
+    }
     .commerce_coupon {
         display: flex; flex-wrap: wrap;
-        .alert-block {
-            flex: 1 1 100%;
-            font-size: $font-size-small;
-            padding: 3px 30px 3px 10px;
-            margin-bottom: 8px;
-            .close { top: 2px; }
-        }
         .form-item-commerce-coupon-coupon-code {
             flex: 1 1 100px;
             margin-bottom: 0;
@@ -1399,26 +1413,44 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
                 border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0;
                 font-size: $font-size-small;
             }
-
         }
         .btn {
             flex: 1 1 40px;
-            font-size: $font-size-small;
+            font-size: $font-size-small; line-height: 1.74;
             border-top-left-radius: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;
         }
-        .view-order-coupon-list {
-            flex: 1 1 100%;
-            table {
-                border: 1px solid $divider-color;
-                margin: 0;
-                > tbody > tr {
-                    background: none;
-                    > td { vertical-align: middle; border: none; }
+    }
+    .view { flex: 100%; }
+    .table-responsive {
+        flex: 100%;
+        table {
+            border: 1px solid $divider-color;
+            width: 100%;
+            margin: 0;
+            > tbody > tr {
+                background: none;
+                > td {
+                    vertical-align: middle; border: none;
+                    padding: 8px;
+                    &:nth-child(1) { width: 30%; }
+                    &:nth-child(3) { width: 20%; text-transform: lowercase; text-align: right; }
                 }
-                .views-field-remove-from-order { text-align: right; }
             }
-            ul { list-style: none; padding: 0; margin: 0; }
         }
+        ul { list-style: none; padding: 0; margin: 0; }
+        .points-remove {
+            border: 0;
+            font-size: inherit; text-transform: lowercase;
+            padding: 0;
+            .icon { display: none; }
+        }
+    }
+    .alert-block {
+        flex: 1 1 100%;
+        font-size: $font-size-small; line-height: 1.7;
+        padding: 3px 30px 3px 10px;
+        margin-bottom: 8px;
+        .close { top: 2px; }
     }
     .checkout-summary {
         margin-bottom: 16px;
@@ -1438,6 +1470,7 @@ $navbar-alter-toggle-icon-bar-bg: $navbar-alter-bg;
         .cs-discount .value { color: $brand-danger; }
         .label { color: $text-muted; font-size: $font-size-small; font-weight: 400; padding: .2em 0; line-height: 1.5; }
         .value {
+            font-size: $font-size-small;
             text-align: right; line-height: 1;
             padding: 4px 0 4px $grid-gutter-width;
         }

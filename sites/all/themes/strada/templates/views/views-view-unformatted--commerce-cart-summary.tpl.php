@@ -22,10 +22,11 @@
         </div>
         <div class="collapse" id="collapseCartList">
         <?php endif; ?>
-            <div<?php if ($classes_array[$id]): ?> class="<?php print $classes_array[$id]; ?>"<?php endif; ?>>
-                <?php print $row; ?>
-            </div>
+
+        <div<?php if ($classes_array[$id]): ?> class="<?php print $classes_array[$id]; ?>"<?php endif; ?>>
+            <?php print $row; ?>
+        </div>
     <?php endforeach; ?>
+
     <?php if (count($rows) > 4): ?></div><?php endif; ?>
 </div>
-
