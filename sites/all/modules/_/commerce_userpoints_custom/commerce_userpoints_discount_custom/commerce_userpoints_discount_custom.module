@@ -13,7 +13,7 @@
 function commerce_userpoints_discount_custom_menu() {
   $items = array();
 
-  $items['admin/config/administration/commerce-userpoints'] = array(
+  $items['admin/config/joy/commerce-userpoints'] = array(
     'title' => 'Использование баллов',
     'description' => 'Configure the commerce userpoints module',
     'page callback' => 'drupal_get_form',

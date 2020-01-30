@@ -41,7 +41,15 @@ function commerce_helper_menu() {
         'access arguments' => array('edit own commerce_order entities'),
         'type' => MENU_LOCAL_ACTION,
     );
-    $items['admin/config/administration/shop'] = array(
+
+    $items['admin/config/joy'] = array(
+        'title' => 'Настройки сайта',
+        'page callback' => 'system_admin_menu_block_page',
+        'access arguments' => array('access administration pages'),
+        'file' => 'system.admin.inc',
+        'file path' => drupal_get_path('module', 'system'),
+    );
+    $items['admin/config/joy/shop'] = array(
         'title' => 'Настройки магазина',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('commerce_helper_settings'),

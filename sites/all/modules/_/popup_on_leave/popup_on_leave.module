@@ -18,7 +18,7 @@ function popup_on_leave_menu()
     $items = array();
 
     // Settings form.
-    $items['admin/config/administration/popup_on_leave'] = array(
+    $items['admin/config/joy/popup_on_leave'] = array(
         'title' => t('Popup On Leave'),
         'page callback' => 'drupal_get_form',
         'page arguments' => array('popup_on_leave_settings'),

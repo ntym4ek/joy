@@ -5,7 +5,7 @@
  */
 function mailing_menu()
 {
-    $items['admin/config/administration/mailing'] = array(
+    $items['admin/config/joy/mailing'] = array(
         'title' => 'Рассылка писем',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('mailing_manual_form'),

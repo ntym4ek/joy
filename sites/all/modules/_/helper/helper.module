@@ -6,14 +6,14 @@
  */
 function helper_menu()
 {
-    $items['admin/config/administration/manager'] = array(
-        'title' => 'Настройки содержимого',
+    $items['admin/config/joy/contents'] = array(
+        'title' => 'Содержимое',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('helper_settings'),
         'access arguments' => array('access manager settings'),
         'file' => 'includes/helper.admin.inc',
     );
-    $items['admin/config/administration/carts'] = array(
+    $items['admin/config/joy/carts'] = array(
         'title' => 'Статистика по корзинам',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('helper_stat_carts_form'),
