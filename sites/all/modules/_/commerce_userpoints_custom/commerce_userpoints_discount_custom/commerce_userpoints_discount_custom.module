@@ -18,7 +18,7 @@ function commerce_userpoints_discount_custom_menu() {
     'description' => 'Configure the commerce userpoints module',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('commerce_userpoints_discount_custom_settings_form'),
-    'access arguments' => array('configure store'),
+    'access arguments' => array('admin commerce userpoints'),
     'file' => 'commerce_userpoints_discount_custom.admin.inc',
   );
 //  $items['commerce_userpoints_discount_custom/ajax/useall/%commerce_order'] = array(
