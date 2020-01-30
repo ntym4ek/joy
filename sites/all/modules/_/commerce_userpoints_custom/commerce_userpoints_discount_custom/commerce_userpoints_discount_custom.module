@@ -13,17 +13,7 @@
 function commerce_userpoints_discount_custom_menu() {
   $items = array();
 
-  $items['admin/commerce/config/commerce-userpoints'] = array(
-    'title' => 'Commerce discount settings',
-    'description' => 'Configure settings for commerce userpoints.',
-    'position' => 'left',
-    'weight' => 50,
-    'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
-    'file path' => drupal_get_path('module', 'system'),
-    'file' => 'system.admin.inc',
-  );
-  $items['admin/commerce/config/commerce-userpoints/discount'] = array(
+  $items['admin/config/administration/commerce-userpoints'] = array(
     'title' => 'Commerce userpoints discount settings',
     'description' => 'Configure the commerce userpoints module',
     'page callback' => 'drupal_get_form',
