@@ -146,6 +146,33 @@ function commerce_userpoints_custom_form_userpoints_admin_txn_alter(&$form, &$fo
 
 
 /**
+ * Implements hook_userpoints().
+ */
+function commerce_userpoints_custom_userpoints($op, &$points_params = array())
+{
+    // Transactions without points are not passed to rules for now.
+    if ($op != 'points after' || !is_array($points_params) || !isset($points_params['points'])) {
+        return;
+    }
+
+    // отправить уведомления пользователям
+    $event = 'points_add';
+    $account = user_load($points_params['uid']);
+    $params['account'] = $account;
+    $params['userpoints'] = $points_params;
+
+    // письмо Пользователю
+//    drupal_mail('mailing', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
+    if (!empty($account->mail)) {
+        drupal_mail('mailing', $event, $account->mail, user_preferred_language($account), $params);
+    }
+
+    // смс пользователю
+    ext_user_sms_gate_sms($event, $params);
+}
+
+
+/**
  * Implements hook_theme().
  * cu_points is short of commerce_userpoints_custom_points.
  */

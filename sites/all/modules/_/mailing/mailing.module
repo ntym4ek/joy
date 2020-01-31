@@ -325,6 +325,15 @@ function mailing_mail($key, &$message, $params)
     $data = empty($params['data']) ? [] : $params['data'];
 
     switch($key) {
+        case 'points_add':
+            $message['subject'] = 'Вам начислены баллы';
+
+            $message['body'][] = '' .
+                '<h2>Здравствуйте!</h2>' .
+                '<p>На сайте joy-magazin.ru Вам начислено ' . format_plural($params['userpoints']['points'],'@count point', '@count points') . '. Оплачивайте до 30% стоимости товаров. </p>';
+
+            break;
+
         case 'leave_feedback':
             $message['subject'] = 'Отзыв на выходе';
 
