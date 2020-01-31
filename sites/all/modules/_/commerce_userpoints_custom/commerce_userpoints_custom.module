@@ -136,6 +136,16 @@ function commerce_userpoints_custom_commerce_currency_info() {
 }
 
 /**
+ * Implements hook_form_alter().
+ */
+function commerce_userpoints_custom_form_userpoints_admin_txn_alter(&$form, &$form_state)
+{
+    // не показываем статус остальным, если он отключен
+    $form['status']['#access'] = !isset($GLOBALS['user']->roles[3]) && (bool)variable_get(USERPOINTS_POINTS_MODERATION, 0);
+}
+
+
+/**
  * Implements hook_theme().
  * cu_points is short of commerce_userpoints_custom_points.
  */
