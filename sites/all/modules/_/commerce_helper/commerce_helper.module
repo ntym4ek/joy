@@ -64,10 +64,12 @@ function commerce_helper_menu() {
 /**
  * Implements hook_menu_alter().
  */
-function commerce_helper_menu_alter(&$items) {
+function commerce_helper_menu_alter(&$items)
+{
     // убрать из админки локальную задачу "Simulate checkout completion"
-    unset($items['admin/commerce/orders/%commerce_order/edit/checkout']);
-    unset($items['admin/commerce/orders/%commerce_order/edit/refresh']);
+    if (!isset($GLOBALS['user']->roles[3])) {
+        unset($items['admin/commerce/orders/%commerce_order/edit/checkout']);
+    }
 
     // убрать настройки DaData для всех кроме админа
 //    $items['admin/config/user-interface/dadata']['access callback'] = 'commerce_helper_user_has_role';
@@ -315,7 +317,7 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
             // устаревшее поле, заменено полем field_parcel_number в профиле доставки
             $form['field_track_number']['#access'] = false;
 
-            $form['order_history']['#access'] = false;
+//            $form['order_history']['#access'] = false;
 //            $form['commerce_line_items']['und']['actions']['#access'] = false;
             $form['field_flags']['#access'] = false;
             if (isset($form['commerce_customer_shipping']['und']['profiles'][0])) {
@@ -1181,44 +1183,55 @@ function commerce_helper_ya_commerce_api_check_order_paid($order)
  */
 function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path)
 {
-    switch($root_path){
-        case 'admin/commerce/orders':
-            if (!empty($data['actions']['output'][0]['#link']['path']) && $data['actions']['output'][0]['#link']['path'] == 'admin/commerce/orders/add') {
-                unset($data['actions']['output'][0]);
-            }
-            break;
-        case 'admin/commerce/orders/%':
-            // добавим печать заказа в меню Действий на странице просмотра заказа для Менеджера
-            $order_id = $router_item['original_map'][3];
-            $item = menu_get_item('user/' . $GLOBALS['user']->uid . '/orders/' . $order_id . '/print');
-            if ($item['access']) {
-                $data['actions']['output'][] = ['#theme' => 'menu_local_action', '#link' => $item];
-            }
-            break;
-        case 'user/%/orders/%':
-            $order_id = $router_item['original_map'][3];
-            if (is_numeric($order_id) && !commerce_helper_ya_commerce_api_check_order_paid($order_id)) {
-                $item = menu_get_item('checkout/%/pay');
-                if ($item['access']) {
-                    $data['actions']['output'][] = ['#theme' => 'menu_local_action', '#link' => $item];
+    if (!isset($GLOBALS['user']->roles[3])) {
+        switch ($root_path) {
+            case 'admin/commerce/orders':
+                if (!empty($data['actions']['output'][0]['#link']['path']) && $data['actions']['output'][0]['#link']['path'] == 'admin/commerce/orders/add') {
+                    unset($data['actions']['output'][0]);
                 }
-            }
-            break;
-        case 'user/%':
+                break;
+            case 'admin/commerce/orders/%':
+                // добавим печать заказа в меню Действий на странице просмотра заказа для Менеджера
+                $order_id = $router_item['original_map'][3];
+                $item = menu_get_item('user/' . $GLOBALS['user']->uid . '/orders/' . $order_id . '/print');
+                if ($item['access']) {
+                    $data['actions']['output'][] = [
+                        '#theme' => 'menu_local_action',
+                        '#link' => $item
+                    ];
+                }
+                break;
+            case 'user/%/orders/%':
+                $order_id = $router_item['original_map'][3];
+                if (is_numeric($order_id) && !commerce_helper_ya_commerce_api_check_order_paid($order_id)) {
+                    $item = menu_get_item('checkout/%/pay');
+                    if ($item['access']) {
+                        $data['actions']['output'][] = [
+                            '#theme' => 'menu_local_action',
+                            '#link' => $item
+                        ];
+                    }
+                }
+                break;
+            case 'user/%':
                 $item = menu_get_item('user/' . $GLOBALS['user']->uid . '/edit');
                 if ($item['access']) {
-                    $data['actions']['output'][] = ['#theme' => 'menu_local_action', '#link' => $item];
+                    $data['actions']['output'][] = [
+                        '#theme' => 'menu_local_action',
+                        '#link' => $item
+                    ];
                 }
-            break;
-    }
+                break;
+        }
 
 
-    // убрать некоторые закладки
-    if (!empty($data['tabs'])) {
-        foreach ($data['tabs'][0]['output'] as $key => $value) {
-            // редактирование аккаунта перенесено в Действия
-            if ($value['#link']['path'] == "user/%/edit") {
-                unset($data['tabs'][0]['output'][$key]);
+        // убрать некоторые закладки
+        if (!empty($data['tabs'])) {
+            foreach ($data['tabs'][0]['output'] as $key => $value) {
+                // редактирование аккаунта перенесено в Действия
+                if ($value['#link']['path'] == "user/%/edit") {
+                    unset($data['tabs'][0]['output'][$key]);
+                }
             }
         }
     }
