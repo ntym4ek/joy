@@ -67,9 +67,7 @@ function commerce_helper_menu() {
 function commerce_helper_menu_alter(&$items)
 {
     // убрать из админки локальную задачу "Simulate checkout completion"
-    if (!isset($GLOBALS['user']->roles[3])) {
-        unset($items['admin/commerce/orders/%commerce_order/edit/checkout']);
-    }
+    unset($items['admin/commerce/orders/%commerce_order/edit/checkout']);
 
     // убрать настройки DaData для всех кроме админа
 //    $items['admin/config/user-interface/dadata']['access callback'] = 'commerce_helper_user_has_role';
