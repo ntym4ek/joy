@@ -842,8 +842,7 @@ function commerce_helper_free_shipping_validate($form, $form_state)
         $has_free_shipping = _commerce_helper_non_free_shipping($form_state['order']) ? false : true;
 
         // для Самовывоза всегда бесплатная доставка
-//        if ($shipping_service->commerce_shipping_service['und'][0]['value'] == 'pickup_shipping_service')
-//            $has_free_shipping = true;
+        if ($form_state['values']['commerce_shipping']['shipping_service'] == 'pickup_shipping_service') { $has_free_shipping = true; }
 
         // проверка стоимости выбранной доставки, пришедшей с Оформления и имеющегося права на бесплатную доставку
         $shipping_service = $form_state['values']['commerce_shipping']['shipping_rates'][$form_state['values']['commerce_shipping']['shipping_service']];
