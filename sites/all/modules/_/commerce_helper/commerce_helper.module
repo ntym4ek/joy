@@ -325,8 +325,39 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
                 $form['commerce_customer_shipping']['und']['profiles'][0]['field_username']['#access'] = FALSE;
             }
         }
+
+        // добавить возможность смены способа оплаты
+        $form['payment_method'] = [
+            '#type' => 'select',
+            '#title' => 'Способ оплаты',
+            '#options' => [
+                'ya_commerce_api|commerce_payment_ya_commerce_api' => 'Яндекс.Касса',
+                'bank_transfer|commerce_payment_bank_transfer' => 'Банковский счёт',
+                'pay_on_delivery|commerce_payment_pay_on_delivery' => 'Оплата при получении',
+            ],
+            '#default_value' => empty($form['#entity']->data['payment_method']) ? '' : $form['#entity']->data['payment_method'],
+        ];
+        array_unshift($form['actions']['submit']['#submit'], 'commerce_helper_commerce_order_ui_order_form_submit');
     }
 }
+
+// submit callback
+function commerce_helper_commerce_order_ui_order_form_submit(&$form, &$form_state)
+{
+    // изменим способ оплаты
+    // If the user is editing an order, load a fresh copy to merge changes to.
+    if ($form_state['commerce_order']->order_id) {
+        $form_state['commerce_order'] = commerce_order_load($form_state['commerce_order']->order_id);
+    }
+
+    // Merge changes into the order object in the form state so it is accessible
+    // by field handlers.
+    $order = $form_state['commerce_order'];
+
+    $order->data['payment_method'] = $form_state['values']['payment_method'];
+    commerce_order_save($order);
+}
+
 
 function commerce_helper_form_commerce_add_to_cart_form_alter(&$form, &$form_state)
 {

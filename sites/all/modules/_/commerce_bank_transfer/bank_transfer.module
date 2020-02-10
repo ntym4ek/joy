@@ -78,32 +78,31 @@ function bank_transfer_show_invoice($order) {
         if (strpos($key,BANK_TRANSFER_METHOD_NAME) === 0) $vars['payment_method'] = $method;
     }
 
-    if (isset($order->data['bank_transfer'])) {
-        // информация о заказе
-        $vars['customer'] = $order->data['bank_transfer']['cstm_name'];
-        $vars['order_id'] = $order->order_number;
-        $vars['total_nds'] = sprintf("%01.2f", $order->commerce_order_total['und'][0]['amount'] / 100 * 0.18);
-        $vars['total_amount'] = sprintf("%01.2f", $order->commerce_order_total['und'][0]['amount'] / 100);
-        $vars['total_amount_str'] = mb_ucfirst(_num2str($vars['total_amount']));
+    // информация о заказе
+    $vars['customer'] = isset($order->data['bank_transfer']) ? $order->data['bank_transfer']['cstm_name'] : '';
+    $vars['order_id'] = $order->order_number;
+    $vars['total_nds'] = sprintf("%01.2f", $order->commerce_order_total['und'][0]['amount'] / 100 * 0.18);
+    $vars['total_amount'] = sprintf("%01.2f", $order->commerce_order_total['und'][0]['amount'] / 100);
+    $vars['total_amount_str'] = mb_ucfirst(_num2str($vars['total_amount']));
 
-        foreach ($order->commerce_line_items['und'] as $key => $line_item) {
-            $item = commerce_line_item_load($line_item['line_item_id']);
-            if ($item->type == 'shipping' && $item->commerce_unit_price['und'][0]['amount'] == 0) continue;
-
-            if ($item->type == 'product') $product = commerce_product_load($item->commerce_product['und'][0]['product_id']);
-            $vars['line_items'][] = array(
-                'title' => ($item->type == 'product') ? $product->title : t($item->line_item_label),
-                'quantity' => sprintf("%d", ($item->type == 'product') ? $item->quantity : 1),
-                'price' => sprintf("%01.2f", ($item->type == 'product') ? $item->commerce_unit_price['und'][0]['amount'] / 100 : $item->commerce_unit_price['und'][0]['amount'] / 100),
-                'amount' => sprintf("%01.2f", ($item->type == 'product') ? $item->commerce_total['und'][0]['amount'] / 100 : $item->commerce_unit_price['und'][0]['amount'] / 100)
-            );
+    foreach ($order->commerce_line_items['und'] as $key => $line_item) {
+        $item = commerce_line_item_load($line_item['line_item_id']);
+        if ($item->type == 'shipping' && $item->commerce_unit_price['und'][0]['amount'] == 0) continue;
+        if ($item->type == 'commerce_discount') {
+            $item->line_item_label = 'Скидка';
         }
-        $vars['total_qty'] = ++$key;
 
-        $output = theme('bank_transfer_invoice', array('invoice' => $vars));
-    } else {
-        $output = t('There is no invoice for this order');
+        if ($item->type == 'product') $product = commerce_product_load($item->commerce_product['und'][0]['product_id']);
+        $vars['line_items'][] = array(
+            'title' => ($item->type == 'product') ? $product->title : t($item->line_item_label),
+            'quantity' => sprintf("%d", ($item->type == 'product') ? $item->quantity : 1),
+            'price' => sprintf("%01.2f", ($item->type == 'product') ? $item->commerce_unit_price['und'][0]['amount'] / 100 : $item->commerce_unit_price['und'][0]['amount'] / 100),
+            'amount' => sprintf("%01.2f", ($item->type == 'product') ? $item->commerce_total['und'][0]['amount'] / 100 : $item->commerce_unit_price['und'][0]['amount'] / 100)
+        );
     }
+    $vars['total_qty'] = ++$key;
+
+    $output = theme('bank_transfer_invoice', array('invoice' => $vars));
 
     return $output;
 }
