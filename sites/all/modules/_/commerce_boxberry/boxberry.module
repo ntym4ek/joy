@@ -174,6 +174,13 @@ function boxberry_api_request($data)
     $handle = fopen($url, "rb"); $contents = stream_get_contents($handle); fclose($handle);
     $response['cost_data'] = json_decode($contents, TRUE);
 
+    if (!empty($data['zipcode'])) {
+        $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=ZipCheck&Zip=' . $data['zipcode'];
+
+        $handle = fopen($url, "rb"); $contents = stream_get_contents($handle); fclose($handle);
+        $response['courier'] = array_shift(json_decode($contents,true));
+    }
+
     // описание точки
     if ($data['target_point']) {
         $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=PointsDescription&code=' . $data['target_point'];
