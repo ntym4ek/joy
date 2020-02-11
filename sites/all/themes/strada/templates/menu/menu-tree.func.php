@@ -21,18 +21,39 @@
  */
 
 /**
- * Bootstrap theme wrapper function for the primary desctop menu links.
+ * Bootstrap theme wrapper function for the primary desktop menu links.
  */
 function strada_menu_tree__menu_help(&$variables) {
   return '<div class="menu-help">' . $variables['tree'] . '</div>';
 }
 
 /**
- * Bootstrap theme wrapper function for the primary desctop menu links.
+ * Bootstrap theme wrapper function for the primary desktop menu links.
  */
-function strada_menu_tree__menu_main(&$variables) {
-  return '<ul class="nav main-menu">' . $variables['tree'] . '</ul>';
+function strada_menu_tree__menu_menu_main(&$variables) {
+  return '<ul class="nav menu-menu-main">' . $variables['tree'] . '</ul>';
 }
+
+/**
+ * Bootstrap theme wrapper function for the primary desktop menu links.
+ */
+function strada_menu_tree__menu_menu_main_mobile(&$variables) {
+  return '<ul class="nav main-menu">  
+            <li class="first last expanded dropdown level-1-item" id="dropdown">
+                <a href="/" title="Каталог товаров" class="dropdown-toggle btn btn-link" data-toggle="dropdown">
+                    <i class="far fa-bars" aria-hidden="true"></i>
+                </a>
+                <div class="dropdown-menu">
+                    <div class="level-2-wrapper">
+                        <ul class="level-2">' .
+                            $variables['tree'] .
+                        '</ul>
+                    </div>
+                </div>
+            </li>
+         </ul>';
+}
+
 
 /**
  * Bootstrap theme wrapper function for the user menu links.
