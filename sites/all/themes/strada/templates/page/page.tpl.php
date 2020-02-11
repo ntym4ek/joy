@@ -117,7 +117,7 @@
 
                 <?php if (!$tsss): ?>
                 <div class="navbar-menu" role="navigation">
-                    <?php print render($main_menu); ?>
+                    <?php print render($menu_menu_main_mobile); ?>
                 </div>
                 <?php endif; ?>
 
@@ -171,7 +171,7 @@
     <?php if (!$tsss): ?>
     <div class="line-3 row hidden-xs">
         <div class="<?php print $container_class; ?>">
-            <?php print render($horizont_menu); ?>
+            <?php print render($menu_menu_main); ?>
         </div>
     </div>
     <?php endif; ?>

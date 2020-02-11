@@ -28,9 +28,23 @@ function strada_preprocess_page(array &$vars)
     }
 
     /** -------------------------------------------- Меню  ---------------------------------------------------------- */
-    // menu menu
-    $menu = menu_tree_all_data('menu-main');
-    $vars['main_menu'] = menu_tree_output($menu);
+    // menu menu main
+    $menu = menu_tree_all_data('menu-menu-main');
+    $menu_menu_main = menu_tree_output($menu);
+    $vars['menu_menu_main'] = $menu_menu_main;
+
+    // menu menu main
+    foreach($menu_menu_main as &$menu_item) {
+        if (isset($menu_item['#theme'])) {
+            $menu_item['#theme'] = 'menu_link__menu_menu_main_mobile';
+        }
+    }
+    $menu_menu_main['#theme_wrappers'] = ['menu_tree__menu_menu_main_mobile'];
+    $vars['menu_menu_main_mobile'] = $menu_menu_main;
+
+//    // menu menu
+//    $menu = menu_tree_all_data('menu-main');
+//    $vars['main_menu'] = menu_tree_output($menu);
 
     // user menu
     $menu = menu_tree_all_data('user-menu');
@@ -38,8 +52,8 @@ function strada_preprocess_page(array &$vars)
     $vars['user_menu']['#theme_wrappers'] = array('menu_tree__user_menu');
 
     // user menu
-    $menu = menu_tree_all_data('menu-horizont');
-    $vars['horizont_menu'] = menu_tree_output($menu);
+//    $menu = menu_tree_all_data('menu-horizont');
+//    $vars['horizont_menu'] = menu_tree_output($menu);
 
     // поиск
     $vars['search_value'] = isset($_GET['s']) ? check_plain($_GET['s']) : '';

@@ -270,7 +270,25 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
             });
 
             /* ------------------------------------------ Main Menu ------------------------------------------------- */
-            $(".main-menu ul.level-2 > li > a").hover(function () {
+            $(".menu-menu-main .level-1-item.dropdown")
+                .mouseenter(function () {
+                    $(this).siblings().removeClass("open");
+                    $(this).addClass("open");
+                })
+                .mouseleave(function () {
+                    $(this).removeClass("open");
+                });
+
+            // лик по родительской категории тоже работает как переход
+            $(".menu-menu-main .level-1-item").click(function(){
+                if ($(this).hasClass('open')) {
+                    location.href = $(this).find('> a').attr('href');
+                }
+            });
+
+            /* ------------------------------------------ Main Menu mobile ------------------------------------------------- */
+            var menu = $('.main-menu');
+            menu.find("ul.level-2 > li > a").hover(function () {
                 var hoveredLI = this.closest('li');
                 $(hoveredLI).closest("ul.level-2").find("li").each(function(index, el) {
                     if (el !== hoveredLI) {
@@ -283,7 +301,7 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
             });
 
             // мобильная кнопка для закрытия меню третьего уровня
-            $('.main-menu ul.level-2 > li.expanded > a').bind('click', function(e) {
+            menu.find("ul.level-2 > li.expanded > a").bind('click', function(e) {
                 var hoveredLI = this.closest('li');
                 $(hoveredLI).addClass("visible");
                 e.stopPropagation();
@@ -298,17 +316,17 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
             });
 
             // затемнение
-            $(".main-menu > li").on("show.bs.dropdown", function () {
+            menu.find("> li").on("show.bs.dropdown", function () {
                 var docHeight = $(document).height() + 50;
                 var docWidth = $(document).width();
                 var winHeight = $(window).height();
                 if( docHeight < winHeight ) { docHeight = winHeight; }
                 $("#modalBackdrop").css("top", "125px").css("height", docHeight + "px").css("width", docWidth + "px").show();
             });
-            $(".main-menu > li").on("shown.bs.dropdown", function () {
+            menu.find("> li").on("shown.bs.dropdown", function () {
                 mainMenuResize($(".level-2-item.visible"));
             });
-            $(".main-menu > li").on("hidden.bs.dropdown", function () {
+            menu.find("> li").on("hidden.bs.dropdown", function () {
                 $("#modalBackdrop").hide();
             });
 
