@@ -326,6 +326,74 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
             }
         }
     }
+
+    // форма редактирования Термина таксономии
+    // в словаре Категорий товаров добавить поле для добавления товаров в категорию
+    if ($form_id == 'taxonomy_form_term' && $form_state['term']->vid == 2) {
+        $form_state['products'] = _commerce_helper_get_products_by_category($form_state['term']->tid, true);
+        $form['products'] = [
+            '#type' => 'select',
+            '#title' => 'Список товаров категории',
+            '#options' => _commerce_helper_get_products_by_category(),
+            '#default_value' => $form_state['products'],
+            '#chosen' => true,
+            '#multiple' => true,
+        ];
+        $form['#submit'][] = 'commerce_helper_taxonomy_form_term_submit';
+    }
+}
+
+/**
+ * submit callback на сохранение термина словаря Категорий
+ * добавить или удалить товары из Категории
+ */
+function commerce_helper_taxonomy_form_term_submit($form, $form_state)
+{
+    $tid = $form_state['term']->tid;
+
+    // добавленные в Категорию товары
+    $products_add = array_diff(array_values($form_state['values']['products']), $form_state['products']);
+    foreach($products_add as $nid) {
+        $product_wr = entity_metadata_wrapper('node', $nid);
+        $product_wr->field_pd_category[] = $tid;
+        $product_wr->save();
+    }
+
+    // удалённые из Категории товары
+    $products_del = array_diff(array_values($form_state['products']), $form_state['values']['products']);
+    foreach($products_del as $nid) {
+        $terms = [];
+        $product_wr = entity_metadata_wrapper('node', $nid);
+        foreach($product_wr->field_pd_category->value() as $term) {
+            if ($tid != $term->tid) $terms[] = $term;
+        }
+        $product_wr->field_pd_category = $terms;
+        $product_wr->save();
+    }
+}
+
+// определить товары, входящие в Категорию
+function _commerce_helper_get_products_by_category($tid = null, $id_only = false)
+{
+    $output = [];
+    $query = db_select('node', 'n')->distinct();
+    $query->condition('n.type', 'product');
+    $query->fields('n', array('nid', 'title'));
+    if ($tid) {
+        $query->innerJoin('field_data_field_pd_category', 'fc', 'fc.entity_id = n.nid');
+        $query->condition('fc.field_pd_category_tid', $tid);
+    }
+    if ($result = $query->execute()) {
+        foreach($result->fetchAll() as $item) {
+            if ($id_only) {
+                $output[] = $item->nid;
+            }
+            else {
+                $output[$item->nid] = $item->title;
+            }
+        }
+    }
+    return $output;
 }
 
 function commerce_helper_form_commerce_add_to_cart_form_alter(&$form, &$form_state)
