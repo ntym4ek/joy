@@ -270,7 +270,7 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
             });
 
             /* ------------------------------------------ Main Menu ------------------------------------------------- */
-            $(".menu-menu-main .level-1-item.dropdown")
+            $(".main-menu .level-1-item.dropdown")
                 .mouseenter(function () {
                     $(this).siblings().removeClass("open");
                     $(this).addClass("open");
@@ -280,14 +280,14 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
                 });
 
             // лик по родительской категории тоже работает как переход
-            $(".menu-menu-main .level-1-item").click(function(){
+            $(".main-menu .level-1-item").click(function(){
                 if ($(this).hasClass('open')) {
                     location.href = $(this).find('> a').attr('href');
                 }
             });
 
             /* ------------------------------------------ Main Menu mobile ------------------------------------------------- */
-            var menu = $('.main-menu');
+            var menu = $('.main-menu-mobile');
             menu.find("ul.level-2 > li > a").hover(function () {
                 var hoveredLI = this.closest('li');
                 $(hoveredLI).closest("ul.level-2").find("li").each(function(index, el) {
@@ -334,7 +334,7 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
             function mainMenuResize(el) {
                 var maxHeight = $(el).find(".level-3-wrapper").outerHeight();
                 var minHeight = $(el).closest(".level-2").outerHeight();
-                $(el).closest(".dropdown-menu").height(minHeight < maxHeight ? maxHeight : minHeight);
+                $(el).closest(".dropdown-menu").height((minHeight < maxHeight ? maxHeight : minHeight) + 10);
             }
 
             /* ------------------------------------------ User  Menu ----------------------------------------------- */

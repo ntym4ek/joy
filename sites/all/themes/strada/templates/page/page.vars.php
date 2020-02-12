@@ -29,18 +29,18 @@ function strada_preprocess_page(array &$vars)
 
     /** -------------------------------------------- Меню  ---------------------------------------------------------- */
     // menu menu main
-    $menu = menu_tree_all_data('menu-menu-main');
-    $menu_menu_main = menu_tree_output($menu);
-    $vars['menu_menu_main'] = $menu_menu_main;
+    $menu = menu_tree_all_data('main-menu');
+    $main_menu = menu_tree_output($menu);
+    $vars['main_menu'] = $main_menu;
 
     // menu menu main
-    foreach($menu_menu_main as &$menu_item) {
+    foreach($main_menu as &$menu_item) {
         if (isset($menu_item['#theme'])) {
-            $menu_item['#theme'] = 'menu_link__menu_menu_main_mobile';
+            $menu_item['#theme'] = 'menu_link__main_menu_mobile';
         }
     }
-    $menu_menu_main['#theme_wrappers'] = ['menu_tree__menu_menu_main_mobile'];
-    $vars['menu_menu_main_mobile'] = $menu_menu_main;
+    $main_menu['#theme_wrappers'] = ['menu_tree__main_menu_mobile'];
+    $vars['main_menu_mobile'] = $main_menu;
 
 //    // menu menu
 //    $menu = menu_tree_all_data('menu-main');

@@ -8,7 +8,7 @@
 /**
  * ---------------------------------------- новое Главное меню  -------------------------------------------
  */
-function strada_menu_link__menu_menu_main(array $vars)
+function strada_menu_link__main_menu(array $vars)
 {
     $element = $vars['element'];
     $sub_menu = '';
@@ -41,7 +41,7 @@ function strada_menu_link__menu_menu_main(array $vars)
 /**
  * ---------------------------------------- мобильное Главное меню  -------------------------------------------
  */
-function strada_menu_link__menu_menu_main_mobile(array $vars)
+function strada_menu_link__main_menu_mobile(array $vars)
 {
     $element = $vars['element'];
     $sub_menu = '';

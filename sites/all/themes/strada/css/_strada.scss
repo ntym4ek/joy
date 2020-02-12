@@ -279,7 +279,7 @@ div.divider {
 
     }
 
-    .menu-menu-main {
+    .main-menu {
         display: flex;
         text-transform: uppercase;
         flex-wrap: wrap; justify-content: space-between;
@@ -320,7 +320,7 @@ div.divider {
             }
         }
     }
-    .main-menu {
+    .main-menu-mobile {
         .level-1-item {
             position: initial;
             > .dropdown-menu {
@@ -331,6 +331,7 @@ div.divider {
                 border-color: $divider-color;
                 background-color: $gray-lighter;
                 border-top-left-radius: 0; border-top-right-radius: 0;
+                box-shadow: none;
                 a { color: $text-color; }
                 @media #{$mobile} {
                     margin: 0 -8px; // из-за position: static в line-2
@@ -349,7 +350,7 @@ div.divider {
         .level-2 {
             padding: $grid-gutter-width*2 0;
             width: 300px;
-            //float: right;
+            float: right;
             > li {
                 border-bottom-left-radius: 2px;
                 border-top-left-radius: 2px;
@@ -367,6 +368,7 @@ div.divider {
             @media #{$mobile} {
                 width: initial;
                 padding: $grid-gutter-width $grid-gutter-width*2;
+                float: none;
             }
         }
         .level-3-wrapper {
@@ -407,25 +409,9 @@ div.divider {
         }
     }
 
-
-    .horizont-menu {
-        margin: 0 (-$grid-gutter-width);
-        text-transform: uppercase;
-        display: flex; justify-content: space-between;
-        flex-wrap: wrap;
-        padding-top: 3px;
-        > li {
-            display: block;
-            a { color: #fff; font-size: $font-size-xs; line-height: 2.5; padding: 0 $grid-gutter-width; }
-            &.last a { color: $brand-danger; font-weight: 600; }
-        }
-        ul li a { color: $text-color; }
-    }
-
     @media #{$mobile} {
         .navbar-header {
             flex-wrap: wrap;
-            margin: 0;
             .navbar-logo {
                 flex: 1 0 auto; order: 4;
                 margin-top: 5px;
