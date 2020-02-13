@@ -20,13 +20,6 @@ function commerce_helper_menu() {
         'access arguments' => array('access content'),
         'type' => MENU_CALLBACK,
     );
-    $items['user/%/orders/%/pay'] = array (
-        'title' => 'Оплатить заказ',
-        'page callback' => 'commerce_helper_commerce_order_pay_again',
-        'page arguments' => array(3),
-        'access arguments' => array('edit own commerce_order entities'),
-        'type' => MENU_LOCAL_ACTION,
-    );
     $items['user/%/orders/%/print'] = array(
         'title' => 'Распечатать заказ',
         'page callback' => 'commerce_helper_print_order_info',
@@ -56,7 +49,6 @@ function commerce_helper_menu() {
         'access arguments' => array('access manager settings'),
         'file' => 'includes/commerce_helper.admin.inc',
     );
-
 
     return $items;
 }
@@ -433,7 +425,8 @@ function commerce_helper_form_commerce_add_to_cart_form_alter(&$form, &$form_sta
     }
 }
 
-function commerce_helper_add_to_cart_ajax_callback($form, $form_state) {
+function commerce_helper_add_to_cart_ajax_callback($form, $form_state)
+{
     drupal_get_messages();
     $product_ids = commerce_cart_add_to_cart_form_product_ids($form_state['line_item']);
     $class = drupal_html_class(commerce_cart_add_to_cart_form_id($product_ids));
@@ -457,7 +450,8 @@ function commerce_helper_add_to_cart_form_validate($form, &$form_state)
     }
 }
 
-function commerce_helper_add_to_cart_form_submit($form, &$form_state){
+function commerce_helper_add_to_cart_form_submit($form, &$form_state)
+{
     $form_state['rebuild'] = TRUE;
 }
 
@@ -703,9 +697,6 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
     }
 
     /** -------------------------------------------- настройка Commerce Userpoints ---------------------------------------------------- */
-
-
-
     $form['buttons']['#type'] = 'container';
     $form['buttons']['cancel']['#access'] = false;
     $form['buttons']['continue']['#value'] = t('Confirm order');
@@ -869,7 +860,8 @@ function commerce_helper_commerce_shipping_recalculate_services_submit($element,
  * Processing Radios Element using #after_build property.
  * Adding the 'active' class attribute for selected item in Product display
  */
-function commerce_helper_radios_alter($element, $form_state) {
+function commerce_helper_radios_alter($element, $form_state)
+{
     if (isset($element['#default_value'])) {
         $radios_value = $element['#default_value'];
 
@@ -888,7 +880,8 @@ function commerce_helper_radios_alter($element, $form_state) {
  * Processing Radios Element using #after_build property.
  * Adding the 'active' class attribute for selected item in checkout_shipping
  */
-function commerce_helper_shipping_radios_alter($element, $form_state) {
+function commerce_helper_shipping_radios_alter($element, $form_state)
+{
     if ($form_state['values']['commerce_shipping']['shipping_service']) {
         $radios_value = $form_state['values']['commerce_shipping']['shipping_service'];
         if (isset($element[$radios_value])) {
@@ -944,6 +937,32 @@ function commerce_helper_commerce_coupon_discount_value_display_alter(&$text, $d
     }
 }
 
+/**
+ * alter commerce_coupon_evaluate_conditions function
+ * дополнительная проверка условий применения купона
+ * сумма купона на сумму не может превышать суммы товаров
+ */
+function commerce_helper_commerce_coupon_condition_outcome_alter(&$outcome, &$context)
+{
+    $offer = $context['coupon']->commerce_discount_reference[0]->commerce_discount_offer;
+    if ($offer->type->value() == 'fixed_amount') {
+        // получить размер скидки
+        $offer_amount = $offer->commerce_fixed_amount->value()['amount'];
+
+        // получить сумму товаров в заказе, так как скидки только на них
+        $products_amount = 0;
+        foreach ($context['order']->commerce_line_items as $line_item_wr) {
+            if ($line_item_wr->type->value() == "product") {
+                $products_amount += $line_item_wr->commerce_total->value()['amount'];
+            }
+        }
+        if ($offer_amount > $products_amount) {
+            $outcome = FALSE;
+            $error = &drupal_static('commerce_coupon_error_' . strtolower($context['coupon']->code->value()));
+            $error = t('Coupon amount exceeds products amount.');
+        }
+    }
+}
 
     ///**
 // * Returns the payment details element for display via AJAX.
@@ -970,7 +989,8 @@ function commerce_helper_commerce_coupon_discount_value_display_alter(&$text, $d
 /**
  * --------------------------------- Автозаполнение полей title и alt изображений в продукции при сохранении ноды ------
  */
-function commerce_helper_node_submit($node, $form, &$form_state) {
+function commerce_helper_node_submit($node, $form, &$form_state)
+{
     if ($node->type == 'product_display' || $node->type == 'product') {
         $site_name = 'ООО "СТРАДА"';
         $pd_wrapper = entity_metadata_wrapper('node', $node);
@@ -1007,14 +1027,16 @@ function commerce_helper_commerce_order_status_info_alter(&$order_statuses)
 /**
  * Implements hook_commerce_checkout_pane_info_alter().
  */
-function commerce_helper_commerce_checkout_pane_info_alter(&$checkout_panes) {
+function commerce_helper_commerce_checkout_pane_info_alter(&$checkout_panes)
+{
     $checkout_panes['checkout_completion_message']['callbacks']['checkout_form'] = 'commerce_helper_completion_message_callback';
 }
 
 /**
  * Checkout complete message callback.
  */
-function commerce_helper_completion_message_callback($form, &$form_state, $checkout_pane, $order) {
+function commerce_helper_completion_message_callback($form, &$form_state, $checkout_pane, $order)
+{
     return array(
         'message' => array(
             '#theme' => 'commerce_checkout_completion_message',
@@ -1048,159 +1070,6 @@ function commerce_helper_commerce_order_presave($order)
 
 
 
-/**
- * ------------------------------------------ Яндекс.Касса (Yandex.Kassa) ----------------------------------------------
- */
-
-/**
- * alter yamoney_api_fail
- * возврат со страницы оплаты яндекса без оплаты
- * или возврат с яндекса при НЕудачной оплате
- * редирект на страницу оформленного заказа
- */
-function commerce_helper_yamoney_api_fail()
-{
-    $params = drupal_get_query_parameters();
-    if (!empty($params['orderId'])) {
-        if ($order = commerce_order_load($params['orderId'])) commerce_checkout_complete($order);
-        drupal_goto('checkout/' . $params['orderId'] . '/complete');
-    }
-}
-
-/**
- * alter yamoney_api_complete
- * возврат с яндекса при Удачной оплате
- * редирект на страницу оформленного заказа
- */
-function commerce_helper_yamoney_api_complete()
-{
-    $params = drupal_get_query_parameters();
-    if (!empty($params['orderId'])) {
-        if ($order = commerce_order_load($params['orderId'])) commerce_checkout_complete($order);
-        drupal_goto('checkout/' . $params['orderId'] . '/complete');
-    }
-}
-
-function commerce_helper_commerce_payment_method_info_alter(&$payment_methods)
-{
-    $payment_methods['ya_commerce_api']['display_title'] = '<div class="carrier">' . t('Pay online') . '</div><div class="message">Через Яндекс. Банковские карты, банк-онлайн и другие.</div>';
-    $payment_methods['commerce_rbspayment']['display_title'] = '<div class="carrier">' . t('Pay online') . '</div><div class="message">Через Сбербанк. Банковские карты, банк-онлайн и другие.</div>';
-}
-
-
-/**
- * функция повторной оплаты из просмотра заказа
- * на базе функции ya_commerce_api_submit_form_submit модуля yamoney_api v.1.0.13
- */
-use YandexCheckout\Common\Exceptions\ApiException;
-use YandexCheckout\Model\PaymentStatus;
-use YandexCheckout\Request\Payments\CreatePaymentRequestSerializer;
-function commerce_helper_commerce_order_pay_again($order_id)
-{
-
-    $modulePath = drupal_get_path('module', 'yamoney_api');
-    require_once $modulePath.DIRECTORY_SEPARATOR.'YandexMoneyLogger.php';
-    require_once $modulePath.DIRECTORY_SEPARATOR.'InstallmentsApi.php';
-
-    if (variable_get('yamoney_api_shop', 1) && $order = commerce_order_load($order_id)) {
-
-        $user = user_load($order->uid);
-
-        $modulePath = drupal_get_path('module', 'yamoney_api');
-        require_once $modulePath.DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'autoload.php';
-        $apiClient = yamoney_api__common__get_api_client();
-
-        $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-        $currency_code = $order_wrapper->commerce_order_total->currency_code->value();
-        $amount        = $order_wrapper->commerce_order_total->amount->value();
-        $amount        = round(commerce_currency_amount_to_decimal($amount, $currency_code), 2);
-
-//        if (variable_get('yamoney_api_paymode') == 'kassa') {
-            $paymentMethod = '';
-//        }
-
-        $builder        = ya_commerce_api_get_create_payment_request_builder($order, $amount, $paymentMethod, $order_wrapper);
-        $paymentRequest = $builder->build();
-        $serializer     = new CreatePaymentRequestSerializer();
-        $serializedData = $serializer->serialize($paymentRequest);
-        YandexMoneyLogger::info('Create payment request: '.json_encode($serializedData));
-        try {
-            $response = $apiClient->createPayment($paymentRequest);
-            if ($response && $response->status !== PaymentStatus::CANCELED) {
-                $transaction = commerce_payment_transaction_new('ya_commerce_api', $order->order_id);
-                $transaction->instance_id   = 'ya_commerce_api|commerce_payment_ya_commerce_api';
-                $transaction->remote_id     = $response->id;
-                $transaction->amount        = $amount * 100;
-                $transaction->currency_code = $currency_code;
-                $transaction->status        = COMMERCE_PAYMENT_STATUS_PENDING;
-                $transaction->remote_status = $response->getStatus();
-                commerce_order_status_update($order, YAMONEY_API_ORDER_STATUS_PENDING);
-                $ymTransaction           = new YAMoneyApiTransaction();
-                $ymTransaction->uid      = isset($user->uid) ? $user->uid : 0;
-                $ymTransaction->amount   = $amount;
-                $ymTransaction->mail     = isset($user->mail) ? $user->mail : $order->mail;
-                $ymTransaction->order_id = $order->order_id;
-                $ymTransaction->payment_id = $response->getId();
-                $ymTransaction->status   = $response->getStatus();
-                if (commerce_payment_transaction_save($transaction) && commerce_order_save($order)
-                    && yamoney_api_transaction_save($ymTransaction)
-                ) {
-                    $confirmationUrl = $response->confirmation->confirmationUrl;
-                    drupal_goto($confirmationUrl);
-                }
-            } else {
-                YandexMoneyLogger::error('Payment not created. Order id: '.$order->order_number);
-                drupal_set_message(t('Unable to create payment.'), 'error');
-            }
-
-        } catch (ApiException $e) {
-            YandexMoneyLogger::error('Api error: '.$e->getMessage());
-            drupal_set_message(t('Unable to pay with this method.'), 'error');
-            drupal_goto(request_uri());
-        }
-    }
-}
-
-// проверить все транзакции заказа и сменить их статус
-// на сервере ЯД на предмет оплаты
-function commerce_helper_ya_commerce_api_check_order_paid($order)
-{
-    if (is_numeric($order)) $order = commerce_order_load($order);
-
-    if ($order) {
-        $balance = commerce_payment_order_balance($order);
-        if (!$balance) {
-            return FALSE;
-        }
-
-        // если сумма заказа и оплаченного не совпадает, проверить транзакции на сервере
-        if ($balance['amount'] > 0) {
-            $apiClient = yamoney_api__common__get_api_client();
-            $transactions = commerce_payment_transaction_load_multiple([], ['order_id' => $order->order_id]);
-            foreach ($transactions as $transaction) {
-                $paymentId = $transaction->remote_id;
-                if ($paymentId && $payment = $apiClient->getPaymentInfo($paymentId)) {
-                    if ($payment->getPaid()) {
-                        // изменить заодно статус транзакции
-                        $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
-                        commerce_payment_transaction_save($transaction);
-                    }
-                }
-            }
-        }
-
-        if (commerce_payment_order_balance($order)['amount'] == 0) {
-            // изменить статус заказа
-            if (in_array($order->status, ['cart', 'pending'])
-                || strpos($order->status, 'checkout_') === 0) {
-                commerce_order_status_update($order, 'paid');
-            }
-            return TRUE;
-        }
-    }
-    return false;
-}
-
 
 /**
  * ------------------------------------------ Действия (Actions) --------------------------------------------------
@@ -1231,7 +1100,7 @@ function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path
                 break;
             case 'user/%/orders/%':
                 $order_id = $router_item['original_map'][3];
-                if (is_numeric($order_id) && !commerce_helper_ya_commerce_api_check_order_paid($order_id)) {
+                if (is_numeric($order_id) && !ext_payment_ya_commerce_api_check_order_paid($order_id)) {
                     $item = menu_get_item('checkout/%/pay');
                     if ($item['access']) {
                         $data['actions']['output'][] = [
@@ -1646,7 +1515,7 @@ function _get_order_info($order, $including_products = false)
                 $payment_title = 'Онлайн, через сервис Яндекс.Касса';
                 $payment_before_shipping = TRUE;
                 $is_online = true;
-                commerce_helper_ya_commerce_api_check_order_paid($order_wr->value());
+                ext_payment_ya_commerce_api_check_order_paid($order_wr->value());
                 break;
 
             case 'pay_on_delivery|commerce_payment_pay_on_delivery':
