@@ -326,10 +326,16 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
             }
         }
     }
+}
 
-    // форма редактирования Термина таксономии
+/**
+ * --------------------------------- Изменение формы редактирования термина ----------------------------------------------
+ * Implements hook_form_FORM_ID_alter()
+ */
+function commerce_helper_form_taxonomy_form_term_alter(&$form, &$form_state)
+{
     // в словаре Категорий товаров добавить поле для добавления товаров в категорию
-    if ($form_id == 'taxonomy_form_term' && $form_state['term']->vid == 2) {
+    if ($form_state['term']->vid == 2) {
         $form_state['products'] = _commerce_helper_get_products_by_category($form_state['term']->tid, true);
         $form['products'] = [
             '#type' => 'select',
@@ -340,6 +346,17 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
             '#multiple' => true,
         ];
         $form['#submit'][] = 'commerce_helper_taxonomy_form_term_submit';
+
+        // убрать лишние поля
+        $form['description']['#access'] = false;
+        $form['relations']['#access'] = false;
+    }
+
+    // в словаре Каталога (связанного с главным меню) убрать лишние поля
+    if ($form_state['term']->vid == 10 && $GLOBALS['user']->uid != 1) {
+        $form['relations']['#access'] = false;
+        $form['description']['#access'] = false;
+        $form['path']['#access'] = false;
     }
 }
 

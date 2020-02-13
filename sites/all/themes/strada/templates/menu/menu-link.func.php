@@ -18,6 +18,16 @@ function strada_menu_link__main_menu(array $vars)
     $options['html'] = TRUE;
     $depth = $element['#original_link']['depth'];
 
+    $href = $element['#href'];
+    if ($element['#original_link']['module'] == 'taxonomy_menu') {
+        $menu_term_tid = str_replace('taxonomy/term/', '', $element['#original_link']['link_path']);
+        if (is_numeric($menu_term_tid) && $source_term_wr = entity_metadata_wrapper('taxonomy_term', $menu_term_tid)) {
+            if ($category_tid = $source_term_wr->field_category_term->tid->value()) {
+                $href = url('taxonomy/term/' . $category_tid);
+            }
+        }
+    }
+
     if ($element['#below']) {
         unset($element['#below']['#theme_wrappers']);
 
@@ -35,7 +45,7 @@ function strada_menu_link__main_menu(array $vars)
     }
     $attributes['class'][] = 'level-' . $depth . '-item';
 
-    return '<li' . drupal_attributes($attributes) . '>' . l($title, $element['#href'], $options) . $sub_menu . "</li>\n";
+    return '<li' . drupal_attributes($attributes) . '>' . l($title, $href, $options) . $sub_menu . "</li>\n";
 }
 
 /**

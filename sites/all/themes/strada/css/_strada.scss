@@ -292,6 +292,7 @@ div.divider {
             flex: auto;
             > a {
                 color: $text-color;
+                cursor: initial;
                 &:hover {
                     color: #fff;
                     background-color: $brand-green;
