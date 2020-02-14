@@ -1433,10 +1433,13 @@ function commerce_helper_commerce_price_component_total_coupons($order)
 }
 
 /**
- * перевод Order total компоненты в цене
+ * перевод компонент цены в заказе
  */
 function commerce_helper_commerce_price_formatted_components_alter(&$components, $price, $entity)
 {
+    foreach($components as $key => &$component) {
+        if ($component['titlt'] == 'Discount') $component['titlt'] = t('Discount');
+    }
     $components['commerce_price_formatted_amount']['title'] = check_plain(t('Order total'));
 }
 
