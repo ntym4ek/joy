@@ -256,9 +256,11 @@
         <div class="f-menu">
             <h5>Меню</h5>
             <ul class="dry-list">
-                <li><a href="<?php print $GLOBALS['user']->uid ? '/user/' . $GLOBALS['user']->uid . '/orders' : 'user/login'; ?>">Мои заказы</a></li>
                 <li><a href="/info/contacts">Контакты</a></li>
+                <li><a href="<?php print $GLOBALS['user']->uid ? '/user/' . $GLOBALS['user']->uid . '/orders' : 'user/login'; ?>">Мои заказы</a></li>
                 <li><a href="/info/about">О компании</a></li>
+                <li><a href="/info/resellers">Оптовым покупателям</a></li>
+                <li><a href="/info/suppliers">Поставщкам</a></li>
                 <li><a href="/info/shopping">Помощь</a></li>
             </ul>
         </div>
