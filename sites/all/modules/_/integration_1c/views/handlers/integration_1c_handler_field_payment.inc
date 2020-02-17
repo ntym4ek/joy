@@ -40,7 +40,7 @@ class integration_1c_handler_field_payment extends views_handler_field
                 }
 
                 // проверка оплаты
-                commerce_helper_ya_commerce_api_check_order_paid($order_wr->value());
+                ext_payment_ya_commerce_api_check_order_paid($order_wr->value());
                 if ($balance = commerce_payment_order_balance($order_wr->value())) {
                     $balance = $balance['amount'];
                 }
