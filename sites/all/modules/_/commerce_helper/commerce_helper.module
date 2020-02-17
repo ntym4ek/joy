@@ -318,7 +318,7 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
             }
         }
 
-        // добавить возможность смены способа оплаты
+        // добавить возможность смены способа оплаты в админке
         $form['payment_method'] = [
             '#type' => 'select',
             '#title' => 'Способ оплаты',
