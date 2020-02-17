@@ -351,6 +351,91 @@ function commerce_helper_commerce_order_ui_order_form_submit(&$form, &$form_stat
 }
 
 
+/**
+ * --------------------------------- Изменение формы редактирования термина ----------------------------------------------
+ * Implements hook_form_FORM_ID_alter()
+ */
+function commerce_helper_form_taxonomy_form_term_alter(&$form, &$form_state)
+{
+    // в словаре Категорий товаров добавить поле для добавления товаров в категорию
+    if ($form_state['term']->vid == 2) {
+        $form_state['products'] = _commerce_helper_get_products_by_category($form_state['term']->tid, true);
+        $form['products'] = [
+            '#type' => 'select',
+            '#title' => 'Список товаров категории',
+            '#options' => _commerce_helper_get_products_by_category(),
+            '#default_value' => $form_state['products'],
+            '#chosen' => true,
+            '#multiple' => true,
+        ];
+        $form['#submit'][] = 'commerce_helper_taxonomy_form_term_submit';
+
+        // убрать лишние поля
+        $form['description']['#access'] = false;
+        $form['relations']['#access'] = false;
+    }
+
+    // в словаре Каталога (связанного с главным меню) убрать лишние поля
+    if ($form_state['term']->vid == 10 && $GLOBALS['user']->uid != 1) {
+        $form['relations']['#access'] = false;
+        $form['description']['#access'] = false;
+        $form['path']['#access'] = false;
+    }
+}
+
+/**
+ * submit callback на сохранение термина словаря Категорий
+ * добавить или удалить товары из Категории
+ */
+function commerce_helper_taxonomy_form_term_submit($form, $form_state)
+{
+    $tid = $form_state['term']->tid;
+
+    // добавленные в Категорию товары
+    $products_add = array_diff(array_values($form_state['values']['products']), $form_state['products']);
+    foreach($products_add as $nid) {
+        $product_wr = entity_metadata_wrapper('node', $nid);
+        $product_wr->field_pd_category[] = $tid;
+        $product_wr->save();
+    }
+
+    // удалённые из Категории товары
+    $products_del = array_diff(array_values($form_state['products']), $form_state['values']['products']);
+    foreach($products_del as $nid) {
+        $terms = [];
+        $product_wr = entity_metadata_wrapper('node', $nid);
+        foreach($product_wr->field_pd_category->value() as $term) {
+            if ($tid != $term->tid) $terms[] = $term;
+        }
+        $product_wr->field_pd_category = $terms;
+        $product_wr->save();
+    }
+}
+
+// определить товары, входящие в Категорию
+function _commerce_helper_get_products_by_category($tid = null, $id_only = false)
+{
+    $output = [];
+    $query = db_select('node', 'n')->distinct();
+    $query->condition('n.type', 'product');
+    $query->fields('n', array('nid', 'title'));
+    if ($tid) {
+        $query->innerJoin('field_data_field_pd_category', 'fc', 'fc.entity_id = n.nid');
+        $query->condition('fc.field_pd_category_tid', $tid);
+    }
+    if ($result = $query->execute()) {
+        foreach($result->fetchAll() as $item) {
+            if ($id_only) {
+                $output[] = $item->nid;
+            }
+            else {
+                $output[$item->nid] = $item->title;
+            }
+        }
+    }
+    return $output;
+}
+
 function commerce_helper_form_commerce_add_to_cart_form_alter(&$form, &$form_state)
 {
     // назначить постобработку для добавления класса активному элементу
@@ -644,7 +729,8 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
 
     $form['customer_profile_shipping']['#prefix'] = '<h4>' . t('Destination region') . '</h4>';
 
-    $form['commerce_shipping']['#prefix'] = $form['commerce_shipping']['#prefix'] . '<h4>' . t('Shipping service') . '</h4>';
+    $form['commerce_shipping']['#prefix'] = '<h4>' . t('Shipping service') . '</h4>';
+    $form['commerce_shipping']['#suffix'] = '';
     $form['commerce_shipping']['shipping_service']['#after_build'][] = 'commerce_helper_shipping_radios_alter';
     // замена ajax обработчика доставки, чтобы возвращать не только панель с деталями, а всю форму
     // чтобы выбранная закладка была выделена и сумма доставки отображалась с итогах

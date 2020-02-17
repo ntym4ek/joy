@@ -4,76 +4,85 @@
  * Stub file for bootstrap_menu_link() and suggestion(s).
  */
 
-/**
- * Returns HTML for a menu link and submenu.
- *
- * @param array $variables
- *   An associative array containing:
- *   - element: Structured array data for a menu link.
- *
- * @return string
- *   The constructed HTML.
- *
- * @see theme_menu_link()
- *
- * @ingroup theme_functions
- */
-function strada_menu_link__menu_main(array $variables)
-{
-    $element = $variables['element'];
-    $sub_menu = '';
 
+/**
+ * ---------------------------------------- новое Главное меню  -------------------------------------------
+ */
+function strada_menu_link__main_menu(array $vars)
+{
+    $element = $vars['element'];
+    $sub_menu = '';
+    $attributes = !empty($element['#attributes']) ? $element['#attributes'] : [];
     $options = !empty($element['#localized_options']) ? $element['#localized_options'] : array();
+    $title = empty($options['html']) ? check_plain($element['#title']) : filter_xss_admin($element['#title']);
+    $options['html'] = TRUE;
     $depth = $element['#original_link']['depth'];
 
-    // Check plain title if "html" is not set, otherwise, filter for XSS attacks.
-    $mlid = $element['#original_link']['mlid'];
-    $title = empty($options['html']) ? check_plain($element['#title']) : filter_xss_admin($element['#title']);
-
-    if ($mlid == 3714) $title = '<i class="far fa-bars" aria-hidden="true"></i><span>' . $title . '</span>';
-    if ($mlid == 3682) $title = '<span class="text-success">' . $title . '</span>';
-    if ($mlid == 3713) $title = '<span class="text-danger">' . $title . '</span>';
-
-    // Ensure "html" is now enabled so l() doesn't double encode. This is now
-    // safe to do since both check_plain() and filter_xss_admin() encode HTML
-    // entities. See: https://www.drupal.org/node/2854978
-    $options['html'] = TRUE;
-
     $href = $element['#href'];
-    $attributes = !empty($element['#attributes']) ? $element['#attributes'] : array();
-        if ($element['#original_link']['module'] == 'taxonomy_menu') {
-            $source_tid = str_replace('taxonomy/term/', '', $element['#original_link']['link_path']);
-            if ($source_term_wr = entity_metadata_wrapper('taxonomy_term', $source_tid)) {
-
-                $href = $source_term_wr->field_link->value();
+    if ($element['#original_link']['module'] == 'taxonomy_menu') {
+        $menu_term_tid = str_replace('taxonomy/term/', '', $element['#original_link']['link_path']);
+        if (is_numeric($menu_term_tid) && $source_term_wr = entity_metadata_wrapper('taxonomy_term', $menu_term_tid)) {
+            if ($category_tid = $source_term_wr->field_category_term->tid->value()) {
+                $href = url('taxonomy/term/' . $category_tid);
             }
         }
+    }
+
+    if ($element['#below']) {
+        unset($element['#below']['#theme_wrappers']);
+
+        $sub_menu .= '<div class="dropdown-menu level-' . ($depth + 1) . '-wrapper">';
+        $sub_menu .=    '<ul class="level-' . ($depth + 1) . '">' .
+                            drupal_render($element['#below']) .
+                        '</ul>';
+        $sub_menu .= '</div>';
+
+        $attributes['class'][] = 'dropdown';
+        $attributes['id'][] = 'dropdown-' . $element['#original_link']['mlid'];
+
+        $options['attributes']['class'][] = 'dropdown-toggle';
+        $options['attributes']['data-toggle'] = 'dropdown';
+    }
+    $attributes['class'][] = 'level-' . $depth . '-item';
+
+    return '<li' . drupal_attributes($attributes) . '>' . l($title, $href, $options) . $sub_menu . "</li>\n";
+}
+
+/**
+ * ---------------------------------------- мобильное Главное меню  -------------------------------------------
+ */
+function strada_menu_link__main_menu_mobile(array $vars)
+{
+    $element = $vars['element'];
+    $sub_menu = '';
+    $attributes = !empty($element['#attributes']) ? $element['#attributes'] : array();
+    $options = !empty($element['#localized_options']) ? $element['#localized_options'] : array();
+    $title = empty($options['html']) ? check_plain($element['#title']) : filter_xss_admin($element['#title']);
+    $options['html'] = TRUE;
+    $depth = $element['#original_link']['depth'] + 1;
 
     if (!empty($element['#below'])) {
         unset($element['#below']['#theme_wrappers']);
-        $sub_menu = (($depth == 1) ? '<div class="dropdown-menu">' : '') .
-                        '<div class="level-' . ($depth + 1) . '-wrapper">' .
-                            ($depth + 1 == 3 ? '<span class="back-button"><i class="far fa-chevron-left"></i></span>' : '') .  // для меню третьего уровня добавить кнопку закрытия в моб. виде
-                            '<ul class="level-' . ($depth + 1) . '">' .
-                            drupal_render($element['#below']) .
-                            ($depth + 1 == 3 ? '<li class="show-all"><a href="' . url($href) . '">Показать все</a></li>' : '') .
-                            '</ul>' .
-                        '</div>' .
-                    (($depth == 1) ? '</div>' : '');
 
-        if ($depth == 1) {
-            $attributes['class'][] = 'dropdown';
-            $attributes['id'] = 'dropdown';
-            $options['attributes']['class'][] = 'dropdown-toggle btn btn-link';
-            $options['attributes']['data-toggle'] = 'dropdown';
-        }
+        $sub_menu =
+            (($depth == 1) ? '<div class="dropdown-menu">' : '') .
+                '<div class="level-' . ($depth + 1) . '-wrapper">' .
+                    ($depth + 1 == 3 ? '<span class="back-button"><i class="far fa-chevron-left"></i></span>' : '') .  // для меню третьего уровня добавить кнопку закрытия в моб. виде
+                    '<ul class="level-' . ($depth + 1) . '">' .
+                        drupal_render($element['#below']) .
+                        ($depth + 1 == 3 ? '<li class="show-all"><a href="' . url($element['#href']) . '">Показать все</a></li>' : '') .
+                    '</ul>' .
+                '</div>' .
+            (($depth == 1) ? '</div>' : '');
     }
     $attributes['class'][] = 'level-' . $depth . '-item';
-//    if ($mlid == 3683) $attributes['class'][] = 'visible';
 
-    return '<li' . drupal_attributes($attributes) . '>' . l($title, $href, $options) . $sub_menu . "</li>";
+    return '<li' . drupal_attributes($attributes) . '>' . l($title, $element['#href'], $options) . $sub_menu . "</li>";
 }
 
+/**
+ * ---------------------------------------- меню Пользователя ----------------------------------------------
+ */
 function strada_menu_link__user_menu(array $variables)
 {
   $element = $variables['element'];
@@ -81,7 +90,7 @@ function strada_menu_link__user_menu(array $variables)
 
   // не выводить кнопку входа или личного кабинета в зависимости от наличия авторизации
   if ($GLOBALS['user']->uid) {
-    if ($mlid == 3661)   return '';
+    if ($mlid == 3661) return '';
   } else {
     if ($mlid == 2) return '';
   }
@@ -132,18 +141,11 @@ function strada_menu_link__user_menu(array $variables)
   return '<li' . drupal_attributes($attributes) . '>' . l($title, $href, $options) . $sub_menu . "</li>";
 }
 
+/**
+ * ---------------------------------------- меню на странице Помощи ----------------------------------------
+ */
 function strada_menu_link__menu_help(array $variables)
 {
-//    $element = $variables['element'];
-//    $sub_menu = '';
-//
-//    if ($element['#below']) {
-//        $sub_menu = drupal_render($element['#below']);
-//    }
-//    $output = l($element['#title'], $element['#href'], $element['#localized_options']);
-//    return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>";
-
-
     // оформлять меню лесенкой
     $element = $variables['element'];
     $sub_menu = '';
