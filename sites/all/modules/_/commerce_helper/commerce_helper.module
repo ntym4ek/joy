@@ -704,7 +704,8 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
 
     $form['customer_profile_shipping']['#prefix'] = '<h4>' . t('Destination region') . '</h4>';
 
-    $form['commerce_shipping']['#prefix'] = $form['commerce_shipping']['#prefix'] . '<h4>' . t('Shipping service') . '</h4>';
+    $form['commerce_shipping']['#prefix'] = '<h4>' . t('Shipping service') . '</h4>';
+    $form['commerce_shipping']['#suffix'] = '';
     $form['commerce_shipping']['shipping_service']['#after_build'][] = 'commerce_helper_shipping_radios_alter';
     // замена ajax обработчика доставки, чтобы возвращать не только панель с деталями, а всю форму
     // чтобы выбранная закладка была выделена и сумма доставки отображалась с итогах
