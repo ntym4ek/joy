@@ -281,11 +281,11 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
 
             // клик по родительской категории тоже работает как переход
             // отключен, до реализации вывода в родительской категории товаров из потомков
-            // $(".main-menu .level-1-item").click(function(){
-            //     if ($(this).hasClass('open')) {
-            //         location.href = $(this).find('> a').attr('href');
-            //     }
-            // });
+            $(".main-menu .level-1-item").click(function(){
+                if ($(this).hasClass('open')) {
+                    location.href = $(this).find('> a').attr('href');
+                }
+            });
 
             /* ------------------------------------------ Main Menu mobile ------------------------------------------------- */
             var menu = $('.main-menu-mobile');

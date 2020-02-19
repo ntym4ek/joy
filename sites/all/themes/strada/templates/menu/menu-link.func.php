@@ -19,14 +19,14 @@ function strada_menu_link__main_menu(array $vars)
     $depth = $element['#original_link']['depth'];
 
     $href = $element['#href'];
-    if ($element['#original_link']['module'] == 'taxonomy_menu') {
-        $menu_term_tid = str_replace('taxonomy/term/', '', $element['#original_link']['link_path']);
-        if (is_numeric($menu_term_tid) && $source_term_wr = entity_metadata_wrapper('taxonomy_term', $menu_term_tid)) {
-            if ($source_term_wr->field_category_term->value() && $category_tid = $source_term_wr->field_category_term->tid->value()) {
-                $href = url('taxonomy/term/' . $category_tid);
-            }
-        }
-    }
+//    if ($element['#original_link']['module'] == 'taxonomy_menu') {
+//        $menu_term_tid = str_replace('taxonomy/term/', '', $element['#original_link']['link_path']);
+//        if (is_numeric($menu_term_tid) && $source_term_wr = entity_metadata_wrapper('taxonomy_term', $menu_term_tid)) {
+//            if ($source_term_wr->field_category_term->value() && $category_tid = $source_term_wr->field_category_term->tid->value()) {
+//                $href = url('taxonomy/term/' . $category_tid);
+//            }
+//        }
+//    }
 
     if ($element['#below']) {
         unset($element['#below']['#theme_wrappers']);

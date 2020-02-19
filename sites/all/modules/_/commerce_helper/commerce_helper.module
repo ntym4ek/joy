@@ -405,7 +405,7 @@ function commerce_helper_taxonomy_form_term_submit($form, $form_state)
         $terms = [];
         $product_wr = entity_metadata_wrapper('node', $nid);
         foreach($product_wr->field_pd_category->value() as $term) {
-            if ($tid != $term->tid) $terms[] = $term;
+            if (is_object($term) && $tid != $term->tid) $terms[] = $term;
         }
         $product_wr->field_pd_category = $terms;
         $product_wr->save();

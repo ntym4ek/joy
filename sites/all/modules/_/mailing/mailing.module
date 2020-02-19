@@ -381,7 +381,7 @@ function mailing_mail($key, &$message, $params)
                         '';
                 }
             } else {
-                $order_url_manager = 'http://joy-magazin.ru/admin/commerce/orders/' . $order_info['id'];
+                $order_url_manager = 'https://joy-magazin.ru/admin/commerce/orders/' . $order_info['id'];
 
                 $message['subject'] = 'Новый заказ №' . $order_info['id'];
                 $message['body'][] = '' .
@@ -403,7 +403,7 @@ function mailing_mail($key, &$message, $params)
                     '<p>Подробную информацию Вы можете посмотреть на странице заказа, перейдя по <a href="' . $order_info['url'] . '">ссылке</a>.</p>' .
                     '';
             } else {
-                $order_url_manager = 'http://joy-magazin.ru/admin/commerce/orders/' . $order_info['id'];
+                $order_url_manager = 'https://joy-magazin.ru/admin/commerce/orders/' . $order_info['id'];
 
                 $message['subject'] = 'Заказ №' . $order_info['id'] . ' оплачен';
                 $message['body'][] = '' .
