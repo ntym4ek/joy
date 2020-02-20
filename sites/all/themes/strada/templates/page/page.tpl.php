@@ -91,7 +91,7 @@
                     <a tabindex="0" role="button" id="phone_popover">8-800-550-28-85</a>
                 </div>
 
-                <div class="topbar-menu">
+                <div class="topbar-menu hidden-sm hidden-md">
                     <ul class="dry-list">
                         <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>
                         <li><a href="/info/delivery">Условия бесплатной доставки</a></li>

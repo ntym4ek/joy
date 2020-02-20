@@ -293,7 +293,6 @@ div.divider {
             flex: auto;
             > a {
                 color: $text-color;
-                &.dropdown-toggle { cursor: default; }
                 &:hover {
                     color: #fff;
                     background-color: $brand-green;
