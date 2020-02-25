@@ -116,7 +116,7 @@
                 </div>
 
                 <?php if (!$tsss): ?>
-                <div class="navbar-menu hidden-sm hidden-md hidden-lg" role="navigation">
+                <div class="navbar-menu" role="navigation">
                     <?php print render($main_menu_mobile); ?>
                 </div>
                 <?php endif; ?>

@@ -335,7 +335,7 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
             function mainMenuResize(el) {
                 var maxHeight = $(el).find(".level-3-wrapper").outerHeight();
                 var minHeight = $(el).closest(".level-2").outerHeight();
-                $(el).closest(".dropdown-menu").height((minHeight < maxHeight ? maxHeight : minHeight) + 10);
+                $(el).closest(".dropdown-menu").height((minHeight < maxHeight ? maxHeight : minHeight));
             }
 
             /* ------------------------------------------ User  Menu ----------------------------------------------- */
