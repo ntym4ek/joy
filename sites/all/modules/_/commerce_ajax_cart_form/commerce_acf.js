@@ -1,7 +1,7 @@
 (function ($) {
     Drupal.behaviors.commerceAcf = {
         attach: function (context, settings) {
-            $("[id^=edit-submit]").hide();
+            $("[name=update-cart]").hide();
 
             $('input.quantity-input', context).each(function() {
                 var $input = $(this);

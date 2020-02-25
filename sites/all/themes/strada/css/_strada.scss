@@ -1438,9 +1438,13 @@ $navbar-strada-toggle-border-color:       #ddd;
         .cs-total .value { font-weight: 800; font-size: $font-size-large; }
     }
     .checkout-buttons.form-group { margin: 0; }
+    [name=update-cart],
     .checkout-continue {
         font-size: $font-size-base;
         width: 100%;
+    }
+    [name=update-cart] {
+        margin-bottom: $grid-gutter-width;
     }
 
     .form-item-fz152-agreement {
