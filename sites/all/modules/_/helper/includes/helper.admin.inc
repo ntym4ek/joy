@@ -33,7 +33,7 @@ function helper_settings($form, &$form_state)
         '#title' => 'Главная страница',
     );
 
-    $terms = taxonomy_get_tree(taxonomy_vocabulary_machine_name_load('products_categories')->vid);
+    $terms = taxonomy_get_tree(taxonomy_vocabulary_machine_name_load('menu')->vid);
     $options = array();
     foreach($terms as $term){
         $options[$term->tid] = str_repeat("-", $term->depth) . ' ' . $term->name;

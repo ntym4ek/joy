@@ -261,7 +261,7 @@
                 <li><a href="/info/about">О компании</a></li>
                 <li><a href="/info/resellers">Оптовым покупателям</a></li>
                 <li><a href="/info/suppliers">Поставщкам</a></li>
-                <li><a href="/info/shopping">Помощь</a></li>
+                <li><a href="/info/how-to-buy">Помощь</a></li>
             </ul>
         </div>
         <div class="f-how-to">
