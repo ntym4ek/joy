@@ -1333,7 +1333,7 @@ function commerce_helper_commerce_order_order_cancel_form($form, &$form_state, $
 
         $form['reason'] = [
             '#type' => 'select',
-            '#title' => 'Причина отказа',
+            '#title' => 'Причина отмены',
             '#options' => array_merge(['- Выберите вариант -'], _commerce_helper_order_cancel_statuses()),
             '#weight' => 1,
         ];
@@ -1380,8 +1380,8 @@ function commerce_helper_commerce_order_order_cancel_form_submit($form, &$form_s
 function _commerce_helper_order_cancel_statuses($id = null)
 {
     $options = [
-        '0' => 'Цена стала выше',
-        '1' => 'Мне больше не нужен этот заказ',
+        '0' => 'Мне больше не нужен этот заказ',
+        '1' => 'Цена стала выше',
         '2' => 'Слишком долгая обработка',
     ];
 

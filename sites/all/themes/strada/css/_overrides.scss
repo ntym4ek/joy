@@ -366,6 +366,15 @@ div.image-widget-data {
 table.sticky-header {
   z-index: 1;
 }
+.table > thead > tr > th,
+.table > thead > tr > td,
+.table > tbody > tr > th,
+.table > tbody > tr > td,
+.table > tfoot > tr > th,
+.table > tfoot > tr > td {
+    vertical-align: middle;
+}
+
 .resizable-textarea textarea {
   border-radius: $border-radius-base $border-radius-base 0 0;
 }
