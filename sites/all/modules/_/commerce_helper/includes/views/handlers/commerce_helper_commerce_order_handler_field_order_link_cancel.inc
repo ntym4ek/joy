@@ -24,6 +24,6 @@ class commerce_helper_commerce_order_handler_field_order_link_cancel extends com
 
     $text = !empty($this->options['text']) ? $this->options['text'] : t('Cancel order');
 
-    return l($text, 'user/' . $GLOBALS['user']->uid . '/orders/' . $order->order_id . '/cancel', array('query' => drupal_get_destination()));
+    return l($text, 'user/' . $GLOBALS['user']->uid . '/orders/' . $order->order_id . '/cancel', ['query' => drupal_get_destination(), 'attributes' => ['class' => ['btn', 'btn-action-link', 'btn-wide']]]);
   }
 }

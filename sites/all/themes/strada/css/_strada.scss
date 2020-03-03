@@ -67,8 +67,18 @@ div.divider {
         &.btn-brand { @include button-variant-empty($brand-primary); }
     }
     &.btn-narrow { padding-left: 5px; padding-right: 5px; }
+    &.btn-action-link {
+        background-color: $btn-brand-bg;
+        border-radius: 4px;
+        color: $btn-brand-color; font-size: 14px; text-decoration: none;
+        display: inline-block;
+        padding: 2px 10px;
+        @include transition(background-color 0.2s ease-in-out);
+    }
+    &.btn-wide { width: 100%; }
 }
 .btn-brand { @include button-variant($btn-brand-color, $btn-brand-bg, $btn-brand-border); }
+
 
 // уведомления
 .bubble {
