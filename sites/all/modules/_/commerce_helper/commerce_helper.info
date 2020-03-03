@@ -2,3 +2,5 @@ name = Commerce Helper
 description = "Модуль со вспомогательными функциями для Commerce."
 package = Custom
 core = 7.x
+
+files[] = includes/views/handlers/commerce_helper_commerce_order_handler_field_order_link_cancel.inc

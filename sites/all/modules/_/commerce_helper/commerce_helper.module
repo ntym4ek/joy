@@ -34,6 +34,14 @@ function commerce_helper_menu() {
         'access arguments' => array('edit own commerce_order entities'),
         'type' => MENU_LOCAL_ACTION,
     );
+    $items['user/%/orders/%commerce_order/cancel'] = array(
+        'title' => 'Cancel',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('commerce_helper_commerce_order_order_cancel_form', 3),
+        'access callback' => 'commerce_order_access',
+        'access arguments' => array('update', 3),
+        'type' => MENU_CALLBACK,
+    );
 
     $items['admin/config/joy'] = array(
         'title' => 'Настройки сайта',
@@ -49,6 +57,7 @@ function commerce_helper_menu() {
         'access arguments' => array('access manager settings'),
         'file' => 'includes/commerce_helper.admin.inc',
     );
+
 
     return $items;
 }
@@ -1282,6 +1291,102 @@ function commerce_helper_commerce_currency_format($amount, $currency, $object)
     return trim(t('@code_before@code_spacer@negative@symbol_before@price@symbol_spacer@symbol_after@code_spacer@code_after', $replacements));
 }
 
+
+/**
+ * ------------------------------------------ Представления (Views) --------------------------------------------------
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_helper_views_api() {
+    return array(
+        'api' => 3,
+        'path' => drupal_get_path('module', 'commerce_helper') . '/includes/views',
+    );
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function commerce_helper_views_data_alter(&$data)
+{
+    $data['commerce_order']['cancel_order'] = array(
+        'field' => array(
+            'title' => t('Cancel order link'),
+            'help' => t('Provide a link to change status of the order from Processing to canceled.'),
+            'handler' => 'commerce_helper_commerce_order_handler_field_order_link_cancel',
+        ),
+    );
+}
+
+
+/**
+ * Form callback: confirmation form for deleting an order.
+ *
+ * @see confirm_form()
+ */
+function commerce_helper_commerce_order_order_cancel_form($form, &$form_state, $order)
+{
+    if ($order) {
+        $form_state['order'] = $order;
+
+        $form['reason'] = [
+            '#type' => 'select',
+            '#title' => 'Причина отказа',
+            '#options' => array_merge(['- Выберите вариант -'], _commerce_helper_order_cancel_statuses()),
+            '#weight' => 1,
+        ];
+        $form['#validate'][] = 'commerce_helper_commerce_order_order_cancel_form_validate';
+        $form['#submit'][] = 'commerce_helper_commerce_order_order_cancel_form_submit';
+
+        $form = confirm_form($form,
+            t('Are you sure you want to cancel order @number?', ['@number' => $order->order_number]),
+            '',
+            '<p>' . t('Cancelling this order cannot be undone.') . '</p>',
+            t('Cancel order'),
+            t('Back'),
+            'confirm'
+        );
+
+        return $form;
+    } else {
+        drupal_access_denied();
+    }
+}
+
+/**
+ * Submit callback for commerce_order_order_delete_form().
+ */
+function commerce_helper_commerce_order_order_cancel_form_validate($form, &$form_state)
+{
+    if (empty($form_state['values']['reason'])) {
+        form_set_error('reason', 'Выберите причину отказа');
+        return false;
+    }
+}
+
+/**
+ * Submit callback for commerce_order_order_delete_form().
+ */
+function commerce_helper_commerce_order_order_cancel_form_submit($form, &$form_state)
+{
+    $order = $form_state['order'];
+
+    commerce_order_status_update($order, 'canceled', false, true, _commerce_helper_order_cancel_statuses($form_state['values']['reason']));
+    drupal_set_message(t('Order @number has been canceled.', array('@number' => $order->order_number)));
+}
+
+function _commerce_helper_order_cancel_statuses($id = null)
+{
+    $options = [
+        '0' => 'Цена стала выше',
+        '1' => 'Мне больше не нужен этот заказ',
+        '2' => 'Слишком долгая обработка',
+    ];
+
+    return $id ? $options[$id] : $options;
+}
 
 /**
  * ------------------------------------------ Вспомогательные функции --------------------------------------------------
