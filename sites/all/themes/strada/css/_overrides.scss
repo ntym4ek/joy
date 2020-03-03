@@ -375,6 +375,11 @@ table.sticky-header {
     vertical-align: middle;
 }
 
+.add-line-item {
+    margin-top: $grid-gutter-width/2;
+    .btn { margin-top: 3px; }
+}
+
 .resizable-textarea textarea {
   border-radius: $border-radius-base $border-radius-base 0 0;
 }

@@ -2386,19 +2386,23 @@ form[id^="user-profile-form"] {
 
 .page-admin-commerce-orders-edit {
     .group-items {
+        .form-control,
+        .form-submit { font-size: 12px; height: 26px; }
+        .form-submit { padding: 4px 20px; margin: 3px 8px 0 0; }
         margin-bottom: 0;
         table {
             margin-bottom: 0;
             > caption { display: none; }}
         .form-group { margin: 0; }
         .field-type-commerce-price .form-text {
-            font-size: 12px; text-align: right;
+            text-align: right;
             height: 26px; width: 60%;
         }
         input[name*=quantity] {
-            font-size: 12px; text-align: center;
-            height: 26px; width: 50%;
+            text-align: center;
+            width: 50%;
         }
+        .table-responsive { margin-bottom: $grid-gutter-width/2; }
     }
     .group-shipping {
         .form-group { margin-bottom: 16px; }
