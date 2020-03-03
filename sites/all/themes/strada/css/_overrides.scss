@@ -278,15 +278,12 @@ ul.action-links {
     margin-bottom: $grid-gutter-width/2;
     padding: 0;
       a {
-          background-color: $brand-primary; border-radius: 4px;
-          color: #fff; font-size: $font-size-small; text-decoration: none;
+          border-radius: 4px;
+          font-size: $font-size-small; text-decoration: none;
           display: block;
           padding: 2px 10px;
+          @include button-variant($btn-brand-color, $btn-brand-bg, $btn-brand-border);
           @include transition(background-color 0.2s ease-in-out);
-          &:hover,
-          &focus {
-              background-color: darken($brand-primary, 10%);
-          }
       }
   }
   .glyphicon {

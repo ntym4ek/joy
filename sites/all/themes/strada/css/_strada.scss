@@ -2385,10 +2385,15 @@ form[id^="user-profile-form"] {
 }
 
 .page-admin-commerce-orders-edit {
+    .group-items,
+    .group-discount {
+        .form-submit {
+            font-size: 12px; height: 26px;
+            padding: 4px 20px; margin: 3px 8px 0 0;
+        }
+    }
     .group-items {
-        .form-control,
-        .form-submit { font-size: 12px; height: 26px; }
-        .form-submit { padding: 4px 20px; margin: 3px 8px 0 0; }
+        .form-control { font-size: 12px; height: 26px; }
         margin-bottom: 0;
         table {
             margin-bottom: 0;
