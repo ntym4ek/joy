@@ -1128,7 +1128,7 @@ $navbar-strada-toggle-border-color:       #ddd;
 
 .order-complete {
     .field-name-commerce-order-total {
-        .field-item {
+        .field-item .table-responsive {
             display: flex; justify-content: right;
             padding: $grid-gutter-width*2 $grid-gutter-width*2 0 0;
         }
