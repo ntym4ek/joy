@@ -2325,15 +2325,19 @@ form[id^="user-profile-form"] {
         .filter-actions { margin-top: 29px; }
     }
     .stat-container {
-        display: flex;
+      display: flex;
+      flex-wrap: wrap;
+      @media #{$normal} {
+        flex-wrap: nowrap;
+      }
     }
     .stat-box {
-        flex: auto;
+        flex: 50%;
         background: #eee;
         .carts {
             color: #fff;
             padding: 40px;
-          .number { font-size: 36px; }
+          .number { font-size: 36px; font-weight: 100; }
         }
         .foot {
           font-weight: 100;
@@ -2353,6 +2357,10 @@ form[id^="user-profile-form"] {
       &:nth-child(3) .carts { background: lighten($brand-primary, 10%); }
       &:nth-child(4) .carts { background: lighten($brand-primary, 15%); }
 
+      @media #{$tablet} {
+        flex: auto;
+      }
+
     }
 
   .sales-container {
@@ -2370,6 +2378,10 @@ form[id^="user-profile-form"] {
       .icon {
         font-size: 46px;
         position: absolute; top: 50px; right: 50px;
+        display: none;
+        @media #{$normal} {
+          display: block;
+        }
       }
     }
   }
