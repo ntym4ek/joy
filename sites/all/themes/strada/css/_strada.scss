@@ -2357,10 +2357,7 @@ form[id^="user-profile-form"] {
       &:nth-child(3) .carts { background: lighten($brand-primary, 10%); }
       &:nth-child(4) .carts { background: lighten($brand-primary, 15%); }
 
-      @media #{$tablet} {
-        flex: auto;
-      }
-
+      @media #{$tablet} { flex: auto; }
     }
 
   .sales-container {

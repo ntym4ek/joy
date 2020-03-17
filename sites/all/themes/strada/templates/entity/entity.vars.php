@@ -72,11 +72,11 @@ function strada_preprocess_entity(&$vars)
                     $vars['cart_link'] =
                         '<div id="product-' . $product_id . '-button" class="btn-group" role="group" >' .
                             '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину">В корзину</a>' .
-                            '<a href="/prod/' . $product_id . '/add-to-cart/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax">+1</a>' .
+                            '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax">+1</a>' .
                         '</div>';
                 }
                 else {
-                    $vars['cart_link'] = '<div id="product-' . $product_id . '-button"><a href="/prod/' . $product_id . '/add-to-cart/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-add-to-cart use-ajax" title="Добавить в корзину">Купить</a></div>';
+                    $vars['cart_link'] = '<div id="product-' . $product_id . '-button"><a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-add-to-cart use-ajax" title="Добавить в корзину">Купить</a></div>';
                 }
             } else {
                 $vars['cart_link'] = '<div id="product-' . $product_id . '-button"><a href="' . $vars['node_url'] . '" class="btn btn-brand btn-sm btn-empty">Товар ожидается</a></div>';
