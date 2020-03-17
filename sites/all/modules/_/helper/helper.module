@@ -13,7 +13,7 @@ function helper_menu()
         'access arguments' => array('access manager settings'),
         'file' => 'includes/helper.admin.inc',
     );
-    $items['admin/config/joy/carts'] = array(
+    $items['admin/config/carts'] = array(
         'title' => 'Статистика',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('helper_stat_carts_form'),
