@@ -2349,9 +2349,9 @@ form[id^="user-profile-form"] {
         }
 
       &:nth-child(1) .carts { background: $brand-primary; }
-      &:nth-child(2) .carts { background: lighten($brand-primary, 10%); }
-      &:nth-child(3) .carts { background: lighten($brand-primary, 15%); }
-      &:nth-child(4) .carts { background: lighten($brand-primary, 20%); }
+      &:nth-child(2) .carts { background: lighten($brand-primary, 5%); }
+      &:nth-child(3) .carts { background: lighten($brand-primary, 10%); }
+      &:nth-child(4) .carts { background: lighten($brand-primary, 15%); }
 
     }
 
