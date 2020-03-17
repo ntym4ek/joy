@@ -176,7 +176,7 @@ function commerce_helper_product_cart_update($product_id, $op, $mode = null)
                 '<div id="product-' . $product_id . '-button" class="btn-group" role="group" >' .
 //                    '<a href="/cart/delete-product/' . $product_id . '/nojs"  class="btn btn-brand btn-sm btn-empty product-cart cart-full use-ajax" title="Убрать из корзины">В корзине</a>' .
                     '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину">В корзину</a>' .
-                    '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax">+1</a>' .
+                    '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax" rel="nofollow">+1</a>' .
                 '</div>';
             $output[] = ajax_command_replace('#product-' . $product_id . '-button', $link);
 
@@ -202,7 +202,7 @@ function commerce_helper_product_cart_update($product_id, $op, $mode = null)
 //
 //
 //        // меняем иконку на товаре
-//        $link = '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-add-to-cart use-ajax">Купить</a>';
+//        $link = '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-add-to-cart use-ajax" rel="nofollow">Купить</a>';
 //        $output[] = ajax_command_replace('#product-' . $product_id, $link);
 //
 //        // обновляем виджет корзины
