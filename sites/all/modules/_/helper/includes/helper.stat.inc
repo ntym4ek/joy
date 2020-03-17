@@ -62,24 +62,28 @@ function helper_stat_carts_form($form, $form_state)
             }
         }
 
-        $form['container'] = [
-            '#type' => 'container',
-            '#attributes' => ['class' => ['stat-container']]
-        ];
-        foreach ($points as $point) {
-            if (isset($result[$point])) {
-                $form['container']['up_to_' . $point] = [
-                    '#markup' => '<h3>Распределение корзин по суммам</h3>' .
-                                    '<div class="stat-box">' .
-                                    '<h4>' . ($point != 99999 ? 'до ' . $point : 'от 1000')  . ' руб.</h4>' .
-                                    '<div class="stat-content">' .
-                                        '<div><div class="number">' . $result[$point]['qty'] . '</div><div class="title">Всего корзин</div></div>' .
-                                        '<div><div class="number">' . ceil($result[$point]['total'] / $result[$point]['qty']) . '</div><div class="title">Средняя сумма, руб</div></div>' .
-                                    '</div>' .
-                                '</div>',
-                ];
-            }
+      $carts_html = '';
+      foreach ($points as $point) {
+        if (isset($result[$point])) {
+          $carts_html .=  '<div class="stat-box">' .
+                            '<div class="carts">' .
+                              '<div class="number">' .  $result[$point]['qty'] . '</div>' .
+                              '<div class="title">Корзин</div>' .
+                            '</div>' .
+                            '<div class="foot">' .
+                              '<div><div class="number">' . ($point != 99999 ? '<div class="title">до</div><span>' . $point . '</span>': '<div class="title">от</div><span>1000</span>') . ' руб.</div></div>' .
+                              '<div><div class="number"><div class="title">cредняя сумма</div><span>' . ceil($result[$point]['total'] / $result[$point]['qty']) . '</span> руб.</div></div>' .
+                            '</div>' .
+                          '</div>';
         }
+      }
+      $form['container'] = [
+        '#type' => 'container',
+      ];
+      $form['container']['carts'] = [
+        '#markup' => '<h3>Распределение корзин по суммам</h3><div class="stat-container">' . $carts_html . '</div>',
+      ];
+
     }
 
   // делаем запрос Корзин

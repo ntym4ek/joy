@@ -2326,27 +2326,33 @@ form[id^="user-profile-form"] {
     }
     .stat-container {
         display: flex;
-        margin: 0 -16px;
     }
     .stat-box {
-        flex: 0 0 auto;
+        flex: auto;
         background: #eee;
-        box-shadow: 1px 1px 10px #ccc;
-        border-radius: 8px;
-        margin: 16px;
-        text-align: center;
-        overflow: hidden;
-        h4 {
-            background: $brand-primary;
+        .carts {
             color: #fff;
-            padding: 12px; margin: 0;
+            padding: 40px;
+          .number { font-size: 36px; }
         }
-        .stat-content {  padding: $grid-gutter-width; }
-        .number { font-size: 48px; line-height: 1; }
-        .title {
-            color: $text-muted; font-size: $font-size-xs; text-transform: uppercase;
-            margin-bottom: 16px;
+        .foot {
+          font-weight: 100;
+          display: flex;
+          padding: 15px;
+          > div {
+            flex: auto;
+            padding: 5px 10px;
+            text-align: center;
+          }
+          span { font-weight: 700; }
+          > div:first-child { border-right: 1px solid #ccc; }
         }
+
+      &:nth-child(1) .carts { background: $brand-primary; }
+      &:nth-child(2) .carts { background: lighten($brand-primary, 10%); }
+      &:nth-child(3) .carts { background: lighten($brand-primary, 15%); }
+      &:nth-child(4) .carts { background: lighten($brand-primary, 20%); }
+
     }
 
   .sales-container {
