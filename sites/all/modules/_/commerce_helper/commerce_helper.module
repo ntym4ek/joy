@@ -1527,7 +1527,7 @@ function _commerce_helper_non_free_shipping($order)
             return [
                 'reason' => 'no_free',
                 'amount' => $non_free_amount,
-                'text' => '<a href="/info/delivery">почему доставка платная?</a>'
+                'text' => '<a href="/info/delivery" class="text-danger">почему доставка платная?</a>'
             ];
         }
 
@@ -1573,7 +1573,7 @@ function _commerce_helper_non_free_shipping($order)
                             $reason = [
                                 'reason' => 'amount',
                                 'amount' => $non_free_amount,
-                                'text' => '<a href="/info/delivery">почему доставка платная?</a>'
+                                'text' => '<a href="/info/delivery" class="text-warning">добавьте товаров на ' . number_format($non_free_amount - $products_amount_base / 100, 0, ',', '') . ' руб. для бесплатной доставки</a>'
                             ];
                             break;
                         }
@@ -1585,7 +1585,7 @@ function _commerce_helper_non_free_shipping($order)
         if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT != 0 && $physical_weight['weight'] >= CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT) {
             $reason = [
                 'reason' => 'weight',
-                'text' => '<a href="/info/delivery">почему доставка платная?</a>'
+                'text' => '<a href="/info/delivery" class="text-danger">почему доставка платная?</a>'
             ];
         }
     }
