@@ -69,7 +69,8 @@ function helper_stat_carts_form($form, $form_state)
         foreach ($points as $point) {
             if (isset($result[$point])) {
                 $form['container']['up_to_' . $point] = [
-                    '#markup' => '<div class="stat-box">' .
+                    '#markup' => '<h3>Распределение корзин по суммам</h3>' .
+                                    '<div class="stat-box">' .
                                     '<h4>' . ($point != 99999 ? 'до ' . $point : 'от 1000')  . ' руб.</h4>' .
                                     '<div class="stat-content">' .
                                         '<div><div class="number">' . $result[$point]['qty'] . '</div><div class="title">Всего корзин</div></div>' .
@@ -80,6 +81,50 @@ function helper_stat_carts_form($form, $form_state)
             }
         }
     }
+
+  // делаем запрос Корзин
+  $query = db_select('commerce_order', 'co');
+  $query->condition('co.created', $date_to, '<');
+  $query->condition('co.created', $date_from, '>');
+  $query->condition('co.status', 'cart');
+  $carts_count = $query->countQuery()->execute()->fetchField();
+
+  $query = db_select('commerce_order', 'co');
+  $query->condition('co.created', $date_to, '<');
+  $query->condition('co.created', $date_from, '>');
+  $query->condition('co.status', 'checkout_checkout');
+  $checkout_count = $query->countQuery()->execute()->fetchField();
+
+  $query = db_select('commerce_order', 'co');
+  $query->condition('co.created', $date_to, '<');
+  $query->condition('co.created', $date_from, '>');
+  $query->condition('co.status', ['cart', 'checkout_checkout', 'wishlist'], 'NOT IN');
+  $orders_count = $query->countQuery()->execute()->fetchField();
+
+  // todo вывести результаты
+  $form['container2'] = [
+    '#type' => 'container',
+  ];
+  $form['container2']['funnel'] = [
+    '#markup' => '<h3>Воронка продаж</h3>' .
+      '<div class="sales-container">' .
+        '<div class="sales-box box-1">' .
+            '<div class="number">' . ($carts_count + $checkout_count + $orders_count) . '</div>' .
+            '<div class="title">Корзина &nbsp;&nbsp;100 %</div>' .
+            '<div class="icon"><i class="fal fa-shopping-cart"></i></div>' .
+        '</div>' .
+        '<div class="sales-box box-2">' .
+            '<div class="number">' . ($checkout_count + $orders_count) . '</div>' .
+            '<div class="title">Оформление &nbsp;&nbsp;' . number_format(($checkout_count + $orders_count)*100/($carts_count + $checkout_count + $orders_count), 0) . ' %</div>' .
+            '<div class="icon"><i class="fal fa-credit-card-blank"></i></div>' .
+        '</div>' .
+        '<div class="sales-box box-3">' .
+            '<div class="number">' . $orders_count . '</div>' .
+            '<div class="title">Заказ &nbsp;&nbsp;' . number_format($orders_count*100/($carts_count + $checkout_count + $orders_count), 1) . ' %</div>' .
+            '<div class="icon"><i class="fal fa-check"></i></div>' .
+        '</div>' .
+      '</div>'
+  ];
 
     return $form;
 }

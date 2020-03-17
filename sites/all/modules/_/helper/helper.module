@@ -14,7 +14,7 @@ function helper_menu()
         'file' => 'includes/helper.admin.inc',
     );
     $items['admin/config/joy/carts'] = array(
-        'title' => 'Статистика по корзинам',
+        'title' => 'Статистика',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('helper_stat_carts_form'),
         'access arguments' => array('access manager settings'),
@@ -518,11 +518,12 @@ function helper_boot() {
     return;
   }
 
-  $ip_pools = ['46.229.168.*', '54.36.149.*', '54.36.150.*', '66.249.76.*', '151.80.39.*'];
+  $user_ip = $_SERVER['REMOTE_ADDR'];
+  $ip_pools = ['46.229.168.*', '46.229.169.*', '54.36.*.*', '66.249.76.*', '151.80.39.*', '212.193.117.*'];
 
   foreach ($ip_pools as $ip_pool) {
-    $ip_regex = '/' . preg_replace(['/\./', '/\*/'], ['\.', '[\d+]'], $ip_pool) . '/';
-    if ($match = preg_match($ip_regex,  $_SERVER['REMOTE_ADDR'])) {
+    $ip_regex = '/^' . preg_replace(['/\./', '/\*/'], ['\.', '[\d]+'], $ip_pool) . '$/';
+    if ($match = preg_match($ip_regex,  $user_ip)) {
       drupal_access_denied();
     }
   }

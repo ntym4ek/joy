@@ -2348,6 +2348,25 @@ form[id^="user-profile-form"] {
             margin-bottom: 16px;
         }
     }
+
+  .sales-container {
+    display: flex;
+    .sales-box {
+      flex: 33.3%;
+      color: white;
+      padding: 40px;
+      position: relative;
+      &.box-1 { background: #78bcee; }
+      &.box-2 { background: #fcce54; }
+      &.box-3 { background: #4caf50; }
+      .number { font-size: 36px; font-weight: 100; }
+      .title {  }
+      .icon {
+        font-size: 46px;
+        position: absolute; top: 50px; right: 50px;
+      }
+    }
+  }
 }
 
 /* ------------------------------------------------- Интерфейс менеджера -------------------------------------------- */
