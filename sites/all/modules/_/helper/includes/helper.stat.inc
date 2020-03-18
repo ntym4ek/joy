@@ -86,7 +86,7 @@ function helper_stat_carts_form($form, $form_state)
 
     }
 
-  // делаем запрос Корзин
+  // отчёт Воронка продаж
   $query = db_select('commerce_order', 'co');
   $query->condition('co.created', $date_to, '<');
   $query->condition('co.created', $date_from, '>');
