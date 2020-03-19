@@ -152,6 +152,7 @@ function commerce_helper_cron() {
  */
 function commerce_helper_product_cart_update($product_id, $op, $mode = null)
 {
+  if ($mode == 'ajax') {
     ctools_include('modal');
     $output = array();
 
@@ -213,12 +214,12 @@ function commerce_helper_product_cart_update($product_id, $op, $mode = null)
     // 'успешное добавление в корзину' в т.ч.
     drupal_get_messages('status');
 
-    if ($mode == 'ajax') {
-        print ajax_render($output);
-        drupal_exit();
-    } else {
-        drupal_goto('checkout');
-    }
+
+    print ajax_render($output);
+    drupal_exit();
+  } else {
+      drupal_goto(url('node/'. _get_product_display_by_product_id($product_id)), ['query' => ['id' => $product_id]]);
+  }
 }
 
 /**
