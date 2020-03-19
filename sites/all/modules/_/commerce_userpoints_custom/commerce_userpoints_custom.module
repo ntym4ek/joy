@@ -98,7 +98,7 @@ function commerce_userpoints_custom_currencies_option_list() {
     $options = array();
     foreach ($userpoint_currencies as $key => $val) {
       $options[$key] = $val['name'];
-    } 
+    }
     return $options;
   }
   return FALSE;
@@ -151,7 +151,11 @@ function commerce_userpoints_custom_form_userpoints_admin_txn_alter(&$form, &$fo
 function commerce_userpoints_custom_userpoints($op, &$points_params = array())
 {
     // Transactions without points are not passed to rules for now.
-    if ($op != 'points after' || !is_array($points_params) || !isset($points_params['points'])) {
+    if ($op != 'points after' || !is_array($points_params)
+      || !isset($points_params['points'])
+      || $points_params["points"] < 1
+      || $points_params["status"] != USERPOINTS_TXN_STATUS_APPROVED
+      || strpos($_SERVER['HTTP_HOST'], '.local') !== false) {
         return;
     }
 

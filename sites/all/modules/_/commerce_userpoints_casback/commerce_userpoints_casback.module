@@ -1,0 +1,99 @@
+<?php
+
+/**
+ * Implements hook_userpoints_info().
+ */
+function commerce_userpoints_casback_userpoints_info() {
+  return array(
+    'commerce_userpoints_cashback' => array(
+      'description' => t('Cashback for purchase'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_order_presave()
+ */
+function commerce_userpoints_casback_commerce_order_presave($order)
+{
+  if (empty($order->original)) return;
+
+  // при отправке заказа начислить кэшбек (КБ)
+  if ($order->original->status != 'completed' && $order->status == 'completed') {
+    // проверить, начислен ли уже КБ
+    $txn_id = commerce_userpoints_casback_get_record($order);
+    // начислить КБ
+    commerce_userpoints_casback_charge($order, $txn_id);
+  }
+
+  // при отмене заказа отменить начисление
+  if ($order->original->status == 'completed' && $order->status != 'completed') {
+    // отменить начисление КБ
+    commerce_userpoints_casback_discharge($order);
+  }
+
+}
+
+/**
+ * Implements hook_commerce_order_delete()
+ */
+function commerce_userpoints_casback_commerce_order_delete($order) {
+  // отменить начисление КБ
+  commerce_userpoints_casback_discharge($order);
+}
+
+function commerce_userpoints_casback_charge($order, $txn_id = null) {
+  // определить сумму товаров
+  $order_wr = entity_metadata_wrapper('commerce_order', $order);
+  $order_total = $order_wr->commerce_order_total->value();
+  $amount = commerce_price_component_total($order_total, 'base_price')['amount'];
+
+  // вычислить процент
+  $cb_amount = $amount * variable_get('commerce_userpoints_cashback_percent', '0')/100;
+  $cb_points = ceil($cb_amount / 100);
+
+  if ($cb_amount) {
+    // Create the userpoints transaction.
+    $userpoints_params = [
+      'txn_id' => $txn_id ? $txn_id : NULL,
+      'points' => $cb_points,
+      'uid' => $order->uid,
+      'operation' => 'commerce_userpoints_cashback',
+      'tid' => variable_get('commerce_userpoints_discount_custom_default_termid', userpoints_get_default_tid()),
+      'display' => FALSE,
+      'entity_id' => $order->order_id,
+      'entity_type' => 'commerce_order',
+      'status' => USERPOINTS_TXN_STATUS_APPROVED,
+    ];
+    $result = userpoints_userpointsapi($userpoints_params);
+
+    if ($result['status']) {
+      drupal_set_message('Начислен кэшбек ' . variable_get('commerce_userpoints_cashback_percent', '0') . '% в виде баллов. Добавлено: ' .
+        format_plural($cb_points,'@count !point', '@count !points', userpoints_translation())
+      );
+
+      // письмо или смс покупателю о начислении отправляются из модуля commerce_userpoints_custom
+    }
+  }
+}
+
+function commerce_userpoints_casback_discharge($order) {
+  // определить ID
+  if ($txn_id = commerce_userpoints_casback_get_record($order)) {
+
+    // Update the userpoints transaction.
+    $userpoints_params = [
+      'txn_id' => $txn_id,
+      'status' => USERPOINTS_TXN_STATUS_DECLINED,
+    ];
+    userpoints_userpointsapi($userpoints_params);
+  }
+}
+
+function commerce_userpoints_casback_get_record($order) {
+  $txn_id = null;
+  // найти запись для данного заказа
+  $txn_id = db_query("SELECT txn_id from {userpoints_txn} WHERE entity_id = :entity_id AND entity_type = 'commerce_order' AND operation = 'commerce_userpoints_cashback'", array(':entity_id' => $order->order_id))->fetchField();
+
+  return $txn_id ? $txn_id : false;
+}
