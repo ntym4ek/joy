@@ -47,9 +47,10 @@ function commerce_userpoints_casback_charge($order, $txn_id = null) {
   $order_wr = entity_metadata_wrapper('commerce_order', $order);
   $order_total = $order_wr->commerce_order_total->value();
   $amount = commerce_price_component_total($order_total, 'base_price')['amount'];
+  $discount =  commerce_helper_commerce_price_component_total_discounts($order)['amount'];
 
   // вычислить процент
-  $cb_amount = $amount * variable_get('commerce_userpoints_cashback_percent', '0')/100;
+  $cb_amount = ($amount + $discount) * variable_get('commerce_userpoints_cashback_percent', '0')/100;
   $cb_points = ceil($cb_amount / 100);
 
   if ($cb_amount) {
