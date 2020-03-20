@@ -97,3 +97,14 @@ function commerce_userpoints_casback_get_record($order) {
 
   return $txn_id ? $txn_id : false;
 }
+
+function commerce_userpoints_discount_custom_settings_form_alter(&$form, $form_state){
+  $form['commerce_userpoints_cashback_percent'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Кэшбек',
+    '#description' => 'Процент от общей стоимости товаров, который вернётся в виде баллов',
+    '#default_value' => variable_get('commerce_userpoints_cashback_percent', '0'),
+    '#size' => 5,
+    '#required' => TRUE,
+  );
+}
