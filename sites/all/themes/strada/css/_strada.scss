@@ -1149,12 +1149,13 @@ $navbar-strada-toggle-border-color:       #ddd;
                 background: none;
             }
         }
+      .commerce-price-formatted-components { margin-right: $grid-gutter-width*2; }
     }
 
     @media #{$mobile} {
         .field-name-commerce-order-total {
             .field-item { padding-right: 0; }
-            .commerce-price-formatted-components { width: 100%; }
+            .commerce-price-formatted-components { margin-right: 0; }
         }
     }
 }
