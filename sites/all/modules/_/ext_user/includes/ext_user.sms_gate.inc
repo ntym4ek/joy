@@ -28,9 +28,7 @@ function ext_user_sms_gate_sms($event, $params)
             if (!empty($params['userpoints'])) {
                 $pts = format_plural($params['userpoints']['points'],'@count point', '@count points');
                 if ($params['userpoints']['points'] > 0) {
-                  $text = 'JOY-MAGAZIN. Вам начислено '  . $pts . '. ' .
-                    (empty($params['userpoints']['description']) ? '' : 'Комментарий: ' . $params['userpoints']['description']) . '. ' .
-                    'Оплачивайте до ' . variable_get('commerce_userpoints_discount_custom_order_total_cover_max_percent', '100') . '% стоимости.';
+                  $text = 'JOY-MAGAZIN. Вам начислено '  . $pts . '. Оплачивайте до ' . variable_get('commerce_userpoints_discount_custom_order_total_cover_max_percent', '100') . '% стоимости.';
                 }
                 if ($params['userpoints']['points'] < 0) $text = 'JOY-MAGAZIN. Со счёта списано '  . $pts . '. Подробнее 8 (912)701-70-74';
                 $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
