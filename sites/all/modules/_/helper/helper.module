@@ -255,7 +255,7 @@ function helper_path_breadcrumbs_view_alter(&$breadcrumbs, $path_breadcrumbs, $c
   // для Описания товара
   // определить текущую и родительскую категорию товара
   if ($path_breadcrumbs->machine_name == 'catalog_item' && isset($_GET['cat'])) {
-    $bread = '';
+    $bread = [];
     $tid = $_GET['cat'];
     if ($term = taxonomy_term_load($tid)) {
         $tid_url = drupal_get_path_alias('taxonomy/term/' . $tid);

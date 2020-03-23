@@ -28,7 +28,7 @@ function ext_wishlist_form_alter(&$form, $form_state, $form_id)
 function ext_wishlist_preprocess_page(&$vars)
 {
     if (menu_get_item()['path'] == 'user/%/wishlist') {
-        drupal_set_title(t('Wish List'));
+        drupal_set_title(t('Account'));
     }
 }
 

@@ -1221,8 +1221,11 @@ function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path
         // убрать некоторые закладки
         if (!empty($data['tabs'])) {
             foreach ($data['tabs'][0]['output'] as $key => $value) {
-                // редактирование аккаунта перенесено в Действия
+                if ($value['#link']['path'] == "user/%/view") {
+                    $data['tabs'][0]['output'][$key]['#link']['title'] = t('Summary', [], ['context' => 'account']);
+                }
                 if ($value['#link']['path'] == "user/%/edit") {
+                    // редактирование аккаунта перенесено в Local Actions
                     unset($data['tabs'][0]['output'][$key]);
                 }
             }
