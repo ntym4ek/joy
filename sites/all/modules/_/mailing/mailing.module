@@ -330,7 +330,10 @@ function mailing_mail($key, &$message, $params)
 
             $message['body'][] = '' .
                 '<h2>Здравствуйте!</h2>' .
-                '<p>На сайте joy-magazin.ru Вам начислено ' . format_plural($params['userpoints']['points'],'@count point', '@count points') . '. Оплачивайте до 30% стоимости товаров. </p>';
+                '<p>На сайте joy-magazin.ru Вам начислено ' . format_plural($params['userpoints']['points'],'@count point', '@count points') . '.' .
+                (empty($params['userpoints']['description']) ? '' : '<br />Комментарий: ' . $params['userpoints']['description']) .
+                '</p>' .
+                '<p>Оплачивайте баллами до 30% стоимости товаров. </p>';
 
             break;
 
