@@ -32,8 +32,8 @@
         echo '<param name="Ростовка">' . trim($height) . '</param>';
       }
     } ?>
-    <delivery>true</delivery>
-    <pickup>true</pickup>
+    <delivery>false</delivery>
+    <pickup>false</pickup>
     <store>false</store>
   </offer>
   <?php
