@@ -628,7 +628,7 @@ $navbar-strada-toggle-border-color:       #ddd;
             li {
                 display: inline-block;
                 &.active-trail {
-                    border: 1px solid #ececec;
+                    border: 1px solid $gray-lighter;
                     border-bottom-color: #fff;
                     border-radius: 4px;
                 }
@@ -639,8 +639,13 @@ $navbar-strada-toggle-border-color:       #ddd;
             }
         }
     }
+    @media #{$mobile} {
+      .page-header { flex-wrap: wrap; }
+      .region-navigation { flex-basis: 100%; }
+    }
     @media #{$tablet} {
-        .with-sidebar-first { padding-left: $grid-gutter-width*2; }
+      .page-header { flex-wrap: wrap; }
+      .with-sidebar-first { padding-left: $grid-gutter-width*2; }
     }
     .content-title h2 { margin-top: 0; }
 }
@@ -2461,11 +2466,75 @@ form[id^="user-profile-form"] {
 }
 
 /* ------------------------------------------------- Личный кабинет -------------------------------------------- */
+.profile {
+  .row {
+    display: flex;
+    > div {
+      flex: 0 50%;
+      margin-bottom: $grid-gutter-width;
+    }
+    @media #{$mobile} {
+      flex-wrap: wrap;
+      > div { flex-basis: 100%; }
+    }
+  }
+}
+.user-info-block {
+  display: flex;
+  border: 1px solid $gray-lighter;
+  border-radius: 4px;
+  padding: $grid-gutter-width;
+  height: 100%; min-height: 175px;
+  h4 { margin-top: 0; }
+  .media-left {
+    padding-right: $grid-gutter-width;
+    min-width: 100px + $grid-gutter-width;
+    text-align: center;
+    .fa, .fas, .fal {
+      font-size: 72px;
+      color: white;
+    }
+  }
+  .user-picture {
+    img { max-width: initial; }
+  }
+  .counter {
+    font-size: 48px;
+  }
+  ul {
+    font-size: $font-size-xs;
+    text-align: right;
+    padding: 0; margin: 0;
+    list-style: none;
+  }
+  .media-body { width: 100%; }
+  .media-bottom { align-self: flex-end; }
+
+  &.wishlist {
+    background: $brand-red;
+    border-color: $brand-red;
+    *, a { color: white; }
+  }
+  &.points {
+    background: $brand-primary;
+    border-color: $brand-primary;
+    *, a { color: white; }
+  }
+  &.orders {
+    background: $brand-orange;
+    border-color: $brand-orange;
+    *, a { color: white; }
+  }
+
+  @media #{$mobile} { min-height: initial; }
+}
+
 .confirmation {
     .form-item {
         display: inline-block;
     }
 }
+
 
 /* ------------------------------------------------- 404 ------------------------------------------------------------ */
 .page404 {

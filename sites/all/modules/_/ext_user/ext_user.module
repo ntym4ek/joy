@@ -527,3 +527,91 @@ function ext_user_form_user_admin_settings_alter(&$form, &$form_state)
     $form['email_title']['#weight'] = 10;
     $form['email']['#weight'] = 11;
 }
+
+/**
+ * ----------------- Оформление ЛК ---------------------------------------------
+ */
+
+/**
+ * Implements hook_preprocess_page
+ */
+function ext_user_preprocess_page(&$vars)
+{
+  if (in_array(menu_get_item()['path'], ['user/%', 'user/%/view'])) {
+    drupal_set_title(t('Account'));
+  }
+}
+
+/**
+ * Implements hook_user_view().
+ */
+function ext_user_user_view($account, $view_mode) {
+  global $user;
+  // блок желаний в аккаунте
+  if (user_access('administer wish lists') || (user_access('manage own wish list') && $user->uid == $account->uid)) {
+    $count = 0;
+    $wishlist_user = menu_get_object('user');
+    if ($wishlist = commerce_wishlist_order_load($wishlist_user->uid)) {
+      $wishlist_wrapper = entity_metadata_wrapper('commerce_order', $wishlist);
+      $count = commerce_line_items_quantity($wishlist_wrapper->commerce_line_items, commerce_product_line_item_types());
+    }
+
+    $links = array();
+    if (user_access('manage own wish list') && $user->uid == $account->uid) {
+      $links['wishlist-view'] = array(
+        'title' => t('View wishlist'),
+        'href' => 'user/' . $account->uid . '/wishlist',
+      );
+    }
+
+    $account->content['wishlist'] = array(
+      'title' => array('#markup' => 'Отложенные товары'),
+      'counter' => array('#markup' => $count),
+      'actions' => array(
+        '#theme' => 'links',
+        '#links' => $links,
+        '#attributes' => array('class' => array('links')),
+      )
+    );
+  }
+
+  // количество заказов
+  if (user_access('edit any commerce_order entity') || (user_access('view own commerce_order entities') && $user->uid == $account->uid)) {
+    $count = db_select('commerce_order', 'co')
+      ->condition('co.uid', $account->uid)
+      ->condition('co.status', ['pending', 'completed', 'processing'], 'IN')
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+
+    $links = array();
+    if (user_access('view own commerce_order entities') && $user->uid == $account->uid) {
+      $links['order-view'] = array(
+        'title' => t('View orders'),
+        'href' => 'user/' . $account->uid . '/orders',
+      );
+    }
+
+    $account->content['orders'] = array(
+      'title' => array('#markup' => 'Заказы'),
+      'counter' => array('#markup' => $count),
+      'actions' => array(
+        '#theme' => 'links',
+        '#links' => $links,
+        '#attributes' => array('class' => array('links')),
+      )
+    );
+  }
+}
+
+/**
+ * Implements hook_user_view_alter().
+ */
+function ext_user_user_view_alter(&$build) {
+  global $user;
+  if ($user->uid == $build["#account"]->uid) {
+    $build["userpoints"]["title"]['#markup'] = strip_tags($build["userpoints"]["title"]['#markup']);
+    $build["userpoints"]["list"] = ['#markup' => userpoints_get_current_points($build["#account"]->uid, 0)];
+    $build["userpoints"]["actions"]["#links"]["userpoints-view"]["href"] = 'user/' . $build["#account"]->uid . '/points';
+  }
+}
