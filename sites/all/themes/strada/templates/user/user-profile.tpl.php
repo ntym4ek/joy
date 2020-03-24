@@ -37,6 +37,7 @@
 hide($user_profile['field_phone']);
 hide($user_profile['field_surname']);
 hide($user_profile['field_name_first']);
+hide($user_profile['field_name_second']);
 hide($user_profile['userpoints']);
 hide($user_profile['wishlist']);
 hide($user_profile['orders']);
@@ -53,6 +54,11 @@ hide($user_profile['orders']);
           <h4><? print $elements["#account"]->realname; ?></h4>
           <? print ($elements["#account"]->mail ? '<div><span class="text-muted">E-Mail:</span> ' . $elements["#account"]->mail . '</div>' : ''); ?>
           <? print ($elements["#account"]->field_phone["und"][0]["safe_value"] ? '<div><span class="text-muted">Телефон:</span> ' . $elements["#account"]->field_phone["und"][0]["safe_value"] . '</div>'  : ''); ?>
+          <? if ($logged_in): ?>
+          <ul class="links">
+            <li><a href="/user/<? print $elements["#account"]->uid;  ?>/edit">Редактировать</a></li>
+          </ul>
+          <? endif; ?>
         </div>
       </div>
     </div>

@@ -2506,8 +2506,9 @@ form[id^="user-profile-form"] {
     text-align: right;
     padding: 0; margin: 0;
     list-style: none;
+    position: absolute; bottom: 0; right: 0;
   }
-  .media-body { width: 100%; }
+  .media-body { width: 100%; position: relative; }
   .media-bottom { align-self: flex-end; }
 
   &.wishlist {
