@@ -1207,13 +1207,13 @@ function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path
                 }
                 break;
             case 'user/%':
-                $item = menu_get_item('user/' . $GLOBALS['user']->uid . '/edit');
-                if ($item['access']) {
-                    $data['actions']['output'][] = [
-                        '#theme' => 'menu_local_action',
-                        '#link' => $item
-                    ];
-                }
+//                $item = menu_get_item('user/' . $GLOBALS['user']->uid . '/edit');
+//                if ($item['access']) {
+//                    $data['actions']['output'][] = [
+//                        '#theme' => 'menu_local_action',
+//                        '#link' => $item
+//                    ];
+//                }
                 break;
         }
 

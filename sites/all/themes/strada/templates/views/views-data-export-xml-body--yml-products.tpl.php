@@ -10,7 +10,7 @@
     <url><?php echo url('node/' . $row['nid'], ['absolute' => TRUE]) . '?id=' . $row['product_id']; ?></url>
     <price><?php echo $row['commerce_price'] / 100; ?></price>
     <currencyId>RUR</currencyId>
-    <categoryId><?php echo $inter[0]; ?></categoryId>
+    <categoryId><?php echo array_shift($inter); ?></categoryId>
     <?php if (!empty($row['field_p_image'])): ?>
       <picture><?php echo $row['field_p_image']; ?></picture>
     <?php endif; ?>
@@ -32,9 +32,6 @@
         echo '<param name="Ростовка">' . trim($height) . '</param>';
       }
     } ?>
-    <delivery>false</delivery>
-    <pickup>false</pickup>
-    <store>false</store>
   </offer>
   <?php
   }
