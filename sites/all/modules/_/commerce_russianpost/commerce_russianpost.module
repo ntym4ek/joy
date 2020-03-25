@@ -325,7 +325,7 @@ function commerce_russianpost_api_request($params = array(), $message = '') {
  *
  * @param SimpleXMLElement $response
  *   The response element to evaluate.
- * 
+ *
  * @return array
  *   An array containing an error status and any related messages.
  */
@@ -358,36 +358,41 @@ function commerce_russianpost_details_form($pane_form, $pane_values, $checkout_p
 {
     $pane_form = array();
 
-    if (empty($errors)) {
+    $user_info = commerce_helper_get_user_info($order->uid, true);
 
-        $pane_form['username'] = array(
-            '#title' => 'Фамилия, Имя, Отчество',
-            '#type' => 'textfield',
-        );
-        $pane_form['phone'] = array(
-            '#title' => 'Телефон',
-            '#type' => 'textfield',
-            '#attributes' => ['class' => ['masked-phone']],
-        );
+    $pane_form['username'] = array(
+        '#title' => 'Фамилия, Имя, Отчество',
+        '#type' => 'textfield',
+        '#default' => empty($user_info['name']['fullname']) ? '' : $user_info['name']['fullname'],
+    );
+    $pane_form['phone'] = array(
+        '#title' => 'Телефон',
+        '#type' => 'textfield',
+        '#attributes' => ['class' => ['masked-phone']],
+        '#default' => empty($user_info['phone']) ? '' : $user_info['phone'],
+    );
 
-        $pane_form['zipcode'] = array(
-            '#title' => 'Индекс',
-            '#type' => 'textfield',
-        );
-        $pane_form['addr'] = array(
-            '#title' => 'Адрес',
-            '#type' => 'textfield',
-        );
-        $pane_form['office'] = array(
-            '#title' => 'Квартира/Офис',
-            '#type' => 'textfield',
-        );
+    $pane_form['zipcode'] = array(
+        '#title' => 'Индекс',
+        '#type' => 'textfield',
+        '#default' => empty($user_info['address']['zipcode']) ? '' : $user_info['address']['zipcode'],
+    );
+    $pane_form['addr'] = array(
+        '#title' => 'Адрес',
+        '#type' => 'textfield',
+      '#default' => empty($user_info['address']['address']) ? '' : $user_info['address']['address'],
+    );
+    $pane_form['office'] = array(
+        '#title' => 'Квартира/Офис',
+        '#type' => 'textfield',
+      '#default' => empty($user_info['address']['office']) ? '' : $user_info['address']['office'],
+    );
 
-        $pane_form['callme'] = array(
-            '#title' => t('Call me to get details about my order and delivery'),
-            '#type' => 'checkbox',
-        );
-    }
+    $pane_form['callme'] = array(
+        '#title' => t('Call me to get details about my order and delivery'),
+        '#type' => 'checkbox',
+        '#default' => empty($user_info['address']['callme']) ? '' : $user_info['address']['callme'],
+    );
 
     return $pane_form;
 }
