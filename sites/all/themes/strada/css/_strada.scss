@@ -723,9 +723,7 @@ $navbar-strada-toggle-border-color:       #ddd;
             padding: 0 $grid-gutter-width/2;
             position: relative;
             padding-bottom: $grid-gutter-width;
-            @media #{$tablet} {
-                flex-basis: 50%;
-            }
+            @media #{$tablet} { flex-basis: 50%; }
             @media #{$normal} { flex-basis: 33.3%; }
             @media #{$wide} { flex-basis: 25%; }
         }
@@ -1816,6 +1814,7 @@ form[id^="user-profile-form"] {
         margin-bottom: $grid-gutter-width;
         .help-block {
             font-size: 13px;
+          .fivestar-summary { white-space: nowrap; }
             .total-votes {
                 font-size: 1em;
                 @media #{$mobile} { display: none; }
@@ -2004,6 +2003,21 @@ form[id^="user-profile-form"] {
                 margin-right: $grid-gutter-width;
             }
         }
+    }
+    .product-related {
+      .field-items {
+        display: flex; flex-wrap: wrap;
+        margin: 0 (-$grid-gutter-width/2);
+      }
+      .field-item {
+        flex: 0 1 100%;
+        padding: 0 8px;
+        position: relative;
+        padding-bottom: 16px;
+        @media #{$tablet} { flex-basis: 33.3%; }
+        @media #{$normal} { flex-basis: 25%; }
+        @media #{$wide} { flex-basis: 20%; }
+      }
     }
 }
 
@@ -2333,9 +2347,7 @@ form[id^="user-profile-form"] {
     .stat-container {
       display: flex;
       flex-wrap: wrap;
-      @media #{$normal} {
-        flex-wrap: nowrap;
-      }
+      @media #{$normal} { flex-wrap: nowrap; }
     }
     .stat-box {
         flex: 50%;

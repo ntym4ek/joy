@@ -159,13 +159,10 @@
 
             <?php if(!empty($content['field_pd_related'])): ?>
             <div class="row">
-                <div class="col-sm-12">
-                    <h3 class="product-related-title">С этим товаром покупают</h3>
-                    <div class="product-related">
-                        <?php print render($content['field_pd_related']); ?>
-                    </div>
-
-                </div>
+                  <h2 class="product-related-title col-xs-12">С этим товаром покупают</h2>
+                  <div class="product-related col-xs-12">
+                      <?php print render($content['field_pd_related']); ?>
+                  </div>
             </div>
             <?php endif; ?>
 
