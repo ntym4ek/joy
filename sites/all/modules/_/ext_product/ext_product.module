@@ -4,9 +4,8 @@
  * Implements hook_menu().
  */
 function ext_product_menu() {
-  $items['api/product/%/set'] = array (
-    'page callback' => 'ext_product_product_status_update',
-    'page arguments' => array(2),
+  $items['api/product/set'] = array (
+    'page callback' => 'ext_product_product_update',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
@@ -25,13 +24,14 @@ function ext_product_menu() {
 /**
  * menu callback
  */
-function ext_product_product_status_update($pid = null) {
+function ext_product_product_update() {
   // проверить Токен
   $message = "Bad query";
 
-  if ($_GET['api_key'] == variable_get('api_key') && isset($_GET['stock']) && in_array($_GET['stock'], [0, 1]) && is_numeric($pid)) {
+  if ($_GET['api_key'] == variable_get('api_key') && isset($_GET['stock']) && in_array($_GET['stock'], [0, 1]) && isset($_GET['pid'])) {
     // изменить статус товара
     $stock = $_GET['stock'];
+    $pid = $_GET['pid'];
     $product_wr = entity_metadata_wrapper('commerce_product', $pid);
     if ($product_wr->value()) {
         $product_wr->field_p_out_of_stock->set(!$stock);
