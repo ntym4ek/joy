@@ -4,15 +4,9 @@
  * Implements hook_menu().
  */
 function ext_product_menu() {
-  $items['api/product/%/set-in-stock'] = array (
+  $items['api/product/%/set'] = array (
     'page callback' => 'ext_product_product_status_update',
-    'page arguments' => array(2, 3),
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['api/product/%/set-out-of-stock'] = array (
-    'page callback' => 'ext_product_product_status_update',
-    'page arguments' => array(2, 3),
+    'page arguments' => array(2),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
@@ -31,31 +25,18 @@ function ext_product_menu() {
 /**
  * menu callback
  */
-function ext_product_product_status_update($pid = null, $op = null) {
+function ext_product_product_status_update($pid = null) {
   // проверить Токен
   $message = "Bad query";
-  if ($_GET['api_key'] == variable_get('api_key') && is_numeric($pid) && $op) {
+
+  if ($_GET['api_key'] == variable_get('api_key') && isset($_GET['stock']) && in_array($_GET['stock'], [0, 1]) && is_numeric($pid)) {
     // изменить статус товара
+    $stock = $_GET['stock'];
     $product_wr = entity_metadata_wrapper('commerce_product', $pid);
     if ($product_wr->value()) {
-      switch ($op) {
-        case 'set-in-stock':
-          $stock = 0;
-          break;
-
-        case 'set-out-of-stock':
-          $stock = 1;
-          break;
-      }
-
-      if (isset($stock)) {
-        db_update('field_data_field_p_out_of_stock')
-          ->fields(['field_p_out_of_stock_value' => $stock])
-          ->condition('bundle', 'product')
-          ->condition('entity_id', $pid)
-          ->execute();
+        $product_wr->field_p_out_of_stock->set(!$stock);
+        $product_wr->save();
         $message = "OK";
-      }
     }
   }
 
