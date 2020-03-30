@@ -711,6 +711,7 @@ $navbar-strada-toggle-border-color:       #ddd;
         }
         .icon-next::before { content: "\f054"; }
         .icon-prev::before { content: "\f053"; }
+      &:focus:not(:hover) { opacity: .5 }
     }
 }
 
