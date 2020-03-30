@@ -78,12 +78,16 @@ function courier_service_rate_order($shipping_service, $order)
                     $rate['data']['errors'][] = 'Ошибка при расчёте стоимости';
                     return FALSE;
                 }
-              $rate['data']['errors'][] = 'Нет курьерской доставки';
             }
             $rate['amount'] = ceil($amount) * 100;
         } else {
+          // возможно это Киров или Чепецк
           if (in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
-            if (!_commerce_helper_non_free_shipping($order)) $rate['amount'] = 0;
+            if (!_commerce_helper_non_free_shipping($order)) {
+              $rate['amount'] = 0;
+            }
+          } else {
+            $rate['data']['errors'][] = 'Нет курьерской доставки';
           }
         }
     }
