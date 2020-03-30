@@ -139,7 +139,7 @@ div.divider {
     .line-1 { position: relative; }
 
     .line-2 {
-        position: absolute; left: 0; right: 0; z-index: 20; top: 40px;
+        position: absolute; left: 0; right: 0; z-index: 20;
         background: white;
         @media #{$mobile} {
             position: static;

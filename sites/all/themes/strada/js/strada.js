@@ -429,27 +429,27 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
 
 
             /* ------------------------------------- Phone popover ---------------------------------------- */
-            $('#phone_popover').popover({
-                html: true,
-                trigger: 'focus',
-                placement: 'bottom',
-                title: 'Служба поддержки',
-                content: function () {
-                    var button = checkTime ('08:00:00', '17:00:00') ?
-                        '<br /><br /><a href="tel:88005502885" class="btn btn-brand btn-block">Позвонить</a>' :
-                        '<br /><br /><button class="btn btn-brand btn-block disabled">Не работает</button>';
-                    return 'Время работы:<br />Пн - Пт &nbsp;&nbsp; 08:00 - 17:00<br /><small style="color: #ccc;">(по московскому времени)</small>' + button;
-                },
-
-            });
-            function checkTime (beg, end) {
-                var s = 60,
-                    d = ':',
-                    b = beg.split (d), b = b [0]* s * s + b [1] * s + +b [2],
-                    e = end.split (d), e = e [0]* s * s + e [1] * s + +e [2],
-                    t = new Date, t = t.getHours () * s * s + t.getMinutes () * s + t.getSeconds ();
-                return (t >= b && t <= e);
-            }
+            // $('#phone_popover').popover({
+            //     html: true,
+            //     trigger: 'focus',
+            //     placement: 'bottom',
+            //     title: 'Служба поддержки',
+            //     content: function () {
+            //         var button = checkTime ('08:00:00', '17:00:00') ?
+            //             '<br /><br /><a href="tel:88005502885" class="btn btn-brand btn-block">Позвонить</a>' :
+            //             '<br /><br /><button class="btn btn-brand btn-block disabled">Не работает</button>';
+            //         return 'Время работы:<br />Пн - Пт &nbsp;&nbsp; 08:00 - 17:00<br /><small style="color: #ccc;">(по московскому времени)</small>' + button;
+            //     },
+            //
+            // });
+            // function checkTime (beg, end) {
+            //     var s = 60,
+            //         d = ':',
+            //         b = beg.split (d), b = b [0]* s * s + b [1] * s + +b [2],
+            //         e = end.split (d), e = e [0]* s * s + e [1] * s + +e [2],
+            //         t = new Date, t = t.getHours () * s * s + t.getMinutes () * s + t.getSeconds ();
+            //     return (t >= b && t <= e);
+            // }
         }
     };
 
