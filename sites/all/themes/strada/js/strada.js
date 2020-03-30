@@ -261,7 +261,7 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
                         }
                     } else {
                         if ($('.line-2').css('position') == 'fixed') {
-                            $('.line-2').css('top', 40);
+                            $('.line-2').css('top', 28);
                             $('.line-2').css('position', 'absolute');
                             $('.line-2').css('box-shadow', 'none');
                         }

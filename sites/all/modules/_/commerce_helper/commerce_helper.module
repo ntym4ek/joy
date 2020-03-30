@@ -251,6 +251,7 @@ function commerce_helper_preprocess_page(&$vars)
     if (strpos($_GET['q'], 'checkout') === 0) {
         drupal_add_js(drupal_get_path('module', 'commerce_helper') . '/js/checkout.js');
         drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
+      drupal_set_title('');
     }
 
     // заменить шаблон страницы для печати user/%/orders/%/print

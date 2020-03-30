@@ -139,7 +139,7 @@ div.divider {
     .line-1 { position: relative; }
 
     .line-2 {
-        position: absolute; left: 0; right: 0; z-index: 20;
+        position: absolute; left: 0; right: 0; z-index: 20; top: 28px;
         background: white;
         @media #{$mobile} {
             position: static;
@@ -1176,7 +1176,7 @@ $navbar-strada-toggle-border-color:       #ddd;
  * ----------------------------------- Checkout -
  */
 .commerce-checkout-form-checkout {
-    margin-top: $grid-gutter-width*2;
+    margin-top: $grid-gutter-width*6;
     h4 {
         font-weight: 700;
         margin: 40px 0 20px 0;

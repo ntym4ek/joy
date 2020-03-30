@@ -75,15 +75,20 @@ function courier_service_rate_order($shipping_service, $order)
             else {
                 // для Владивостока и многих других почему-то до пункта выдачи выдаёт нулевую стоимость
                 if ($to_point_cost == 0) {
-                    $rate['data']['errors'][] = 'ошибка при расчёте стоимости';
+                    $rate['data']['errors'][] = 'Ошибка при расчёте стоимости';
                     return FALSE;
                 }
+              $rate['data']['errors'][] = 'Нет курьерской доставки';
             }
             $rate['amount'] = ceil($amount) * 100;
+        } else {
+          if (in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
+            if (!_commerce_helper_non_free_shipping($order)) $rate['amount'] = 0;
+          }
         }
     }
 
-    return $rate['amount'] ? $rate : false;
+    return empty($rate['data']['errors']) ? $rate : false;
 }
 
 
@@ -100,7 +105,8 @@ function courier_commerce_shipping_service_rate_options_alter(&$options, $order)
 
         $message = $cost = '';
         if (empty($data['errors'])) {
-            $cost = commerce_currency_format($line_item_wr->commerce_unit_price->amount->value(), 'RUB');
+          $cost = $line_item_wr->commerce_unit_price->amount->value();
+          $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
         } else {
             $message = implode('<br />', $data['errors']);
         }
