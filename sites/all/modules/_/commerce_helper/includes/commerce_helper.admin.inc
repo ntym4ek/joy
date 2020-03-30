@@ -105,7 +105,7 @@ function commerce_helper_settings($form, &$form_state)
   );
   $form['fieldset4']['zone4_regions'] = array(
     '#type' => 'hidden',
-    '#value' => [623],
+    '#value' => [624],
   );
 
   $form['fieldset5'] = array('#type' => 'fieldset', '#title' => 'Кирово-Чепецк', '#group' => 'vertical_tabs');
@@ -117,7 +117,7 @@ function commerce_helper_settings($form, &$form_state)
   );
   $form['fieldset4']['zone5_regions'] = array(
     '#type' => 'hidden',
-    '#value' => [624],
+    '#value' => [625],
   );
 
     return system_settings_form($form);
