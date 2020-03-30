@@ -62,7 +62,13 @@ function courier_service_rate_order($shipping_service, $order)
     // базовые данные
     if (isset($shipping_profile->field_data['und'][0]['value'])) {
         $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
-        if (isset($data['boxberry']['courier']) && !empty($data['boxberry']['courier']['ExpressDelivery'])) {
+        // возможно это Киров или Чепецк
+
+        if (in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])
+            && !_commerce_helper_non_free_shipping($order)) {
+          $rate['amount'] = 0;
+        }
+        elseif (isset($data['boxberry']['courier']) && !empty($data['boxberry']['courier']['ExpressDelivery'])) {
             // если стоит 1, стоимость ставить от BB
             $to_door_cost = variable_get('courier_delivery_cost', 150) == 1 ? $data['boxberry']['cost_data']['price_service'] : variable_get('courier_delivery_cost', 150);
             $to_point_cost = $data['boxberry']['cost_data']['price_base'];
@@ -81,14 +87,7 @@ function courier_service_rate_order($shipping_service, $order)
             }
             $rate['amount'] = ceil($amount) * 100;
         } else {
-          // возможно это Киров или Чепецк
-          if (in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
-            if (!_commerce_helper_non_free_shipping($order)) {
-              $rate['amount'] = 0;
-            }
-          } else {
-            $rate['data']['errors'][] = 'Нет курьерской доставки';
-          }
+          $rate['data']['errors'][] = 'Нет курьерской доставки';
         }
     }
 
