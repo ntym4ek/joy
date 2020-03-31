@@ -87,7 +87,7 @@ function boxberry_service_rate_order($shipping_service, $order)
 
                         $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
                         $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
-                        if (!empty($field_data['boxberry']['point_data'])) {
+                        if (!empty($field_data['boxberry']['point_data']['address'])) {
                             $rate['data']['address'] = $field_data['boxberry']['point_data']['address'];
                         }
 

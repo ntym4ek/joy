@@ -51,6 +51,11 @@ function pickup_service_rate_order($shipping_service, $order) {
     // в $order после ajax submit старые данные, загружаем заново
     // $order = commerce_order_load($order->order_id);
 
+  // оставить самовывоз только для служесного пользования
+  if (!_user_has_role('products manager') || $GLOBALS['user']->uid == 393) {
+    return false;
+  }
+
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
     $error = $message = '';

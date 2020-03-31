@@ -757,11 +757,6 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
         }
     }
 
-    // оставить самовывоз только для служесного пользования
-    if (!_user_has_role('products manager') || $GLOBALS['user']->uid == 393) {
-        unset($form['commerce_shipping']['shipping_service']['#options']['pickup_shipping_service']);
-    }
-
     $form['commerce_payment']['#prefix'] = '<h4>' . t('Payment service') . '</h4>';
     $form['commerce_payment']['payment_method']['#after_build'][] = 'commerce_helper_payment_radios_alter';
     $form['commerce_payment']['payment_method']['#ajax']['callback'] = 'commerce_helper_commerce_checkout_form_refresh';
