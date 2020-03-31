@@ -176,7 +176,7 @@ div.divider {
     .line-2-1 {
         .phone-help { font-size: .7em;  padding: 0; }
         .topbar-phone { justify-content: space-between; }
-        a {
+        div, a {
             color: $text-color; font-size: .9em;
             display: flex; align-items: center;
         }
@@ -200,6 +200,12 @@ div.divider {
         .navbar-menu {
             flex: 0 1 auto; order: 3;
             padding-right: $grid-gutter-width;
+        }
+        .navbar-phone {
+          flex: 0 1 auto; order: 4;
+          padding-right: $grid-gutter-width;
+          a { line-height: 0.9; }
+          div { font-size: $font-size-xs; }
         }
         .navbar-search {
             flex: auto; order: 5;
@@ -281,7 +287,7 @@ div.divider {
         }
         a.btn > span {
             display: none;
-            @media #{$tablet} {
+            @media #{$normal} {
                 display: inline-block;
                 margin-left: 8px;
             }
@@ -301,6 +307,7 @@ div.divider {
         }
         .level-1-item {
             flex: auto;
+            overflow: hidden;
             > a {
                 color: $text-color;
                 &:hover {
@@ -435,6 +442,9 @@ div.divider {
             }
             .navbar-menu {
                 padding-right: 0;
+            }
+            .navbar-phone {
+              display: none;
             }
             .navbar-search {
                 flex: 0 auto; order: 3;
@@ -628,7 +638,7 @@ $navbar-strada-toggle-border-color:       #ddd;
             li {
                 display: inline-block;
                 &.active-trail {
-                    border: 1px solid $gray-lighter;
+                    border: 1px solid $divider-color;
                     border-bottom-color: #fff;
                     border-radius: 4px;
                 }
@@ -2495,7 +2505,7 @@ form[id^="user-profile-form"] {
 }
 .user-info-block {
   display: flex;
-  border: 1px solid $gray-lighter;
+  border: 1px solid $divider-color;
   border-radius: 4px;
   padding: $grid-gutter-width;
   height: 100%; min-height: 175px;

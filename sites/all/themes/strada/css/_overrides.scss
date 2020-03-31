@@ -122,6 +122,18 @@ a {
     &:focus { outline: none; }
 }
 
+.container {
+  @media (min-width: $screen-sm-min) {
+    width: 95%;
+  }
+  @media (min-width: $screen-md-min) {
+    width: 95%;
+  }
+  @media (min-width: $screen-lg-min) {
+    width: $container-lg;
+  }
+}
+
 // Default navbar.
 .navbar {
   &.container {

@@ -83,12 +83,12 @@
                 <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
                 <div class="topbar-phone">
-                    <a tabindex="0" role="button" id="phone_popover">8-800-550-28-85</a>
+                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank">7 (912) 701-70-74</a>
                 </div>
 
                 <div class="topbar-menu hidden-sm hidden-md">
                     <ul class="dry-list">
-                        <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>
+<!--                        <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>-->
                         <li><a href="/info/delivery">Условия бесплатной доставки</a></li>
                         <li><a href="/info/payment">Оплата</a></li>
                         <li><a href="/info/return">Возврат</a></li>
@@ -116,7 +116,11 @@
                 </div>
                 <?php endif; ?>
 
-                <?php if (!$tsss): ?>
+              <div class="navbar-phone">
+                <a href="tel:88005502885" tabindex="0" role="button" class="btn btn-brand">8-800-550-28-85<br /><div>круглосуточно</div></a>
+              </div>
+
+              <?php if (!$tsss): ?>
                 <div class="navbar-search">
                         <div class="navbar-search-mobile"><a class="btn btn-link"><i class="far fa-search"></i></a></div>
                         <div class="navbar-search-pane">
@@ -154,7 +158,8 @@
 
     <div class="line-2-1 hidden-sm hidden-md hidden-lg">
         <div class="topbar-phone">
-            <a href="tel:88005502885">8-800-550-28-85</a>
+            <div><a href="tel:88005502885">8-800-550-28-85</a></div>
+            <div>WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank">7 (912) 701-70-74</a></div>
         </div>
     </div>
 
