@@ -108,11 +108,11 @@ function popup_on_leave_display_popup(popup_on_leave_title, popup_on_leave_body,
             +          "<input type='text' id='name'/>"
             +       "</div>"
             +       "<div class='field-response'>"
-            +           "<label for='response'><input type='checkbox' id='response'/> жду ответ на e-mail</label>"
+            +           "<label for='response'><input type='checkbox' id='response'/> жду обратного звонка</label>"
             +       "</div>"
-            +       "<div class='field-email'>"
-            +           "<label for='email'>E-Mail</label>"
-            +           "<input type='text' id='email'/>"
+            +       "<div class='field-phone'>"
+            +           "<label for='phone'>Телефон</label>"
+            +           "<input type='text' id='phone'/>"
             +        "</div>"
             +         "<div class='field-promo'>"
             +           "<p>Спасибо, что помогаете нам стать лучше!</p>"
@@ -164,7 +164,7 @@ function popup_on_leave_form_submit()
                 text : jQuery('#text').val(),
                 name : jQuery('#name').val(),
                 checkbox : jQuery('#response').is(":checked"),
-                email : jQuery('#email').val(),
+                phone : jQuery('#phone').val(),
             }
         }
     };

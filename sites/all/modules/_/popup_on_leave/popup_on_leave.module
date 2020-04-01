@@ -125,8 +125,8 @@ function popup_on_leave_send_email_callback()
     $params['data'] = [
         'text' => empty($_POST['data']['text']) ? '' : $_POST['data']['text'],
         'name' => empty($_POST['data']['name']) ? '' : $_POST['data']['name'],
-        'checkbox' => empty($_POST['data']['email']) ? '' : $_POST['data']['email'],
-        'email' => empty($_POST['data']['email']) ? '' : $_POST['data']['email'],
+        'checkbox' => empty($_POST['data']['phone']) ? '' : $_POST['data']['phone'],
+        'phone' => empty($_POST['data']['phone']) ? '' : $_POST['data']['phone'],
     ];
     $mail = variable_get('support_email', 'mega_comp@mail.ru');
 

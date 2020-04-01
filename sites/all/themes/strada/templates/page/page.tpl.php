@@ -82,14 +82,14 @@
             <div class="topbar">
                 <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
-                <div class="topbar-phone">
-                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank">7 (912) 701-70-74</a>
+                <div class="topbar-phone" style="color:red;">
+                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank" style="color:red;">7 (912) 701-70-74</a>
                 </div>
 
-                <div class="topbar-menu hidden-sm hidden-md">
+                <div class="topbar-menu hidden-sm">
                     <ul class="dry-list">
 <!--                        <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>-->
-                        <li><a href="/info/delivery">Условия бесплатной доставки</a></li>
+                        <li><a href="/info/delivery" style="background: red;padding: 5px 10px;color: white;border-radius: 4px;">Безопасная доставка</a></li>
                         <li><a href="/info/payment">Оплата</a></li>
                         <li><a href="/info/return">Возврат</a></li>
                         <li><a href="/info/how-to-buy">Как купить</a></li>

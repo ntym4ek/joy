@@ -277,18 +277,22 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
 
             /* ------------------------------------------ Main Menu ------------------------------------------------- */
             // выравнивание выпадающих элементов для правых пунктов меню
-            var coordsParent = $(".main-menu").offset();
-            var widthParent = $(".main-menu").width();
-            $(".main-menu .level-1-item").each(function() {
-              var drop = $(this).find(".dropdown-menu");
-              if (drop.length > 0) {
-                var coordsChild = drop.offset();
-                var widthChild = drop.width();
-                if (coordsChild.left + widthChild > coordsParent.left + widthParent - 10) {
-                  drop.css("right", "0").css("left", "initial");
+            function alignMenu() {
+              var coordsParent = $(".main-menu").offset();
+              var widthParent = $(".main-menu").width();
+              $(".main-menu .level-1-item").each(function () {
+                var drop = $(this).find(".dropdown-menu");
+                if (drop.length > 0) {
+                  var coordsChild = drop.offset();
+                  var widthChild = drop.width();
+                  var title = $(this).find("a").attr("title");
+                  if (coordsChild.left + widthChild > coordsParent.left + widthParent - 10) {
+                    drop.css("right", "0").css("left", "initial");
+                  }
                 }
-              }
-            });
+              });
+            }
+            setTimeout(alignMenu, 500);
 
             // только для десктопа
             // клик по родительской категории тоже работает как переход
@@ -308,6 +312,7 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
                 }
               });
             }
+
 
             /* ------------------------------------------ Main Menu mobile ------------------------------------------------- */
             var menu = $('.main-menu-mobile');
