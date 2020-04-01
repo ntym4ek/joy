@@ -345,7 +345,7 @@ function mailing_mail($key, &$message, $params)
                 '<strong>Текст:</strong> ' . $data['text'] . '<br />' .
                 '<strong>Имя:</strong> ' . $data['name'] . '<br />' .
                 '<strong>Нужен ответ:</strong> ' .  ($data['checkbox'] == 'false' ? 'нет' : 'да') . '<br />' .
-                '<strong>Email:</strong> ' . ($data['email'] ? $data['email'] : 'нет') . '<br />' .
+                '<strong>Телефон:</strong> ' . ($data['phone'] ? $data['phone'] : 'нет') . '<br />' .
                 '';
 
             break;
