@@ -3,6 +3,9 @@
  */
 var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
 
+// глобальная переменная для всплывающих окон
+var popupStatus = 0;
+
 (function ($, Drupal, window, document, undefined) {
     Drupal.behaviors.strada = {
         attach: function (context, settings) {

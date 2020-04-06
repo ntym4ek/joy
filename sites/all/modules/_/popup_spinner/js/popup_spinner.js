@@ -5,10 +5,7 @@
  * Modifications for Drupal: Grzegorz Bartman grzegorz.bartman@openbit.pl
  */
 
-
-// Setting up popup.
-// 0 means disabled; 1 means enabled.
-var popupSpinnerStatus = 0;
+// popupStatus - global var from strada.js
 
 var overlay = '';
 var throbber = '';
@@ -20,14 +17,14 @@ var throbber = '';
 function popup_spinner_load_popup()
 {
     // Loads popup only if it is disabled.
-    if (popupSpinnerStatus === 0) {
+    if (popupStatus === 0) {
         jQuery("#popup-spinner-background").css({
             "opacity": "0.7",
         });
         jQuery("#popup-spinner-background").fadeIn("slow");
         jQuery("#page").toggleClass("blur");
         jQuery("#popup-spinner-window").fadeIn("slow");
-        popupSpinnerStatus = 1;
+        popupStatus = 1;
     }
 }
 
@@ -37,11 +34,12 @@ function popup_spinner_load_popup()
 function popup_spinner_disable_popup()
 {
     // Disables popup only if it is enabled.
-    if (popupSpinnerStatus == 1) {
+    if (popupStatus == 1) {
         jQuery("#popup-spinner-background").fadeOut("slow").remove();
         jQuery("#popup-spinner-window").fadeOut("slow").remove();
         jQuery("#page").toggleClass("blur");
-        popupSpinnerStatus = 0;
+        popupStatus = 0;
+        window.location.reload();
     }
 }
 
@@ -146,7 +144,7 @@ function popup_spinner_display_popup(popup_spinner_title, popup_spinner_body, wi
         });
         // Press Escape event!
         jQuery(document).keypress(function(e) {
-            if (e.keyCode == 27 && popupSpinnerStatus == 1) {
+            if (e.keyCode == 27 && popupStatus == 1) {
                 popup_spinner_disable_popup();
             }
         });
@@ -235,7 +233,7 @@ function popup_spinner_run_popup()
         )
       });
 
-      if (popupSpinnerStatus === 0) {
+      if (popupStatus === 0) {
         $('#gift').on('click', popup_spinner_run_popup);
       }
 

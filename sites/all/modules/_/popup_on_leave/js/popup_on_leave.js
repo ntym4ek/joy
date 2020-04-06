@@ -5,10 +5,7 @@
  * Modifications for Drupal: Grzegorz Bartman grzegorz.bartman@openbit.pl
  */
 
-
-// Setting up popup.
-// 0 means disabled; 1 means enabled.
-var popupStatus = 0;
+// popupStatus - global var from strada.js
 
 /**
  * Loading popup with jQuery.

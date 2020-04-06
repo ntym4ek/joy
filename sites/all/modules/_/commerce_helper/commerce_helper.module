@@ -662,7 +662,7 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
     $form['commerce_shipping']['shipping_service']['#ajax']['callback'] = 'commerce_helper_commerce_checkout_form_refresh';
     $form['commerce_shipping']['shipping_service']['#ajax']['wrapper'] = 'commerce-checkout-ajax-wrapper';
 
-    // убрать описание  (добавляет модуль Cщmmerce Coupon для бесплатной доставки)
+    // убрать описание  (добавляет модуль Commerce Coupon для бесплатной доставки)
   foreach($form["commerce_shipping"]["shipping_service"] as &$service) {
     if (!empty($service['#description'])) $service['#description'] = '';
   }

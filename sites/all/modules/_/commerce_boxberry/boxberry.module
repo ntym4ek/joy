@@ -185,8 +185,10 @@ function boxberry_api_request($data)
     if (!empty($data['zipcode'])) {
         $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=ZipCheck&Zip=' . $data['zipcode'];
 
-        $handle = fopen($url, "rb"); $contents = stream_get_contents($handle); fclose($handle);
-        $response['courier'] = array_shift(json_decode($contents,true));
+        $handle = fopen($url, "rb");
+        $contents = stream_get_contents($handle); fclose($handle);
+        $contents = json_decode($contents,true);
+        $response['courier'] = array_shift($contents);
     }
 
     // описание точки

@@ -175,25 +175,28 @@ function popup_spinner_ajax_callback()
     // отправить СМС с паролем
     ext_user_sms_gate_sms('user_pass', ['phone' => $phone, 'pass' => $pass]);
 
-    // todo вычислить и начислить подарок
+    // вычислить и начислить подарок
     // вероятности
-    $rand = rand(1, 100);
-    if      ($rand <= 15) $gift_id = 1;
-    elseif  ($rand <= 45  && $rand > 15) $gift_id = 2;
-    elseif  ($rand <= 60  && $rand > 45) $gift_id = 3;
-    elseif  ($rand <= 85  && $rand > 60) $gift_id = 4;
-    elseif  ($rand <= 90  && $rand > 85) $gift_id = 5;
-    elseif  ($rand <= 100 && $rand > 90) $gift_id = 6;
+    $gift_id = variable_get('popup_spinner_test_gift', 0);
+    if ($gift_id < 1 || $gift_id > 6)  $gift_id = 0;
 
-    $gift_id = 1;
+    // рандом для рабочего режима или для тестирования менеджерами
+    if (variable_get('popup_spinner_enable', 1) || $gift_id == 0) {
+        $rand = rand(1, 100);
+        if      ($rand <= 15)                $gift_id = 1;
+        elseif  ($rand <= 45  && $rand > 15) $gift_id = 2;
+        elseif  ($rand <= 60  && $rand > 45) $gift_id = 3;
+        elseif  ($rand <= 85  && $rand > 60) $gift_id = 4;
+        elseif  ($rand <= 90  && $rand > 85) $gift_id = 5;
+        elseif  ($rand <= 100 && $rand > 90) $gift_id = 6;
+    }
+
     $error = '';
     switch ($gift_id) {
       case '1':
-        $gift_text_1 = 'Вы выиграли подарок к следующему заказу';
-        $gift_text_2 = 'Добавьте любой товар в корзину и подарок добавится автоматически.';
-        $gift_name = 'SEDA "Biohumus"';
-        $gift_type = 'gift';
-        $gift_code = 'BIOHUMUS';
+        $gift_text_1 = 'Вы выиграли купон на подарок SEDA "Biohumus" 250 мл';
+        $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
+        $gift_name = 'BIOHUMUS';
         break;
       case '2':
         $gift_text_1 = 'Вы выиграли бонусные баллы';
@@ -210,7 +213,7 @@ function popup_spinner_ajax_callback()
           'display' => FALSE,
           'status' => USERPOINTS_TXN_STATUS_APPROVED,
         ];
-        $result = userpoints_userpointsapi($userpoints_params);
+        userpoints_userpointsapi($userpoints_params);
 
         break;
       case '3':
@@ -219,11 +222,9 @@ function popup_spinner_ajax_callback()
         $gift_name = variable_get('popup_spinner_coupon_15', '');
         break;
       case '4':
-        $gift_text_1 = 'Вы выиграли подарок к следующему заказу';
-        $gift_text_2 = 'Добавьте любой товар в корзину и подарок добавится автоматически.';
-        $gift_name = 'JOY "Клеща нет"';
-        $gift_type = 'gift';
-        $gift_code = 'ACARID';
+        $gift_text_1 = 'Вы выиграли купон на подарок JOY "Клеща нет" 12 мл';
+        $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
+        $gift_name = 'ACARID';
         break;
       case '5':
         $gift_text_1 = 'Вы выиграли купон на бесплатную доставку';
@@ -236,17 +237,9 @@ function popup_spinner_ajax_callback()
         $gift_name = variable_get('popup_spinner_coupon_30', '');
         break;
     }
-    if ($gift_type == 'gift') {
-      $order = commerce_cart_order_load($uid);
-      if (empty($order)) {
-        $order = commerce_cart_order_new($uid);
-        $order->data['last_cart_refresh'] = REQUEST_TIME;
-        commerce_order_save($order);
-      }
-      commerce_coupon_redeem_coupon_code($gift_code, $order, $error);
-    }
     $gift = [
       'id' => $gift_id,
+      'name' => $gift_name,
       'output' =>   '<div class="thanx">
                             <h2>Поздравляем!</h2>
                             <div class="field field-promo"><p>' . $gift_text_1 . '</p></div>
@@ -261,15 +254,15 @@ function popup_spinner_ajax_callback()
       'gift' => $gift,
     ];
 
-    // todo отправить письмо с небольшой задержкой, так как подарок уже определён, а пользователь всё ещё крутит колесо
+    // отправить письмо менеджеру
     $params['data'] = [
       'name' => empty($_POST['data']['name']) ? '' : $_POST['data']['name'],
       'phone' => empty($_POST['data']['phone']) ? '' : $_POST['data']['phone'],
-      'gift' => $gift,
+      'gift' => $gift_name,
     ];
-    $mail = 'mega_comp@mail.ru';
-//  $mail = variable_get('support_email', 'mega_comp@mail.ru');
-//  drupal_mail('popup_spinner', '', $mail, 'ru', $params);
+//    $mail = 'mega_comp@mail.ru';
+    $mail = variable_get('support_email', 'mega_comp@mail.ru');
+    drupal_mail('popup_spinner', '', $mail, 'ru', $params);
   }
 
   return $result;
