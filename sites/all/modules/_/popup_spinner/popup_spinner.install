@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Popup message module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function popup_spinner_install()
+{
+  $t = get_t();
+  drupal_set_message('Настройки модуля: "Configuration -> Administration -> Popup spinner"');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function popup_spinner_uninstall()
+{
+  variable_del('popup_spinner_title');
+  variable_del('popup_spinner_body');
+  variable_del('popup_spinner_enable');
+  variable_del('popup_spinner_delay');
+  variable_del('popup_spinner_check_cookie');
+  variable_del('popup_spinner_visibility');
+  variable_del('popup_spinner_visibility_pages');
+}

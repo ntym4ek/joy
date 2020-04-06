@@ -59,8 +59,11 @@ function boxberry_service_rate_order($shipping_service, $order)
 
         if ($rate_request['zipcode']) {
             $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
-//            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400)); // день в кэше
-            $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // день в кэше
+            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
+                $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400));
+            } else {
+                $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // секунда в кэше
+            }
 
             if (!$cache) {
                 // при переходе на страницу оформления запрос на расчёт выполняется дважды:
@@ -72,6 +75,10 @@ function boxberry_service_rate_order($shipping_service, $order)
 
                     if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
                         $rate['data']['errors'][] = $response['cost_data'][0]['err'];
+                    }
+                    elseif ($response["cost_data"]["price_base"] == 0) {
+//                      $rate['data']['errors'][] = 'Пунктов выдачи не найдено';
+                      return false;
                     }
                     else {
                         // записать в field_data данные запроса
@@ -96,7 +103,7 @@ function boxberry_service_rate_order($shipping_service, $order)
                         } else {
                             // для Владивостока и многих других почему-то выдаёт нулевую стоимость
                             if ($rate['amount'] == 0) {
-                                $rate['data']['errors'][] = 'ошибка при расчёте стоимости';
+//                                $rate['data']['errors'][] = 'ошибка при расчёте стоимости';
                                 return false;
                             }
                         }
@@ -105,7 +112,8 @@ function boxberry_service_rate_order($shipping_service, $order)
                         commerce_shipping_rates_cache_set('boxberry' . $cache_key, $order, $rate);
                     }
                 } else {
-                    $rate['data']['errors'][] = 'выполняется расчёт...';
+//                    $rate['data']['errors'][] = 'выполняется расчёт...';
+                    return false;
                 }
             }
             else {

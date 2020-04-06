@@ -172,8 +172,11 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
         if (!empty($rate_request['postal-code']) && !empty($rate_request['weight'])) {
             // поднять из кэша расчёт для этого Индекса-Суммы-Веса
             $cache_key = $rate_request['postal-code'] . $rate_request['content-value'] . $rate_request['weight'];
-//                $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, variable_get('commerce_russianpost_cache_timeout', 600));
-            $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, 1);
+            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
+                $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, variable_get('commerce_russianpost_cache_timeout', 600));
+            } else {
+                $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, 1);
+            }
 
             if (!$cache) {
                 // при переходе на страницу оформления запрос на расчёт выполняется дважды

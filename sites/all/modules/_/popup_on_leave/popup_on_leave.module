@@ -131,5 +131,23 @@ function popup_on_leave_send_email_callback()
     $mail = variable_get('support_email', 'mega_comp@mail.ru');
 
     // отправить письмо
-    drupal_mail('mailing', 'leave_feedback', $mail, 'ru', $params);
+    drupal_mail('popup_on_leave', '', $mail, 'ru', $params);
+}
+
+/**
+ * Implements hook_mail
+ */
+function popup_on_leave_mail($key, &$message, $params)
+{
+  $data = empty($params['data']) ? [] : $params['data'];
+
+  $message['subject'] = 'Отзыв на выходе';
+  $message['body'][] = '' .
+    '<h2>И снова здравствуйте!</h2>' .
+    '<p>Пользователь заполнил форму при покидании сайта:</p>' .
+    '<strong>Текст:</strong> ' . $data['text'] . '<br />' .
+    '<strong>Имя:</strong> ' . $data['name'] . '<br />' .
+    '<strong>Нужен ответ:</strong> ' . ($data['checkbox'] == 'false' ? 'нет' : 'да') . '<br />' .
+    '<strong>Телефон:</strong> ' . ($data['phone'] ? $data['phone'] : 'нет') . '<br />' .
+    '';
 }

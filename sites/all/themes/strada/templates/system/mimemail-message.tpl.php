@@ -46,7 +46,7 @@ $auto = !isset($message['params']['context']['auto']) ? 'Письмо сформ
                         <tr>
                             <td style="border-bottom: 1px solid #ccc;">
                                 <div style="width: 110px; margin-bottom: 10px;">
-                                    <img src="https://joy-magazin.ru/sites/all/themes/strada/logo.png" style="width: 100%;">
+                                  <a href="https://joy-magazin.ru" target="_blank" title="JOY-MAGAZIN - ДЛЯ ДОМА И САДА"><img src="https://joy-magazin.ru/sites/all/themes/strada/logo.png" style="width: 100%;"></a>
                                 </div>
                             </td>
                         </tr>

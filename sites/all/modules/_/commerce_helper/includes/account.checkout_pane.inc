@@ -186,12 +186,12 @@ function account_pane_checkout_form_submit($form, &$form_state, $checkout_pane, 
             $arguments['field_name_second'][LANGUAGE_NONE][0]['value']  = trim($pane_values['name_second']);
 
             // телефон
-            if (!empty($pane_values['phone'])) $arguments['field_phone'][LANGUAGE_NONE][0]['value'] = trim($pane_values['phone']);
+            if (!empty($pane_values['phone'])) $arguments['field_phone'][LANGUAGE_NONE][0]['value'] = ext_user_normalize_phone($pane_values['phone']);
 
             // создание пользователя
             user_save(NULL, $arguments);
             // аутентификация пользователя
-            $uid = user_authenticate($arguments['mail'], $arguments['pass']);
+            $uid = ext_user_user_authenticate($arguments['mail'], $arguments['pass']);
             $user = user_load($uid);
             user_login_finalize();
             // нужно для rpt - Registration Password Token, в противном случае токен будет пустой

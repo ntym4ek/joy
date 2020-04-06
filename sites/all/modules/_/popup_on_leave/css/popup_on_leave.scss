@@ -2,7 +2,7 @@
   -webkit-transition: all .5s ease-in-out;
   -moz-transition: all .5s ease-in-out;
   -o-transition: all .5s ease-in-out;
-  transition: all .5s ease-in-out;  
+  transition: all .5s ease-in-out;
 }
 .blur {
     filter: blur(3px);
@@ -16,7 +16,7 @@
   background: #000;
 }
 
-#popup-message-window { 
+#popup-message-window {
   display: none;
   position: fixed; z-index: 1001;
   _position: absolute; /* hack for internet explorer 6*/
@@ -33,13 +33,13 @@
     color: white;
     justify-content: flex-end;
     padding: 20px;
+    .thanx {
+      flex: 0 0 300px;
+      text-align: center;
+      margin-top: 50px;
+    }
 }
 
-.thanx {
-    flex: 0 0 300px;
-    text-align: center;
-    margin-top: 50px;
-}
 
 #popup-message-form {
     flex: 0 0 400px;

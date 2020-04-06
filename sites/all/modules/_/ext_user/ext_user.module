@@ -132,27 +132,39 @@ function ext_user_form_user_login_alter (&$form, $form_state)
  */
 function ext_user_login_name_validate($form, &$form_state)
 {
-    $name_input = $form_state['values']['name'];
-
-    // Try loading by email.
-    if ($user = user_load_by_mail($name_input)) {
-        // Set the username for further validation.
-        $form_state['values']['name'] = $user->name;
-        return TRUE;
-    }
-
-    // Try loading by phone.
-    if ($user = ext_user_user_load_by_phone($name_input)) {
-        $form_state['values']['name'] = $user->name;
-        return TRUE;
-    }
-
-    // Try loading by username.
-    if ($user = user_load_by_name($name_input)) {
-        return TRUE;
+    if ($user = ext_user_user_load_by_login($form_state['values']['name'])) {
+      $form_state['values']['name'] = $user->name;
+      return TRUE;
     }
 
     return FALSE;
+}
+
+
+/**
+ * Загрузить пользователя по указанному логину
+ * @param $login
+ *
+ * @return bool|mixed
+ */
+function ext_user_user_load_by_login($login)
+{
+  // Try loading by email.
+  if ($user = user_load_by_mail($login)) {
+    // Set the username for further validation.
+    return $user;
+  }
+
+  // Try loading by phone.
+  if ($user = ext_user_user_load_by_phone($login)) {
+    return $user;
+  }
+
+  // Try loading by username.
+  if ($user = user_load_by_name($login)) {
+    return $user;
+  }
+  return false;
 }
 
 function ext_user_user_load_by_phone($phone)
@@ -180,7 +192,7 @@ function ext_user_user_load_by_phone($phone)
 function ext_user_normalize_phone($phone)
 {
     // убираем всё лишнее кроме цифр
-    $phone = preg_replace('/[^\d]/', '', $phone);
+    $phone = preg_replace('/[^\d]/', '', trim($phone));
     // заменить первую 8 на 7
     $phone = preg_replace('/8(\d{10})/', '7$1', $phone);
     return $phone;
@@ -308,7 +320,7 @@ function ext_user_register_name_validate($element, &$form_state)
     }
 
     // проверка на наличие тлф в БД
-    if (ext_user_user_load_by_phone(ext_user_normalize_phone($form_state['values']['name']))) {
+    if (ext_user_user_load_by_phone($form_state['values']['name'])) {
         form_set_error('name', t('This phone number is already registered.'));
     }
 
@@ -340,7 +352,7 @@ function ext_user_registration_wizard_check_code($form, &$form_state)
     $code = rand(1001, 9998);
     $phone = $form_state['values']['field_phone']['und'][0]['value'];
     if (ext_user_sms_gate_sms('user_code', ['phone' => $phone, 'code' => $code])) {
-        $form_state['user_code'] = ['code' => $code, 'sent_time' => time(),];
+        $form_state['user_code'] = ['code' => $code, 'sent_time' => time()];
 
         $step = &$form_state['step'];
         $form_state['step_information'][$step]['stored_values'] = $form_state['values'];
@@ -491,7 +503,7 @@ function ext_user_profile_phone_validate($element, &$form_state)
 {
     if ($form_state['values']['field_phone']['und'][0]['value']) {
         // проверка на наличие тлф в БД
-        if (ext_user_user_load_by_phone(ext_user_normalize_phone($form_state['values']['field_phone']['und'][0]['value']))) {
+        if (ext_user_user_load_by_phone($form_state['values']['field_phone']['und'][0]['value'])) {
             form_set_error('field_phone][und][0][value', t('This phone number is already registered.'));
         }
     }
@@ -614,4 +626,37 @@ function ext_user_user_view_alter(&$build) {
     $build["userpoints"]["list"] = ['#markup' => userpoints_get_current_points($build["#account"]->uid, 0)];
     $build["userpoints"]["actions"]["#links"]["userpoints-view"]["href"] = 'user/' . $build["#account"]->uid . '/points';
   }
+}
+
+/**
+ * на базе user_authenticate
+
+ * Try to validate the user's login credentials locally.
+ *
+ * @param $name
+ *   User name, phone or email to authenticate.
+ * @param $password
+ *   A plain-text password, such as trimmed text from form values.
+ * @return
+ *   The user's uid on success, or FALSE on failure to authenticate.
+ */
+function ext_user_user_authenticate($name, $password) {
+  $uid = FALSE;
+  if (!empty($name) && strlen(trim($password)) > 0) {
+    $account = ext_user_user_load_by_login($name);
+    if ($account) {
+      // Allow alternate password hashing schemes.
+      require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+      if (user_check_password($password, $account)) {
+        // Successful authentication.
+        $uid = $account->uid;
+
+        // Update user to new password scheme if needed.
+        if (user_needs_new_hash($account)) {
+          user_save($account, array('pass' => $password));
+        }
+      }
+    }
+  }
+  return $uid;
 }

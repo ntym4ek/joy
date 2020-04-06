@@ -4,22 +4,11 @@
 // при ноле ограничений нет
 define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_weight', 0));
 
+
 /**
  * Implements hook_menu().
  */
 function commerce_helper_menu() {
-    $items['cart/add-product/%'] = array (
-        'page callback' => 'commerce_helper_product_cart_update',
-        'page arguments' => array(2, 1),
-        'access arguments' => array('access content'),
-        'type' => MENU_CALLBACK,
-    );
-    $items['cart/delete-product/%'] = array (
-        'page callback' => 'commerce_helper_product_cart_update',
-        'page arguments' => array(2, 1),
-        'access arguments' => array('access content'),
-        'type' => MENU_CALLBACK,
-    );
     $items['user/%/orders/%/print'] = array(
         'title' => 'Распечатать заказ',
         'page callback' => 'commerce_helper_print_order_info',
@@ -145,82 +134,7 @@ function commerce_helper_cron() {
     }
 }
 
-/**
- * ------------------------------------------ Добавление Product Teaser в корзину --------------------------------------
- * http://www.realtidings.com/blog/12/Apr/26/drupal-commerce-custom-add-cart-link
- * callback для добавления товара в корзину по id.
- */
-function commerce_helper_product_cart_update($product_id, $op, $mode = null)
-{
-  if ($mode == 'ajax') {
-    ctools_include('modal');
-    $output = array();
 
-    // добавляем в корзину
-    if ($op == 'add-product' && $product = commerce_product_load($product_id)) {
-        $fields = ['field_option_size' => ['und' => ['value' => null]]];
-        $line_item = commerce_product_line_item_new($product, 1, 0, [$fields]);
-        // задать в line_item пустые поля опций
-        // требуется для корректного объединения одинаковых line_item's
-        // т.к. если полей нет, то line_item не сравнивается с позициями в корзине и сразу создаётся новый
-        // соотвественно, нельзя таким способом добавлять в корзину товары, имеющие опции
-        foreach((array)$product as $field_name => $field) {
-            if (strpos($field_name, '_option_')) {
-                $line_item->{$field_name} = [];
-            }
-        }
-        $line_item->commerce_display_path['und']['0']['value'] = drupal_get_path_alias('node/'. _get_product_display_by_product_id($product_id));
-        $line_item = commerce_cart_product_add($GLOBALS['user']->uid, $line_item, TRUE);
-        if ($line_item) {
-            // меняем кнопку
-            $link =
-                '<div id="product-' . $product_id . '-button" class="btn-group" role="group" >' .
-//                    '<a href="/cart/delete-product/' . $product_id . '/nojs"  class="btn btn-brand btn-sm btn-empty product-cart cart-full use-ajax" title="Убрать из корзины">В корзине</a>' .
-                    '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину">В корзину</a>' .
-                    '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax" rel="nofollow">+1</a>' .
-                '</div>';
-            $output[] = ajax_command_replace('#product-' . $product_id . '-button', $link);
-
-            // обновляем виджет корзины
-            $output[] = ajax_command_invoke('#cart', 'html', [trim(commerce_helper_cart_info_block())]);
-        } else {
-            // сообщение о неудачном добавлении
-            $output[] = ctools_modal_command_display('Ошибка', 'Ошибка при добавлении товара в корзину.');
-        }
-    };
-
-    // удаляем из корзины
-//    if ($op == 'delete-from-cart' && $order = commerce_cart_order_load($GLOBALS['user']->uid)) {
-//        $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-//        foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-//            if ($line_item_wrapper->type->value() == 'product') {
-//                $product = $line_item_wrapper->commerce_product->value();
-//                if ($product->product_id == $product_id) {
-//                    commerce_cart_order_product_line_item_delete($order, $line_item_wrapper->line_item_id->value());
-//                }
-//            }
-//        }
-//
-//
-//        // меняем иконку на товаре
-//        $link = '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-add-to-cart use-ajax" rel="nofollow">Купить</a>';
-//        $output[] = ajax_command_replace('#product-' . $product_id, $link);
-//
-//        // обновляем виджет корзины
-//        $output[] = ajax_command_invoke('#cart', 'html', [trim(commerce_helper_cart_info_block())]);
-//    }
-
-    // очистить статусные сообщения
-    // 'успешное добавление в корзину' в т.ч.
-    drupal_get_messages('status');
-
-
-    print ajax_render($output);
-    drupal_exit();
-  } else {
-      drupal_goto(url('node/'. _get_product_display_by_product_id($product_id)), ['query' => ['id' => $product_id]]);
-  }
-}
 
 /**
  * Preprocess function for theme_html()
@@ -251,7 +165,7 @@ function commerce_helper_preprocess_page(&$vars)
     if (strpos($_GET['q'], 'checkout') === 0) {
         drupal_add_js(drupal_get_path('module', 'commerce_helper') . '/js/checkout.js');
         drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
-      drupal_set_title('');
+        drupal_set_title('');
     }
 
     // заменить шаблон страницы для печати user/%/orders/%/print
@@ -747,6 +661,11 @@ function commerce_helper_form_commerce_checkout_form_checkout_alter(&$form, &$fo
     // чтобы выбранная закладка была выделена и сумма доставки отображалась с итогах
     $form['commerce_shipping']['shipping_service']['#ajax']['callback'] = 'commerce_helper_commerce_checkout_form_refresh';
     $form['commerce_shipping']['shipping_service']['#ajax']['wrapper'] = 'commerce-checkout-ajax-wrapper';
+
+    // убрать описание  (добавляет модуль Cщmmerce Coupon для бесплатной доставки)
+  foreach($form["commerce_shipping"]["shipping_service"] as &$service) {
+    if (!empty($service['#description'])) $service['#description'] = '';
+  }
 
     // если было выведено сообщение при сабмите, то после ввода данных и обновления формы оно остаётся
     if (isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == 'Recalculate shipping'
@@ -1573,6 +1492,18 @@ function _commerce_helper_non_free_shipping($order)
         // причина отказа в бесплатной доставке
         $reason = [];
 
+        // проверить наличие в заказе Купона на бесплатную доставку
+        $order_wr = entity_metadata_wrapper('commerce_order', $order);
+        if ($order_wr->commerce_coupons->value()) {
+          foreach ($order_wr->commerce_coupons as $coupon_wr) {
+            $code = $coupon_wr->code->value();
+            if ($code == variable_get('popup_spinner_coupon_free_shipping', null)) {
+              return false;
+            }
+          }
+        }
+
+        // проверка по Зонам доставки
         // если параметры не заданы, всё платно
         $non_free_amount = variable_get('zone1_amount', 0);
         if ($non_free_amount === 0) {

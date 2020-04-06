@@ -8,6 +8,9 @@ function ext_user_sms_gate_sms($event, $params)
 {
     $result = false;
 
+    // не отправлять при запуске на dev сервере
+    if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) return false;
+
     if (!variable_get('phone_registration', false)) return false;
 
     // определить телефон для отправки смс
@@ -44,6 +47,11 @@ function ext_user_sms_gate_sms($event, $params)
 
         case 'user_new':
             $text = 'JOY-MAGAZIN. Вы успешно зарегистрированы.';
+            $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
+            break;
+
+        case 'user_pass':
+            $text = 'JOY-MAGAZIN. Ваш пароль от кабинета: ' . $params['pass'];
             $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
             break;
 
