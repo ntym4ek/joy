@@ -467,17 +467,17 @@ function ext_user_registration_wizard_prev($form, &$form_state)
  */
 function ext_user_registration_wizard_repeat($form, &$form_state)
 {
-        $code = rand(1001, 9998);
-        $phone = $form_state['step_information'][1]['stored_values']['field_phone']['und'][0]['value'];
-        if (ext_user_sms_gate_sms('user_code', ['phone' => $phone, 'code' => $code])) {
-            $form_state['user_code'] = [
-                'code' => $code,
-                'sent_time' => time(),
-            ];
-            drupal_set_message('Новое СМС с кодом отправлено.');
-        }
+    $code = rand(1001, 9998);
+    $phone = $form_state['step_information'][1]['stored_values']['field_phone']['und'][0]['value'];
+    if (ext_user_sms_gate_sms('user_code', ['phone' => $phone, 'code' => $code])) {
+        $form_state['user_code'] = [
+            'code' => $code,
+            'sent_time' => time(),
+        ];
+        drupal_set_message('Новое СМС с кодом отправлено.');
+    }
 
-        $form_state['rebuild'] = TRUE;
+    $form_state['rebuild'] = TRUE;
 }
 
 
@@ -487,19 +487,21 @@ function ext_user_registration_wizard_repeat($form, &$form_state)
  */
 function ext_user_form_user_profile_form_alter (&$form, $form_state)
 {
-    if ($GLOBALS['user']->uid != 1) {
-        $form['timezone']['#access'] = false;
-        $form['locale']['#access'] = false;
-        $form['mimemail']['#access'] = false;
-        $form['account']['#prefix'] = '<br /><h4>' . t('Account info') . '</h4>';
-        $form['field_user_surname']['#prefix'] = '<h4>' . t('Personal info') . '</h4>';
-        $form['flag']['#title'] = 'Подписки';
-    }
-  if (!_user_has_role('product manager') && $form["field_phone"]["und"][0]["value"]["#default_value"]) {
-    $form["field_phone"]["und"][0]["#disabled"] = true;
+  if ($GLOBALS['user']->uid != 1) {
+      $form['timezone']['#access'] = false;
+      $form['locale']['#access'] = false;
+      $form['mimemail']['#access'] = false;
+      $form['account']['#prefix'] = '<br /><h4>' . t('Account info') . '</h4>';
+      $form['field_user_surname']['#prefix'] = '<h4>' . t('Personal info') . '</h4>';
+      $form['flag']['#title'] = 'Подписки';
+      // не даём менять телефон пользователю
+      if (!_user_has_role('product manager') && $form["field_phone"]["und"][0]["value"]["#default_value"]) {
+        $form["field_phone"]["und"][0]["#disabled"] = true;
+      }
   }
-    $form['account']['mail']['#required'] = false;
-    $form['field_phone']['#element_validate'][] = 'ext_user_profile_phone_validate';
+
+  $form['field_phone']['#element_validate'][] = 'ext_user_profile_phone_validate';
+  $form['account']['mail']['#required'] = false;
 }
 
 function ext_user_profile_phone_validate($element, &$form_state)
@@ -627,13 +629,11 @@ function ext_user_user_view($account, $view_mode) {
 /**
  * Implements hook_user_view_alter().
  */
-function ext_user_user_view_alter(&$build) {
-  global $user;
-  if ($user->uid == $build["#account"]->uid) {
+function ext_user_user_view_alter(&$build)
+{
     $build["userpoints"]["title"]['#markup'] = strip_tags($build["userpoints"]["title"]['#markup']);
     $build["userpoints"]["list"] = ['#markup' => userpoints_get_current_points($build["#account"]->uid, 0)];
     $build["userpoints"]["actions"]["#links"]["userpoints-view"]["href"] = 'user/' . $build["#account"]->uid . '/points';
-  }
 }
 
 /**

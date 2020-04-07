@@ -53,7 +53,7 @@ hide($user_profile['orders']);
         <div class="media-body">
           <h4><? print $elements["#account"]->realname; ?></h4>
           <? print ($elements["#account"]->mail ? '<div><span class="text-muted">E-Mail:</span> ' . $elements["#account"]->mail . '</div>' : ''); ?>
-          <? print ($elements["#account"]->field_phone["und"][0]["safe_value"] ? '<div><span class="text-muted">Телефон:</span> ' . $elements["#account"]->field_phone["und"][0]["safe_value"] . '</div>'  : ''); ?>
+          <? print empty($elements["#account"]->field_phone["und"][0]["safe_value"]) ? '' : '<div><span class="text-muted">Телефон:</span> ' . $elements["#account"]->field_phone["und"][0]["safe_value"] . '</div>'; ?>
           <? if ($logged_in): ?>
           <ul class="links">
             <li><a href="/user/<? print $elements["#account"]->uid;  ?>/edit">Редактировать</a></li>
