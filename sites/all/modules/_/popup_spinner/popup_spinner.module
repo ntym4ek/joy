@@ -191,16 +191,18 @@ function popup_spinner_ajax_callback()
         elseif  ($rand <= 100 && $rand > 90) $gift_id = 6;
     }
 
-    $error = '';
+    $error = $gift_mail_name = '';
     switch ($gift_id) {
       case '1':
         $gift_text_1 = 'Вы выиграли купон на подарок SEDA "Biohumus" 250 мл';
         $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
+        $gift_mail_name = 'SEDA "Biohumus" 250 мл';
         $gift_name = 'BIOHUMUS';
         break;
       case '2':
         $gift_text_1 = 'Вы выиграли бонусные баллы';
         $gift_text_2 = 'Вы можете использовать баллы при оформлении заказа. 1 балл = 1 рубль.';
+        $gift_mail_name = '100 баллов';
         $gift_name = '100 баллов';
 
         // Create the userpoints transaction.
@@ -220,21 +222,25 @@ function popup_spinner_ajax_callback()
         $gift_text_1 = 'Вы выиграли купон на скидку 15%';
         $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
         $gift_name = variable_get('popup_spinner_coupon_15', '');
+        $gift_mail_name = 'Cкидка 15%';
         break;
       case '4':
         $gift_text_1 = 'Вы выиграли купон на подарок JOY "Клеща нет" 12 мл';
         $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
         $gift_name = 'ACARID';
+        $gift_mail_name = 'JOY "Клеща нет" 12 мл';
         break;
       case '5':
         $gift_text_1 = 'Вы выиграли купон на бесплатную доставку';
         $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
         $gift_name = variable_get('popup_spinner_coupon_free_shipping', '');
+        $gift_mail_name = 'Бесплатная доставка';
         break;
       case '6':
         $gift_text_1 = 'Вы выиграли купон на скидку 30%';
         $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
         $gift_name = variable_get('popup_spinner_coupon_30', '');
+        $gift_mail_name = 'Cкидка 30%';
         break;
     }
     $gift = [
@@ -254,15 +260,18 @@ function popup_spinner_ajax_callback()
       'gift' => $gift,
     ];
 
-    // отправить письмо менеджеру
-    $params['data'] = [
-      'name' => empty($_POST['data']['name']) ? '' : $_POST['data']['name'],
-      'phone' => empty($_POST['data']['phone']) ? '' : $_POST['data']['phone'],
-      'gift' => $gift_name,
-    ];
-//    $mail = 'mega_comp@mail.ru';
-    $mail = variable_get('support_email', 'mega_comp@mail.ru');
-    drupal_mail('popup_spinner', '', $mail, 'ru', $params);
+    if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+      // отправить письмо менеджеру
+      $params['data'] = [
+        'name' => empty($_POST['data']['name']) ? '' : $_POST['data']['name'],
+        'phone' => empty($_POST['data']['phone']) ? '' : $_POST['data']['phone'],
+        'gift' => $gift_mail_name,
+      ];
+      //    $mail = 'mega_comp@mail.ru';
+      $mail = variable_get('support_email', 'mega_comp@mail.ru');
+      drupal_mail('popup_spinner', '', $mail, 'ru', $params);
+      drupal_mail('popup_spinner', '', 'ed_smr@kccc.ru', 'ru', $params);
+    }
   }
 
   return $result;

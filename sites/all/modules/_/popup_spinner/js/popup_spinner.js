@@ -227,14 +227,14 @@ function popup_spinner_run_popup()
     attach: function(context) {
       $('body').once(function () {
         $("body").append(
-          '<div id="gift" style="width: 70px;height: 70px;position: fixed; top: 45%; right: 30px;">' +
+          '<div id="spinner_gift">' +
             '<img src="/sites/all/modules/_/popup_spinner/images/gift.png" class="img-responsive">' +
           '</div>'
         )
       });
 
       if (popupStatus === 0) {
-        $('#gift').on('click', popup_spinner_run_popup);
+        $('#spinner_gift').on('click', popup_spinner_run_popup);
       }
 
       $(".masked-phone").mask("9 (999) 999-9999");

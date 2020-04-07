@@ -44,7 +44,7 @@ function popup_spinner_settings()
   $form['popup_spinner_test_gift'] = array(
     '#type' => 'textfield',
     '#title' => 'Протестировать сектор',
-    '#description' => 'Число от 1 до 6. На рулетке выпадет указанный приз. 1 - это Биогумус. 0 - включить случайное распределение.',
+    '#description' => 'Число от 1 до 6, где 1 - это Биогумус. На рулетке выпадет указанный приз. 0 - включить случайное распределение.',
     '#default_value' => variable_get('popup_spinner_test_gift', 0),
   );
     $form['popup_spinner_fieldset'] = array(
