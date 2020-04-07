@@ -275,8 +275,8 @@ function helper_path_breadcrumbs_view_alter(&$breadcrumbs, $path_breadcrumbs, $c
   }
 
   // для Подкатегорий
-  if (strpos($breadcrumbs[0], 'Каталог') !== false
-    || strpos($breadcrumbs[0], 'Горизонтальное меню') !== false) {
+  if (!empty($breadcrumbs) && (strpos($breadcrumbs[0], 'Каталог') !== false
+    || strpos($breadcrumbs[0], 'Горизонтальное меню') !== false)) {
       array_shift($breadcrumbs);
   }
 }

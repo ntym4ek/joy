@@ -65,12 +65,6 @@ function popup_spinner_settings()
         '#required' => TRUE,
         '#default_value' => variable_get('popup_spinner_height', 300),
     );
-    $form['popup_spinner_fieldset']['popup_spinner_delay'] = array(
-        '#type' => 'textfield',
-        '#title' => 'Перерыв',
-        '#description' => 'Период в секундах между показами сообщения',
-        '#default_value' => variable_get('popup_spinner_delay', 0),
-    );
 
     $form['popup_spinner_fieldset']['visibility']['path'] = array(
         '#type' => 'fieldset',

@@ -1,0 +1,16 @@
+Index: sites/all/modules/commerce_discount/commerce_discount.module
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sites/all/modules/commerce_discount/commerce_discount.module	(date 1586260036292)
++++ sites/all/modules/commerce_discount/commerce_discount.module	(date 1586260036292)
+@@ -637,7 +637,7 @@
+ 
+     // Add missing parameter.
+     foreach ($rule->actions() as $action) {
+-      if (is_callable() && $action->getElementName() == 'commerce_discount_free_shipping_service') {
++      if (is_callable($action, 'getElementName') && $action->getElementName() == 'commerce_discount_free_shipping_service') {
+         $action->settings['shipping_service'] = $shipping_service;
+       }
+     }
