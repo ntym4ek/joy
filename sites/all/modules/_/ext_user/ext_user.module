@@ -495,17 +495,25 @@ function ext_user_form_user_profile_form_alter (&$form, $form_state)
         $form['field_user_surname']['#prefix'] = '<h4>' . t('Personal info') . '</h4>';
         $form['flag']['#title'] = 'Подписки';
     }
+  if (!_user_has_role('product manager') && $form["field_phone"]["und"][0]["value"]["#default_value"]) {
+    $form["field_phone"]["und"][0]["#disabled"] = true;
+  }
     $form['account']['mail']['#required'] = false;
     $form['field_phone']['#element_validate'][] = 'ext_user_profile_phone_validate';
 }
 
 function ext_user_profile_phone_validate($element, &$form_state)
 {
-    if ($form_state['values']['field_phone']['und'][0]['value']) {
-        // проверка на наличие тлф в БД
-        if (ext_user_user_load_by_phone($form_state['values']['field_phone']['und'][0]['value'])) {
-            form_set_error('field_phone][und][0][value', t('This phone number is already registered.'));
-        }
+    if ($phone = $form_state['values']['field_phone']['und'][0]['value']) {
+      $phone = ext_user_normalize_phone($phone);
+      // проверка на валидность
+      if (!ext_user_valid_phone($phone)) {
+        form_set_error('field_phone][und][0][value', t('Type valid phone number.')); return false;
+      }
+      // проверка на наличие тлф в БД
+      if (($account = ext_user_user_load_by_phone($phone)) && $account->uid != $form_state["user"]->uid) {
+          form_set_error('field_phone][und][0][value', t('This phone number is already registered.'));
+      }
     }
 }
 
