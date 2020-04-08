@@ -5,8 +5,6 @@ $shipping = $order_info['shipping'];
 $payment = $order_info['payment'];
 $user = $order_info['user'];
 
-$items_count = format_plural($order_info['products']['qty'], '1 item', '@count items', array(), array('context' => 'product count on a Commerce order'));
-
 $ordet_title = 'Информация о заказе';
 $ordet_num_title = 'Номер заказа';
 $payment_label = $payment['balance'] ? 'К оплате' : '<span class="brand-success">Оплачено</span>';
@@ -93,7 +91,7 @@ if ($payment['before_shipping']) {
 
                 <dt>Состав заказа</dt>
                 <dd>
-                    <p><?php print $items_count; ?></p>
+                    <p><?php print $order_info['products']['qty_txt']; ?></p>
                     <p><?php if (is_array($order_info['weight'])): ?>Вес: <?php print $order_info['weight']['weight'] . ' ' . t($order_info['weight']['unit']); endif; ?></p>
                 </dd>
 

@@ -1,5 +1,5 @@
-name = Customizations to payment modules
-description = Дополнения к модулям оплаты
+name = Ext Payment
+description = Изменения, связанные с оплатой
 version = 7.x-1.0
 core = 7.x
 package = Custom

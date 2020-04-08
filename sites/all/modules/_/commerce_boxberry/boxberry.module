@@ -98,7 +98,7 @@ function boxberry_service_rate_order($shipping_service, $order)
                             $rate['data']['address'] = $field_data['boxberry']['point_data']['address'];
                         }
 
-                        if (!_commerce_helper_non_free_shipping($order)) {
+                        if (!ext_checkout_non_free_shipping($order)) {
                             $rate['amount'] = 0;
                         } else {
                             // для Владивостока и многих других почему-то выдаёт нулевую стоимость
@@ -309,8 +309,7 @@ function boxberry_service_details_form_validate($details_form, $details_values, 
 }
 
 /**
- * Shipping service callback: increases the shipping line item's unit price if
- * express delivery was selected.
+ * Shipping service callback
  */
 function boxberry_service_details_form_submit($details_form, $details_values, $line_item)
 {

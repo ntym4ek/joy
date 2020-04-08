@@ -1,0 +1,607 @@
+<?php
+
+/**
+ * hook_module_implements_alter
+ * change hook execution order
+ */
+function ext_checkout_module_implements_alter(&$implementations, $hook)
+{
+  // Name of the hook.
+  if (in_array($hook, ['form_commerce_checkout_form_checkout_alter'])) {
+    // ext_checkout - last
+    $module = 'ext_checkout';
+    if (isset($implementations[$module])) {
+      $group = $implementations[$module];
+      unset($implementations[$module]);
+      $implementations[$module] = $group;
+    }
+  }
+
+  if ($hook == 'commerce_order_presave') {
+    // ext_checkout - first
+    $module = 'ext_checkout';
+    $group = array($module => $implementations[$module]);
+    unset($implementations[$module]);
+    $implementations = $group + $implementations;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ext_checkout_theme() {
+  return array(
+    // шаблон страницы об оформленном заказе
+    'commerce_checkout_completion_message' => array(
+      'template' => 'templates/commerce-checkout-completion-message',
+      'variables' => array('order' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_preprocess_page
+ */
+function ext_checkout_preprocess_page(&$vars)
+{
+  // добавляем скрипты
+  if (strpos($_GET['q'], 'checkout') === 0) {
+    drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js');
+    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
+    drupal_set_title('');
+  }
+}
+
+
+/**
+ * --------------------------------- Изменение формы оформления заказа -------------------------------------------------
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_state)
+{
+  // check if shipping details form has values & put them to storage
+  $stored_service_details = &$form_state['storage']['service_details'];
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $form_state['order']);
+  $shipping_profile = $order_wrapper->commerce_customer_shipping->value();
+  $shipping_profile_wr = $order_wrapper->commerce_customer_shipping;
+
+  // сохранить данные с панели доставки
+  if (isset($form_state['values']['commerce_shipping']['service_details'])) {
+    $service_details_values = $form_state['values']['commerce_shipping']['service_details'];
+    foreach($service_details_values as $name => $value) {
+      $stored_service_details[$name] = check_plain($value);
+    }
+    // или вытащить их из профиля доставки
+  } else {
+    if (!empty($shipping_profile)) {
+      $stored_service_details['zipcode'] =  $shipping_profile_wr->field_zipcode->value();
+      $stored_service_details['addr'] = $shipping_profile_wr->field_addr->value();
+      $stored_service_details['office'] = $shipping_profile_wr->field_office->value();
+      $stored_service_details['callme'] = $shipping_profile_wr->field_callme->value();
+      //            $stored_service_details['passport'] = $shipping_profile_wr->field_passport->value();
+    }
+    $user_wr = entity_metadata_wrapper('user', $GLOBALS['user']);
+
+    if (empty($stored_service_details['username'])) {
+      $stored_service_details['username'] = $user_wr->field_surname->value() . ($user_wr->field_name_first->value() ? ' ' . $user_wr->field_name_first->value() : '') . ($user_wr->field_name_second->value() ? ' ' . $user_wr->field_name_second->value() : '');
+    }
+    if (empty($stored_service_details['phone'])) {
+      $stored_service_details['phone'] = $user_wr->field_phone->value();
+    }
+  }
+
+  // check if locality changed
+  if (!empty($shipping_profile) && isset($stored_service_details['city']) && $shipping_profile_wr->field_city->value() && $shipping_profile_wr->field_city->value() !== $stored_service_details['city']) {
+    $stored_service_details['city'] = $shipping_profile_wr->field_city->value();
+    $stored_service_details['zipcode'] =  $shipping_profile_wr->field_zipcode->value();
+    $stored_service_details['addr_boxberry'] =  '';
+    // we have to change input value, cause it has priority over the default_value set in code beneath
+    $form_state['input']['commerce_shipping']['service_details']['zipcode'] = $stored_service_details['zipcode'];
+    $form_state['input']['commerce_shipping']['service_details']['addr_boxberry'] = '';
+  }
+
+  // set default values of the pane from the storage
+  if ($stored_service_details) {
+    foreach ($stored_service_details as $name => $value) {
+      if (isset($form['commerce_shipping']['service_details'][$name])) {
+        $form['commerce_shipping']['service_details'][$name]['#default_value'] = $stored_service_details[$name];
+      }
+    }
+  }
+
+
+  $form['#prefix'] = '<div id="commerce-checkout-ajax-wrapper">';
+  $form['#suffix'] = '</div>';
+  $form['#attributes']['class'][] = 'commerce-checkout-form-checkout';
+
+  // todo нужно отключить автозаполнение в форме
+  // но браузеры игнорируют эту настройку
+  $form['#attributes']['autocomplete'] = 'off';
+
+  if (isset($form['account'])) {
+    $form['account']['#prefix'] = '<h4>' . t('Contact information') . '</h4>';
+  }
+
+  $form['cart_contents']['#prefix'] = '<h4>' . t('Order contents') . '<a href="/cart">' . t('Change') . '</a></h4>';
+
+  $form['customer_profile_shipping']['#prefix'] = '<h4>' . t('Destination region') . '</h4>';
+
+  $form['commerce_shipping']['#prefix'] = '<h4>' . t('Shipping service') . '</h4>';
+  $form['commerce_shipping']['#suffix'] = '';
+  $form['commerce_shipping']['shipping_service']['#after_build'][] = 'ext_checkout_shipping_radios_alter';
+  // замена ajax обработчика доставки, чтобы возвращать не только панель с деталями, а всю форму
+  // чтобы выбранная закладка была выделена и сумма доставки отображалась с итогах
+  $form['commerce_shipping']['shipping_service']['#ajax']['callback'] = 'ext_checkout_commerce_checkout_form_refresh';
+  $form['commerce_shipping']['shipping_service']['#ajax']['wrapper'] = 'commerce-checkout-ajax-wrapper';
+
+  // убрать описание  (добавляет модуль Commerce Coupon для бесплатной доставки)
+  foreach($form["commerce_shipping"]["shipping_service"] as &$service) {
+    if (!empty($service['#description'])) $service['#description'] = '';
+  }
+
+  // если было выведено сообщение при сабмите, то после ввода данных и обновления формы оно остаётся
+  if (isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == 'Recalculate shipping'
+    && isset($form_state['storage']['errors']['commerce_shipping][service_details][boxberry_set'])) {
+    if (!empty($form_state['values']['customer_profile_shipping']['field_data']['und'][0]['value'])) {
+      $data = json_decode($form_state['values']['customer_profile_shipping']['field_data']['und'][0]['value'], true);
+      if (!empty($data['boxberry'])) unset($form['commerce_shipping']['commerce_shipping_messages']);
+    }
+  }
+
+  $form['commerce_payment']['#prefix'] = '<h4>' . t('Payment service') . '</h4>';
+  $form['commerce_payment']['payment_method']['#after_build'][] = 'ext_checkout_payment_radios_alter';
+  $form['commerce_payment']['payment_method']['#ajax']['callback'] = 'ext_checkout_commerce_checkout_form_refresh';
+  $form['commerce_payment']['payment_method']['#ajax']['wrapper'] = 'commerce-checkout-ajax-wrapper';
+  $form['commerce_payment']['payment_details'] = [];
+  if (isset($form['commerce_payment']['commerce_payment_messages'])) unset($form['commerce_payment']['commerce_payment_messages']);
+
+  /** -------------------------------------------- настройка Commerce Coupons ---------------------------------------------------- */
+  unset($form['commerce_coupon']['coupon_code']['#title']);
+  $form['commerce_coupon']['coupon_code']['#attributes']['placeholder'] = 'Промокод на скидку';
+  $form['commerce_coupon']['coupon_add']['#ajax']['callback'] = 'ext_checkout_commerce_checkout_form_refresh';
+  $form['commerce_coupon']['coupon_add']['#ajax']['wrapper'] = 'commerce-checkout-ajax-wrapper';
+  $form['commerce_coupon']['coupon_code']['#description'] = '';
+  // при применении купона остальные данные формы не проходят валидацию
+  // по этой причине выбранная опция для доставки сбрасывается
+  // commerce_shipping берет данные только из values, сбрасывая input при отсутствии данных
+  // (commerce_payment проверяет и input, поэтому опция сохраняется)
+  // добавляем commerce_shipping в валидацию при добавлении купона
+  $form['commerce_coupon']['coupon_add']['#limit_validation_errors'][] = ['commerce_shipping'];
+  // todo проверить, обновляется ли список товаров, например при применении купона на подарок
+  $form['commerce_coupon']['coupon_add']['#limit_validation_errors'][] = ['cart_contents'];
+  // commerce_coupon не пишет причину отказа в применеии купона
+  // костыль для вывода сообщения для неавторизованных пользователей
+  if (isset($form['commerce_coupon']['status_messages']) && !$GLOBALS['user']->uid) {
+    drupal_set_message('Необходимо <a href="/user/login?destination=checkout">авторизоваться</a> для применения купона.', 'error');
+    $form['commerce_coupon']['status_messages'] = array(
+      '#type' => 'markup',
+      '#markup' => theme('status_messages'),
+      '#weight' => -1,
+    );
+
+  }
+
+  $form['buttons']['#type'] = 'container';
+  $form['buttons']['cancel']['#access'] = false;
+  $form['buttons']['continue']['#value'] = t('Confirm order');
+  $form['buttons']['continue']['#attributes']['class'][] = 'btn-lg';
+  $form['buttons']['continue']['#attributes']['class'][] = 'autofill-button';
+
+  // при выборе оплаты ЯД валидация не идёт дальше commerce_checkout_form_validate
+  // ставим свой валидатор легитимности бесплатной доставки перед ней
+  $key = array_search('commerce_checkout_form_validate', $form['buttons']['continue']['#validate']);
+  array_splice($form['buttons']['continue']['#validate'], $key, 0, 'ext_checkout_free_shipping_validate');
+
+  // при нажатии Оформить заказ даже при наличии ошибок в форме доставки
+  // line_item выбранной доставки добавляется в заказ
+  // удаляем
+  commerce_shipping_delete_shipping_line_items($form_state['order']);
+
+  // сформировать блок Order Summary
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $form_state['order']);
+
+  $order_total = $order_wrapper->commerce_order_total->value();
+  $products_amount = commerce_price_component_total($order_total, 'base_price')['amount'];
+  $userpoints_amount = commerce_price_component_total($order_total, 'userpoints')['amount'];
+  $discount_amount = commerce_helper_commerce_price_component_total_discounts($form_state['order'])['amount'];
+  $coupon_amount = commerce_helper_commerce_price_component_total_coupons($form_state['order'])['amount'];
+  $total_amount = commerce_price_component_total($order_total)['amount'];
+
+  $shipping_service = $form['commerce_shipping']['shipping_service']['#default_value'];
+  $shipping_amount = $form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['amount'];
+  switch ($shipping_service) {
+    case 'dellin_shipping_service':
+      $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $form_state['order']->shipping_rates['dellin_shipping_service']);
+      $data = $line_item_wrapper->commerce_unit_price->data->value();
+
+      foreach (commerce_dellin_get_options_list() as $option => $title) {
+        if (!empty($stored_service_details[$option])) $shipping_amount += $data[$option . '_amount'];
+      }
+      break;
+  }
+  $shipping_label = t($form['commerce_shipping']['shipping_rates']['#value'][$form['commerce_shipping']['shipping_service']['#default_value']]->line_item_label);
+  if (!empty($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors'])) {
+    $delivery_text = array_shift($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors']);
+  } else {
+    $delivery_text = $shipping_amount ? commerce_currency_format($shipping_amount, 'RUB') : t('free', [], ['context' => 'Checkout delivery cost']);
+  }
+
+  if ($reason_to_pay = ext_checkout_non_free_shipping($form_state['order'])) {
+    $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
+  }
+
+  $total_amount += $shipping_amount;
+
+  $products_qty = commerce_line_items_quantity($order_wrapper->commerce_line_items, commerce_product_line_item_types());
+
+  // вес заказа
+  $weight = commerce_physical_order_weight($form_state['order'], 'kg')['weight'];
+  $weight_text = number_format($weight, 2) . ' кг';
+
+  $form['summary'] = array(
+    '#markup' =>
+      '<div class="checkout-summary">' .
+      '<div class="cs-quantity"><span class="label">' . 'Товары (' . $products_qty . ')</span><span class="value">' . commerce_currency_format($products_amount, 'RUB') . '</span></div>' .
+      ($userpoints_amount < 0 ? '<div class="cs-discount"><span class="label">Баллы</span><span class="value">' . commerce_currency_format($userpoints_amount, 'RUB') . '</span></div>' : '').
+      ($discount_amount < 0 ? '<div class="cs-discount"><span class="label">Скидка</span><span class="value">' . commerce_currency_format($discount_amount, 'RUB') . '</span></div>' : '').
+      ($coupon_amount < 0 ? '<div class="cs-discount"><span class="label">Промокод</span><span class="value">' . commerce_currency_format($coupon_amount, 'RUB') . '</span></div>' : '').
+      '<div class="cs-weight"><span class="label">Вес</span><span class="value">' . $weight_text . '</span></div>' .
+      '<div class="cs-delivery"><span class="label">' . $shipping_label . '</span><span class="value">' . $delivery_text . '</span></div>' .
+      '<div class="cs-total"><span class="label">' . t('Total to pay') . '</span><span class="value">' . commerce_currency_format($total_amount, 'RUB') . '</span></div>' .
+      '</div>',
+  );
+
+  // замена ajax обработчика кнопки Recalculate, чтобы возвращать не только панель с деталями, а всю форму
+  $form['commerce_shipping']['recalc'] = $form['commerce_shipping']['recalculate'];
+  unset($form['commerce_shipping']['recalculate']);
+  $form['commerce_shipping']['recalc']['#attributes']['class'][] = 'recalculate-button';
+  $form['commerce_shipping']['recalc']['#attributes']['class'][] = 'autofill-button';
+  $form['commerce_shipping']['recalc']['#ajax']['callback'] = 'ext_checkout_commerce_checkout_form_refresh';
+  $form['commerce_shipping']['recalc']['#ajax']['wrapper'] = 'commerce-checkout-ajax-wrapper';
+  // обработчик вывода ошибок на элементах формы (автоматически на кнопку не подвесился)
+  $form['commerce_shipping']['recalc']['#validate'][] = 'ext_checkout_recalc_validator';
+  $form['commerce_shipping']['recalc']['#validate'][] = 'ifec_form_validator';
+
+  // дополнительный обработчик для сохранения состояния заказа
+  array_unshift($form['commerce_shipping']['recalc']['#submit'], 'ext_checkout_commerce_shipping_recalculate_services_submit');
+
+  $form['fz152_agreement'] = [
+    '#name' => 'fz152-agreement',
+    '#type' => 'item',
+    '#markup' => 'Нажав «Подтвердить заказ», вы соглашаетесь c <a href="/info/rules" target="_blank" rel="nofollow">условиями использования сайта</a>.',
+  ];
+
+}
+
+/**
+ * validate callback
+ *
+ * если пользователь нажала Оформить заказ и в форме нашлись ошибки,
+ * то Recalc не запускает обновление форм,
+ * в том числе деталей доставки и пересчёта стоимости
+ */
+function ext_checkout_recalc_validator($form, &$form_state)
+{
+  // сбрасываем имеющиеся на форме ошибки
+  unset($form_state['storage']['errors']);
+}
+
+function ext_checkout_commerce_checkout_form_refresh($form, $form_state)
+{
+  return $form;
+}
+
+/**
+ * дополнительный submit для кнопки пересчёта стоимости
+ */
+function ext_checkout_commerce_shipping_recalculate_services_submit($element, $form_state)
+{
+  // сохранить $order, хранящийся в $form_state['order']
+  // при стандартном submit в commerce_shipping.checkout_pane.inc (с.287)
+  // при отсутствии создаётся профиль commerce_customer_shipping и его id заносится в $order->commerce_customer_shipping
+  // но $order после этого не сохраняется в БД, а форма чекаута перед построением (и пересчётом доставки)
+  // загружает заказ заново, затирая переменную $order->commerce_customer_shipping
+  if (isset($form_state['order'])) commerce_order_save($form_state['order']);
+}
+
+/**
+ * Processing Radios Element using #after_build property.
+ * Adding the 'active' class attribute for selected item in checkout_shipping
+ */
+function ext_checkout_shipping_radios_alter($element, $form_state)
+{
+  if ($form_state['values']['commerce_shipping']['shipping_service']) {
+    $radios_value = $form_state['values']['commerce_shipping']['shipping_service'];
+    if (isset($element[$radios_value])) {
+      $element[$radios_value]['#wrapper_attributes']['class'][] = 'active';
+    } else {
+      $element[$element['#default_value']]['#wrapper_attributes']['class'][] = 'active';
+    }
+
+  }
+  return $element;
+}
+
+/**
+ * Processing Radios Element using #after_build property.
+ * Adding the 'active' class attribute for selected item in checkout_shipping
+ */
+function ext_checkout_payment_radios_alter($element, $form_state) {
+  if ($form_state['values']['commerce_payment']['payment_method']) {
+    $radios_value = $form_state['values']['commerce_payment']['payment_method'];
+    if (isset($element[$radios_value])) {
+      $element[$radios_value]['#wrapper_attributes']['class'][] = 'active';
+    } else {
+      $element[$element['#default_value']]['#wrapper_attributes']['class'][] = 'active';
+    }
+
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_commerce_coupon_discount_savings_value_alter().
+ * округлить выводимый процент скидки до целого
+ */
+function ext_checkout_commerce_coupon_discount_value_display_alter(&$text, $discount, $order)
+{
+  // Common variables.
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $offer_wrapper = $discount_wrapper->commerce_discount_offer;
+  $offer_type = $offer_wrapper->value()->type;
+  $discount_type = $discount_wrapper->value()->type;
+
+  // Savings value implementations on behalf of commerce discount.
+  switch ($discount_type) {
+    case 'order_discount':
+      switch ($offer_type) {
+        case 'percentage':
+          $text = t('@percentage% off order', ['@percentage' => floor($offer_wrapper->commerce_percentage->value())]);
+
+          break;
+      }
+      break;
+  }
+}
+
+/**
+ * alter commerce_coupon_evaluate_conditions function
+ * дополнительная проверка условий применения купона
+ * сумма купона на сумму не может превышать суммы товаров
+ */
+function ext_checkout_commerce_coupon_condition_outcome_alter(&$outcome, &$context)
+{
+  $offer = $context['coupon']->commerce_discount_reference[0]->commerce_discount_offer;
+  if ($offer->type->value() == 'fixed_amount') {
+    // получить размер скидки
+    $offer_amount = $offer->commerce_fixed_amount->value()['amount'];
+
+    // получить сумму товаров в заказе, так как скидки только на них
+    $products_amount = 0;
+    foreach ($context['order']->commerce_line_items as $line_item_wr) {
+      if ($line_item_wr->type->value() == "product") {
+        $products_amount += $line_item_wr->commerce_total->value()['amount'];
+      }
+    }
+    if ($offer_amount > $products_amount) {
+      $outcome = FALSE;
+      $error = &drupal_static('commerce_coupon_error_' . strtolower($context['coupon']->code->value()));
+      $error = t('Coupon amount exceeds products amount.');
+    }
+  }
+}
+
+/**
+ * validate free shipping callback
+ * проверить легитимность бесплатной доставки
+ * и, как результат, наличие расчёта доставки в целом
+ */
+function ext_checkout_free_shipping_validate($form, $form_state)
+{
+  if (empty($form_state['storage']['errors'])) {
+
+    // проверить наличие индекса
+    $zipcode = '';
+    if (!empty($form_state['values']['customer_profile_shipping']['field_data']['und'][0]['value'])) {
+      $field_data = json_decode($form_state['values']['customer_profile_shipping']['field_data']['und'][0]['value'], TRUE);
+      $zipcode = empty($field_data['region']['data']['postal_code']) ? '' : $field_data['region']['data']['postal_code'];
+    }
+
+    if (!$zipcode) {
+      form_set_error('customer_profile_shipping][field_city][und][0][value', 'Выберите населенный пункт из выпадающего списка');
+      return false;
+    }
+
+    // проверить легитимность бесплатной доставки
+    $has_free_shipping = ext_checkout_non_free_shipping($form_state['order']) ? false : true;
+
+    // для Самовывоза всегда бесплатная доставка
+    if ($form_state['values']['commerce_shipping']['shipping_service'] == 'pickup_shipping_service') { $has_free_shipping = true; }
+
+    // проверка стоимости выбранной доставки, пришедшей с Оформления и имеющегося права на бесплатную доставку
+    $shipping_service = $form_state['values']['commerce_shipping']['shipping_rates'][$form_state['values']['commerce_shipping']['shipping_service']];
+    if ($shipping_service->commerce_unit_price['und'][0]['amount'] == 0 && !$has_free_shipping) {
+      form_set_error('customer_profile_shipping][field_city][und][0][value', 'Выберите населенный пункт из списка ещё раз.');
+    }
+  }
+}
+
+/**
+ * hook_commerce_checkout_complete()
+ */
+function ext_checkout_commerce_checkout_complete($order)
+{
+  // перенести номер телефона в ЛК при необходимости
+  $order_wr = entity_metadata_wrapper('commerce_order', $order);
+  $order_phone = $order_wr->field_phone->value();
+  $user_wr = entity_metadata_wrapper('user', $order_wr->uid->value());
+  if (!$user_wr->field_phone->value()) {
+    $user_wr->field_phone = ext_user_normalize_phone($order_phone);
+    $user_wr->save();
+  }
+}
+
+/**
+ * alter commerce_order_status_info
+ * сделать статус Checkout Payment входящим в список статусов этапа Корзина
+ * чтобы функция commerce_cart_order_load возвращала заказы и с этим статусом
+ */
+function ext_checkout_commerce_order_status_info_alter(&$order_statuses)
+{
+  $order_statuses['checkout_payment']['cart'] = TRUE;
+}
+
+/**
+ * ------------------------------------------ Замена страницы об оформленнии заказа -----------------------------
+ * http://xandeadx.ru/blog/drupal/865
+ */
+
+/**
+ * Implements hook_commerce_checkout_pane_info_alter().
+ */
+function ext_checkout_commerce_checkout_pane_info_alter(&$checkout_panes)
+{
+  $checkout_panes['checkout_completion_message']['callbacks']['checkout_form'] = 'ext_checkout_completion_message_callback';
+}
+
+/**
+ * Checkout complete message callback.
+ */
+function ext_checkout_completion_message_callback($form, &$form_state, $checkout_pane, $order)
+{
+  return array(
+    'message' => array(
+      '#theme' => 'commerce_checkout_completion_message',
+      '#order' => $order,
+    ),
+  );
+}
+
+/**
+ * ------------------------------------------ Обновление заказа (Order update) -
+ * Implements hook_commerce_order_presave()
+ */
+function ext_checkout_commerce_order_presave($order)
+{
+  if (empty($order->original)) return;
+
+  // при онлайн оплате время заказа не проставится, если пользователь не вернется на сайт
+  // поэтому проставляем принудительно
+  if (($order->original->status == 'checkout_checkout' && $order->status == 'pending')
+    || ($order->original->status == 'checkout_checkout' && $order->status == 'checkout_payment')){
+    $order->placed = REQUEST_TIME;
+  }
+
+  // модуль сбера при удачной оплате ставит статус Завершено
+  // заменить на Оплачено
+  if (($order->original->status == 'checkout_payment' && $order->status == 'completed')
+    && ($order->data['payment_method'] == 'commerce_rbspayment|commerce_payment_commerce_rbspayment')) {
+    $order->status = 'paid';
+  }
+}
+
+
+/**
+ * Функция проверяет условия для платной доставки
+ * @param $order - проверяемый заказ
+ *
+ * @return mixed - причина платной/false
+ */
+function ext_checkout_non_free_shipping($order)
+{
+  $reason = &drupal_static(__FUNCTION__);
+
+  if (!$reason) {
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+    $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
+    $physical_weight = commerce_physical_order_weight($order, 'kg');
+
+    // причина отказа в бесплатной доставке
+    $reason = [];
+
+    // проверить наличие в заказе Купона на бесплатную доставку
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+    if ($order_wr->commerce_coupons->value()) {
+      foreach ($order_wr->commerce_coupons as $coupon_wr) {
+        $code = $coupon_wr->code->value();
+        if ($code == variable_get('popup_spinner_coupon_free_shipping', null)) {
+          return false;
+        }
+      }
+    }
+
+    // проверка по Зонам доставки
+    // если параметры не заданы, всё платно
+    $non_free_amount = variable_get('zone1_amount', 0);
+    if ($non_free_amount === 0) {
+      return [
+        'reason' => 'no_free',
+        'amount' => $non_free_amount,
+        'text' => '<a href="/info/delivery" class="text-danger">почему доставка платная?</a>'
+      ];
+    }
+
+    // получить платные регионы и сделать привязку
+    // по зонам
+    if ($vid = taxonomy_vocabulary_machine_name_load('regions')->vid) {
+      $tree = taxonomy_get_tree($vid, 0, null, TRUE);
+
+      // Регион пользователя
+      $region_kladr = $city_kladr = '';
+      $field_name = commerce_physical_order_shipping_field_name($order);
+      if (isset($_COOKIE['user_region']) && $cookie = json_decode($_COOKIE['user_region'], TRUE)) {
+        // в первую очередь проверяем куки
+        // так как регион могли сменить за пределами чекаута
+        $region_kladr = $cookie['data']['region_kladr_id'];
+        $city_kladr = $cookie['data']['city_kladr_id'];
+      }
+      elseif ($shipping_profile = $order_wr->{$field_name}->value()) {
+        $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+        $region_kladr = $data['region']['data']['region_kladr_id'];
+        $city_kladr = $data['region']['data']['city_kladr_id'];
+      }
+
+      if ($region_kladr) {
+        // три тарифные Зоны
+        foreach ([3, 2, 5, 4, 1] as $zindex) {
+          $non_free_amount = variable_get('zone' . $zindex . '_amount', 0);
+
+          $non_free_regions = [];
+          if ($non_free_regions_tids = variable_get('zone' . $zindex . '_regions', [])) {
+            // получить список всех регионов текущей Зоны
+            foreach ($tree as $term) {
+              if (in_array($term->tid, $non_free_regions_tids)) {
+                $non_free_regions[] = $term->field_kladr['und'][0]['value'];
+              }
+            }
+          }
+
+          // если регион попадает в заданный список Тарифной Зоны
+          // или регионы в Зоне 1 не заданы, то для оставшихся
+          if (($non_free_regions && (in_array($region_kladr, $non_free_regions) || in_array($city_kladr, $non_free_regions)))
+            || (!$non_free_regions && $zindex == 1)) {
+            // если сумма не попадает в бесплатный промежуток Тарифной Зоны
+            // возвращаем причину
+            if ($products_amount_base < $non_free_amount * 100) {
+              $reason = [
+                'reason' => 'amount',
+                'amount' => $non_free_amount,
+                'text' => '<a href="/info/delivery" class="text-warning">добавьте товаров на ' . number_format($non_free_amount - $products_amount_base / 100, 0, ',', '') . ' руб. для бесплатной доставки</a>'
+              ];
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT != 0 && $physical_weight['weight'] >= CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT) {
+      $reason = [
+        'reason' => 'weight',
+        'text' => '<a href="/info/delivery" class="text-danger">почему доставка платная?</a>'
+      ];
+    }
+  }
+
+  return $reason ? $reason : false;
+}

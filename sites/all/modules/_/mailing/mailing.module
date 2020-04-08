@@ -217,6 +217,7 @@ function mailing_commerce_order_presave($order)
 {
 
     if (empty($order->original)) return;
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
 
     // перенести из Rules отправку писем на оформление заказа и смену статуса
     // варианты писем
@@ -240,7 +241,6 @@ function mailing_commerce_order_presave($order)
     }
     if ($order->original->status != 'completed' && $order->status == 'completed') {
 
-        $order_wr = entity_metadata_wrapper('commerce_order', $order);
         if ($order_wr->commerce_line_items->count()) {
             $td = 'border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; padding: 4px 8px;';
 
@@ -298,6 +298,10 @@ function mailing_commerce_order_presave($order)
         }
 
         // смс пользователю
+        // если есть, то на тлф из заказа, иначе с ЛК
+        if ($order_wr->field_phone->value()) {
+          $params['phone'] = $order_wr->field_phone->value();
+        }
         ext_user_sms_gate_sms($event, $params);
 
         // письмо Менеджеру

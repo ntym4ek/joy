@@ -24,6 +24,7 @@ function ext_user_sms_gate_sms($event, $params)
         }
     }
 
+    $phone = ext_user_normalize_phone($phone);
     if (empty($phone)) return false;
 
     switch ($event) {

@@ -251,7 +251,8 @@ function popup_spinner_ajax_callback()
                             <div class="field field-promo"><p>' . $gift_text_1 . '</p></div>
                             <div class="field field-gift"><span>' . $gift_name . '</span></div>
                             <div class="field field-promo"><p>' . $gift_text_2 . '</p></div>
-                         </div>'];
+                         </div>'
+    ];
 
     // установить Флаг игры в Колесо
     // в объекте Flagging устанавливаем значение дополнительного поля field_notes с Подарком
