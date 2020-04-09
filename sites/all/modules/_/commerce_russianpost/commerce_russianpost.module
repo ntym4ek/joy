@@ -140,7 +140,12 @@ function commerce_russianpost_commerce_shipping_service_rate_options_alter(&$opt
             $cost = $line_item_wr->commerce_unit_price->amount->value();
             $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
         } else {
-            $message = implode('<br />', $data['errors']);
+            if ($data['messages']) {
+              foreach($data['messages'] as &$message) {
+                $message = t($message);
+              }
+              $message = implode('<br />', $data['messages']);
+            }
         }
 
         $options['rp_cennayaposylka'] =   '<div class="carrier">Заберу<br />на почте</div>' .
