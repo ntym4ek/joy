@@ -421,7 +421,7 @@ function ext_checkout_free_shipping_validate($form, $form_state)
     // проверка стоимости выбранной доставки, пришедшей с Оформления и имеющегося права на бесплатную доставку
     $shipping_service = $form_state['values']['commerce_shipping']['shipping_rates'][$form_state['values']['commerce_shipping']['shipping_service']];
     if ($shipping_service->commerce_unit_price['und'][0]['amount'] == 0 && !$has_free_shipping) {
-      form_set_error('customer_profile_shipping][field_city][und][0][value', 'Выберите населенный пункт из списка ещё раз.');
+      form_set_error('customer_profile_shipping][field_city][und][0][value', 'Ошибка при расчёте стоимости доставки для населенного пункта');
     }
   }
 }

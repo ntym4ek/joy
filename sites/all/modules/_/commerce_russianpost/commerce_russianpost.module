@@ -140,12 +140,7 @@ function commerce_russianpost_commerce_shipping_service_rate_options_alter(&$opt
             $cost = $line_item_wr->commerce_unit_price->amount->value();
             $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
         } else {
-            if ($data['messages']) {
-              foreach($data['messages'] as &$message) {
-                $message = t($message);
-              }
-              $message = implode('<br />', $data['messages']);
-            }
+            $message = implode('<br />', $data['errors']);
         }
 
         $options['rp_cennayaposylka'] =   '<div class="carrier">Заберу<br />на почте</div>' .
@@ -204,12 +199,12 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
                         }
                         else {
                             foreach (commerce_russianpost_load_enabled_services() as $service_name => $service) {
-                                $rates[$service_name] = [
+                              $message = empty($response["services"]["message"]["message"]) ? $response['services']['message']['error'] : $response["services"]["message"]["message"];
+                              $rates[$service_name] = [
                                     'amount' => 0,
                                     'currency_code' => '',
                                     'data' => [
-                                        'errors' => [$response['services']['message']['error']],
-                                        'messages' => [$response['services']['message']['message']],
+                                        'errors' => [$message],
                                     ],
                                 ];
                             }
