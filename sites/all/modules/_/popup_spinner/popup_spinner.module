@@ -173,7 +173,7 @@ function popup_spinner_ajax_callback()
     // нужно для rpt - Registration Password Token, в противном случае токен будет пустой
     $user->password = $arguments['pass'];
     // отправить СМС с паролем
-    ext_user_sms_gate_sms('user_pass', ['phone' => $phone, 'pass' => $pass]);
+    mailer_send_sms('user_pass', ['phone' => $phone, 'pass' => $pass]);
 
     // вычислить и начислить подарок
     // вероятности

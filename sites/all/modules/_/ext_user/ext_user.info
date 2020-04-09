@@ -1,4 +1,4 @@
-name = User module extensions
+name = Ext User
 description = Дополнительный функционал пользователя
 version = 7.x-1.0
 core = 7.x

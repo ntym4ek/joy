@@ -1,7 +1,5 @@
 <?php
 
-require 'includes/ext_user.sms_gate.inc';
-
 /**
  * Implements hook_menu_alter().
  */
@@ -71,7 +69,7 @@ function ext_user_user_insert( &$edit, &$account, $category = NULL )
     }
 
     // отправить СМС о регистрации
-    ext_user_sms_gate_sms('user_new', ['account' => $account]);
+    mailer_send_sms('user_new', ['account' => $account]);
 }
 
 /**
@@ -351,7 +349,7 @@ function ext_user_registration_wizard_check_code($form, &$form_state)
     // послать СМС с кодом
     $code = rand(1001, 9998);
     $phone = $form_state['values']['field_phone']['und'][0]['value'];
-    if (ext_user_sms_gate_sms('user_code', ['phone' => $phone, 'code' => $code])) {
+    if (mailer_send_sms('user_code', ['phone' => $phone, 'code' => $code])) {
         $form_state['user_code'] = ['code' => $code, 'sent_time' => time()];
 
         $step = &$form_state['step'];
@@ -469,7 +467,7 @@ function ext_user_registration_wizard_repeat($form, &$form_state)
 {
     $code = rand(1001, 9998);
     $phone = $form_state['step_information'][1]['stored_values']['field_phone']['und'][0]['value'];
-    if (ext_user_sms_gate_sms('user_code', ['phone' => $phone, 'code' => $code])) {
+    if (mailer_send_sms('user_code', ['phone' => $phone, 'code' => $code])) {
         $form_state['user_code'] = [
             'code' => $code,
             'sent_time' => time(),

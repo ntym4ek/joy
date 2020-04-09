@@ -4,7 +4,7 @@
 /**
  * роутер
  */
-function ext_user_sms_gate_sms($event, $params)
+function mailer_send_sms($event, $params)
 {
     $result = false;
 
@@ -35,45 +35,45 @@ function ext_user_sms_gate_sms($event, $params)
                   $text = 'JOY-MAGAZIN. Вам начислено '  . $pts . '. Оплачивайте до ' . variable_get('commerce_userpoints_discount_custom_order_total_cover_max_percent', '100') . '% стоимости.';
                 }
                 if ($params['userpoints']['points'] < 0) $text = 'JOY-MAGAZIN. Со счёта списано '  . $pts . '. Подробнее 8 (912)701-70-74';
-                $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
+                $result = mailer_process_send_sms($phone, $text, $event);
             }
             break;
 
         case 'user_code':
             if (!empty($params['code'])) {
                 $text = 'JOY-MAGAZIN. Код подтверждения: ' . $params['code'];
-                $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
+                $result = mailer_process_send_sms($phone, $text, $event);
             }
             break;
 
         case 'user_new':
             $text = 'JOY-MAGAZIN. Вы успешно зарегистрированы.';
-            $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
+            $result = mailer_process_send_sms($phone, $text, $event);
             break;
 
         case 'user_pass':
             $text = 'JOY-MAGAZIN. Ваш пароль от кабинета: ' . $params['pass'];
-            $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
+            $result = mailer_process_send_sms($phone, $text, $event);
             break;
 
         case 'order_creation':
             if (!empty($params['order_info'])) {
                 $text = 'JOY-MAGAZIN. Ваш заказ № ' . $params['order_info']['id'] . ' принят в обработку.';
-                $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
+                $result = mailer_process_send_sms($phone, $text, $event);
             }
             break;
 
         case 'order_paid':
             if (!empty($params['order_info'])) {
                 $text = 'JOY-MAGAZIN. Оплата заказа №' . $params['order_info']['id'] . ' прошла успешно.';
-                $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
+                $result = mailer_process_send_sms($phone, $text, $event);
             }
             break;
 
         case 'order_sent':
             if (!empty($params['order_info'])) {
                 $text = 'JOY-MAGAZIN. Заказ № ' . $params['order_info']['id'] . ' отправлен.' . ($params['order_info']['shipping']['parcel_number'] ? ' Трек-номер для отслеживания ' . $params['order_info']['shipping']['parcel_number'] : '');
-                $result = ext_user_sms_gate_process_send_sms($phone, $text, $event);
+                $result = mailer_process_send_sms($phone, $text, $event);
             }
             break;
     }
@@ -85,7 +85,7 @@ function ext_user_sms_gate_sms($event, $params)
 /**
  * отправка смс пользователю
  */
-function ext_user_sms_gate_process_send_sms($phone, $text, $tag = null)
+function mailer_process_send_sms($phone, $text, $tag = null)
 {
     // токен из ЛК Talk-Me
     $api_token = 'ru2zkdh4xnxqto9ixfvactad59zqea9zh0w0w2dddqb4awfzfce185x28dx22pox';

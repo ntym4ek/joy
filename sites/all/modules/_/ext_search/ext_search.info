@@ -1,4 +1,4 @@
-name = Search API Customizations
+name = Ext Search
 description = Дополнения к Search API
 version = 7.x-1.0
 core = 7.x

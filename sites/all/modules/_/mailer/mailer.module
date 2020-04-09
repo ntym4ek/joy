@@ -3,13 +3,21 @@
 /**
  * Implements hook_menu()
  */
-function mailing_menu()
+function mailer_menu()
 {
-    $items['admin/config/joy/mailing'] = array(
-        'title' => 'Рассылка писем',
+    $items['admin/config/joy/mailer/email'] = array(
+        'title' => 'Рассылка E-Mail',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('mailing_manual_form'),
+        'page arguments' => array('mailer_email_form'),
         'access arguments' => array('access manager settings'),
+        'type' => MENU_LOCAL_ACTION,
+    );
+    $items['admin/config/joy/mailer/sms'] = array(
+        'title' => 'Рассылка SMS',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('mailer_sms_form'),
+        'access arguments' => array('access manager settings'),
+        'type' => MENU_LOCAL_ACTION,
     );
 
     return $items;
@@ -18,45 +26,89 @@ function mailing_menu()
 /**
  * Implements hook_cron().
  */
-function mailing_cron()
+function mailer_cron()
 {
     if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
         // добавляем задания для рассылки уведомлений о брошенных Корзинах
-        mailing_queue_cart_orphan_mails();
+        mailer_queue_cart_orphan_mails();
         // добавляем задания для рассылки уведомлений на Отзыв о товарах
-        mailing_queue_order_review_mails();
+        mailer_queue_order_review_mails();
         // добавляем задания для рассылки уведомлений на Отзыв о сервисе
-        mailing_queue_shop_review_mails();
+        mailer_queue_shop_review_mails();
     }
 }
 
 /**
  * Implements hook_cron_queue_info().
  */
-function mailing_cron_queue_info() {
+function mailer_cron_queue_info()
+{
     $queues['cart_orphan_mails_queue'] = array(
-        'worker callback' => 'mailing_send_cart_orphan_mails',
+        'worker callback' => 'mailer_send_cart_orphan_mails',
     );
     $queues['order_review_mails_queue'] = array(
-        'worker callback' => 'mailing_send_order_review_mails',
+        'worker callback' => 'mailer_send_order_review_mails',
     );
     $queues['shop_review_mails_queue'] = array(
-        'worker callback' => 'mailing_send_shop_review_mails',
+        'worker callback' => 'mailer_send_shop_review_mails',
     );
     $queues['manual_mails_queue'] = array(
-        'worker callback' => 'mailing_send_manual_mails',
+        'worker callback' => 'mailer_send_manual_mails',
     );
     $queues['order_complete_mails_queue'] = array(
-        'worker callback' => 'mailing_send_order_complete_mails',
+        'worker callback' => 'mailer_send_order_complete_mails',
     );
 
     return $queues;
 }
 
 /**
- * form callback.
+ * form callback: Рассылка SMS
  */
-function mailing_manual_form($form, $form_state)
+function mailer_sms_form($form, $form_state)
+{
+  $form['filter'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'Фильтр получателей',
+    '#options' => [
+      1 => 'Без заказов',
+      2 => 'С заказами',
+      3 => 'Только зарегистрированным за последние 2 недели',
+    ],
+  );
+
+  $form['message'] = array(
+    '#type' => 'text_format',
+    '#title' => 'Сообщение',
+    '#description' => 'Текст SMS',
+    '#required' => TRUE,
+  );
+
+  $form['actions'] = [
+    '#type' => 'container'
+  ];
+  $form['actions']['test'] = [
+    '#type' => 'submit',
+    '#value' => 'Сначала тест!',
+    '#description' => 'Отправить SMS на номер ' . variable_get('manager_phone', null),
+    '#validate' => ['mailer_sms_form_validate'],
+    '#submit' => ['mailer_sms_form_test_submit'],
+  ];
+  $form['actions']['spam'] = [
+    '#type' => 'submit',
+    '#value' => 'Начать спамить',
+    '#description' => 'Отправить письма заданному контингенту',
+    '#validate' => ['mailer_sms_form_filter_validate', 'mailer_smsl_form_validate'],
+    '#submit' => ['mailer_sms_form_spam_submit'],
+  ];
+
+  return $form;
+}
+
+/**
+ * form callback: Рассылка E-Maul
+ */
+function mailer_email_form($form, $form_state)
 {
     $form['filter'] = array(
         '#type' => 'checkboxes',
@@ -66,14 +118,12 @@ function mailing_manual_form($form, $form_state)
             2 => 'С заказами',
             3 => 'Только зарегистрированным за последние 2 недели',
         ],
-        '#default_value' => empty($form_state['values']['filter']) ? [1 => 1, 2 => 2, 3 => 3] : $form_state['values']['filter'],
     );
 
     $form['subject'] = array(
         '#type' => 'textfield',
         '#title' => 'Тема письма',
         '#required' => TRUE,
-        '#default_value' => empty($form_state['values']['subject']) ? '' : $form_state['values']['subject'],
     );
 
     $form['body'] = array(
@@ -81,7 +131,6 @@ function mailing_manual_form($form, $form_state)
         '#title' => 'Тело письма',
         '#description' => 'Письмо может содержать в тексте HTML разметку со встроенными стилями',
         '#required' => TRUE,
-        '#default_value' => empty($form_state['values']['body']['value']) ? '' : $form_state['values']['body']['value'],
     );
 
     $form['actions'] = [
@@ -91,15 +140,15 @@ function mailing_manual_form($form, $form_state)
         '#type' => 'submit',
         '#value' => 'Сначала тест!',
         '#description' => 'Отправить письмо на Электропочту магазина',
-        '#validate' => ['mailing_manual_form_validate'],
-        '#submit' => ['mailing_manual_form_test_submit'],
+        '#validate' => ['mailer_email_form_validate'],
+        '#submit' => ['mailer_email_form_test_submit'],
     ];
     $form['actions']['spam'] = [
         '#type' => 'submit',
         '#value' => 'Начать спамить',
         '#description' => 'Отправить письма заданному контингенту',
-        '#validate' => ['mailing_manual_form_filter_validate', 'mailing_manual_form_validate'],
-        '#submit' => ['mailing_manual_form_spam_submit'],
+        '#validate' => ['mailer_email_form_filter_validate', 'mailer_email_form_validate'],
+        '#submit' => ['mailer_email_form_spam_submit'],
     ];
 
     return $form;
@@ -108,7 +157,7 @@ function mailing_manual_form($form, $form_state)
 /**
  * form validate callback.
  */
-function mailing_manual_form_filter_validate($form, $form_state)
+function mailer_email_form_filter_validate($form, $form_state)
 {
     if (!$form_state['input']['filter'][1] && !$form_state['input']['filter'][2]) {
         form_set_error('filter', 'Выберите одну или несколько категорий получателей.' );
@@ -118,7 +167,7 @@ function mailing_manual_form_filter_validate($form, $form_state)
 /**
  * form validate callback.
  */
-function mailing_manual_form_validate($form, $form_state)
+function mailer_email_form_validate($form, $form_state)
 {
     if (empty($form_state['input']['subject'])) {
         form_set_error('subject', 'Тема письма обязательна к заполнению.' );
@@ -131,14 +180,14 @@ function mailing_manual_form_validate($form, $form_state)
 /**
  * form submit callback.
  */
-function mailing_manual_form_test_submit($form, &$form_state)
+function mailer_email_form_test_submit($form, &$form_state)
 {
     $params['subject'] = $form_state['values']['subject'];
     $params['body'] = $form_state['values']['body']['value'];
 
     // письмо Пользователю
-    drupal_mail('mailing', 'manual_mail', variable_get('support_email', 'help@joy-magazin.ru'), 'RU', $params);
-//    drupal_mail('mailing', 'manual_mail', 'mega_comp@mail.ru', 'RU', $params);
+    drupal_mail('mailer', 'manual_mail', variable_get('support_email', 'help@joy-magazin.ru'), 'RU', $params);
+//    drupal_mail('mailer', 'manual_mail', 'mega_comp@mail.ru', 'RU', $params);
 
     // оставляем значения в форме
     $form_state['rebuild'] = true;
@@ -147,7 +196,7 @@ function mailing_manual_form_test_submit($form, &$form_state)
 /**
  * form submit callback.
  */
-function mailing_manual_form_spam_submit($form, &$form_state)
+function mailer_email_form_spam_submit($form, &$form_state)
 {
     // определение пула получателей
     $query = db_select('commerce_order', 'co');
@@ -192,7 +241,7 @@ function mailing_manual_form_spam_submit($form, &$form_state)
     drupal_set_message('Письма поставлены в очередь и будут отправлены в ближайшее время');
 }
 
-function mailing_send_manual_mails($params)
+function mailer_send_manual_mails($params)
 {
     $will_get_email = true;
 
@@ -205,15 +254,15 @@ function mailing_send_manual_mails($params)
     }
 
     if ($will_get_email) {
-        drupal_mail('mailing', 'manual_mail', $params['mail'], 'ru', $params);
-        //    drupal_mail('mailing', 'manual_mail', 'mega_comp@mail.ru', 'ru', $params);
+        drupal_mail('mailer', 'manual_mail', $params['mail'], 'ru', $params);
+        //    drupal_mail('mailer', 'manual_mail', 'mega_comp@mail.ru', 'ru', $params);
     }
 }
 
 /**
  * Implements hook_helper_commerce_order_presave
  */
-function mailing_commerce_order_presave($order)
+function mailer_commerce_order_presave($order)
 {
 
     if (empty($order->original)) return;
@@ -292,9 +341,9 @@ function mailing_commerce_order_presave($order)
         $params['order_info'] = _get_order_info($order);
 
         // письмо Пользователю
-//        drupal_mail('mailing', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
+//        drupal_mail('mailer', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
         if (!empty($order->mail)) {
-            drupal_mail('mailing', $event, $order->mail, user_preferred_language($account), $params);
+            drupal_mail('mailer', $event, $order->mail, user_preferred_language($account), $params);
         }
 
         // смс пользователю
@@ -302,17 +351,17 @@ function mailing_commerce_order_presave($order)
         if ($order_wr->field_phone->value()) {
           $params['phone'] = $order_wr->field_phone->value();
         }
-        ext_user_sms_gate_sms($event, $params);
+        mailer_send_sms($event, $params);
 
         // письмо Менеджеру
         if ($mail_to_manager) {
             $params['mail_to_manager'] = $mail_to_manager;
             $manager_mail = variable_get('support_email', 'help@joy-magazin.ru');
-            drupal_mail('mailing', $event, $manager_mail, user_preferred_language($account), $params);
+            drupal_mail('mailer', $event, $manager_mail, user_preferred_language($account), $params);
 
             // письмо Смирнову
             if ($event == 'order_creation' && $order->mail != 'support@kccc.ru' && $manager_mail != 'mega_comp@mail.ru') {
-                drupal_mail('mailing', $event, 'ed_smr@kccc.ru', user_preferred_language($account), $params);
+                drupal_mail('mailer', $event, 'ed_smr@kccc.ru', user_preferred_language($account), $params);
             }
         }
 
@@ -322,7 +371,7 @@ function mailing_commerce_order_presave($order)
 /**
  * Implements hook_mail
  */
-function mailing_mail($key, &$message, $params)
+function mailer_mail($key, &$message, $params)
 {
     $order_info = empty($params['order_info']) ? [] : $params['order_info'];
 
@@ -511,13 +560,13 @@ function mailing_mail($key, &$message, $params)
 /**
  * отправка писем с уведомлением об оформленном заказе
  */
-//function mailing_queue_order_complete_mails($data)
+//function mailer_queue_order_complete_mails($data)
 //{
 //    $queue = DrupalQueue::get('order_complete_mails_queue');
 //    $queue->createItem($data);
 //}
 //
-//function mailing_send_order_complete_mails($data) {
+//function mailer_send_order_complete_mails($data) {
 //  $order = $data['order'];
 //  $account = user_load($order->uid);
 //  $params = $data['params'];
@@ -525,9 +574,9 @@ function mailing_mail($key, &$message, $params)
 //  $params['order_info'] = _get_order_info($order);
 //
 //  // письмо Пользователю
-//  //        drupal_mail('mailing', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
+//  //        drupal_mail('mailer', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
 //  if (strpos($_SERVER['HTTP_HOST'], '.local') === FALSE) {
-//    drupal_mail('mailing', $data['event'], $order->mail, user_preferred_language($account), $params);
+//    drupal_mail('mailer', $data['event'], $order->mail, user_preferred_language($account), $params);
 //  }
 //
 //    // письмо Менеджеру
@@ -535,11 +584,11 @@ function mailing_mail($key, &$message, $params)
 //        $params['mail_to_manager'] = $data['mail_to_manager'];
 //        $manager_mail = variable_get('support_email', 'help@joy-magazin.ru');
 //        if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) $manager_mail = 'mega_comp@mail.ru';
-//        drupal_mail('mailing', $data['event'], $manager_mail, user_preferred_language($account), $params);
+//        drupal_mail('mailer', $data['event'], $manager_mail, user_preferred_language($account), $params);
 //
 //        // письмо Смирнову
 //        if ($data['event'] == 'order_creation' && $order->mail != 'support@kccc.ru' && $manager_mail != 'mega_comp@mail.ru') {
-//            drupal_mail('mailing', $data['event'], 'ed_smr@kccc.ru', user_preferred_language($account), $params);
+//            drupal_mail('mailer', $data['event'], 'ed_smr@kccc.ru', user_preferred_language($account), $params);
 //        }
 //    }
 //}
@@ -549,7 +598,7 @@ function mailing_mail($key, &$message, $params)
  * 00000001 - флаг отправленного уведомления
  * время жизни > 24 часов, без изменения > 8 часов
  */
-function mailing_queue_cart_orphan_mails()
+function mailer_queue_cart_orphan_mails()
 {
     // найти брошенные корзины ()
     $query = db_select('commerce_order', 'co');
@@ -578,7 +627,7 @@ function mailing_queue_cart_orphan_mails()
     }
 }
 
-function mailing_send_cart_orphan_mails($order_id)
+function mailer_send_cart_orphan_mails($order_id)
 {
     $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
 
@@ -590,8 +639,8 @@ function mailing_send_cart_orphan_mails($order_id)
     if ($flag && $flag->is_flagged($GLOBALS['user']->uid, $GLOBALS['user']->uid)) {
         $params['account'] = $account;
         $params['order_info'] = _get_order_info($order_wr->value());
-        //                    drupal_mail('mailing', 'cart_orphan', 'mega_comp@mail.ru', user_preferred_language($account), $params);
-        drupal_mail('mailing', 'cart_orphan', $order_wr->mail->value(), user_preferred_language($account), $params);
+        //                    drupal_mail('mailer', 'cart_orphan', 'mega_comp@mail.ru', user_preferred_language($account), $params);
+        drupal_mail('mailer', 'cart_orphan', $order_wr->mail->value(), user_preferred_language($account), $params);
     }
 }
 
@@ -601,7 +650,7 @@ function mailing_send_cart_orphan_mails($order_id)
  * 00000010 - флаг отправленного уведомления
  * время с момента отправки > 2 недель
  */
-function mailing_queue_order_review_mails()
+function mailer_queue_order_review_mails()
 {
     $query = db_select('commerce_order', 'co');
     $query->condition('co.changed', REQUEST_TIME - 1209600, '<');
@@ -617,7 +666,7 @@ function mailing_queue_order_review_mails()
             // проверяем все на наличие неуведомлённых заказов
             if ((!$item->field_flags_value || !($item->field_flags_value & bindec('00000010')))) {
                 $queue->createItem($item->order_id);
-//                watchdog('mailing_order', 'Постановка в очередь. Заказ ' . $item->order_id, [], WATCHDOG_DEBUG);
+//                watchdog('mailer_order', 'Постановка в очередь. Заказ ' . $item->order_id, [], WATCHDOG_DEBUG);
 
                 // установить флаг
                 $order_wr = entity_metadata_wrapper('commerce_order', $item->order_id);
@@ -629,7 +678,7 @@ function mailing_queue_order_review_mails()
     }
 }
 
-function mailing_send_order_review_mails($order_id)
+function mailer_send_order_review_mails($order_id)
 {
     $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
 
@@ -666,10 +715,10 @@ function mailing_send_order_review_mails($order_id)
 
         $params['account'] = $account;
         $params['order_info'] = _get_order_info($order_wr->value());
-        // drupal_mail('mailing', 'leave_review', 'mega_comp@mail.ru', user_preferred_language($account), $params);
-        drupal_mail('mailing', 'leave_review', $order_wr->mail->value(), user_preferred_language($account), $params);
+        // drupal_mail('mailer', 'leave_review', 'mega_comp@mail.ru', user_preferred_language($account), $params);
+        drupal_mail('mailer', 'leave_review', $order_wr->mail->value(), user_preferred_language($account), $params);
 
-        // watchdog('mailing_order', 'Отправка. Заказ ' . $order_id, [], WATCHDOG_DEBUG);
+        // watchdog('mailer_order', 'Отправка. Заказ ' . $order_id, [], WATCHDOG_DEBUG);
     }
 }
 
@@ -679,7 +728,7 @@ function mailing_send_order_review_mails($order_id)
  * 00000100 - флаг отправленного уведомления
  * время с момента отправки > 2 недель и 2х дней
  */
-function mailing_queue_shop_review_mails()
+function mailer_queue_shop_review_mails()
 {
     $query = db_select('commerce_order', 'co');
     $query->condition('co.changed', REQUEST_TIME - 1382400, '<');
@@ -695,7 +744,7 @@ function mailing_queue_shop_review_mails()
             // проверяем все на наличие неуведомлённых заказов
             if ((!$item->field_flags_value || !($item->field_flags_value & bindec('00000100')))) {
                 $queue->createItem($item->order_id);
-//                watchdog('mailing_shop', 'Постановка в очередь. Заказ ' . $item->order_id, [], WATCHDOG_DEBUG);
+//                watchdog('mailer_shop', 'Постановка в очередь. Заказ ' . $item->order_id, [], WATCHDOG_DEBUG);
 
                 // после поставновки сразу меняем флаг
                 $order_wr = entity_metadata_wrapper('commerce_order', $item->order_id);
@@ -707,7 +756,7 @@ function mailing_queue_shop_review_mails()
     }
 }
 
-function mailing_send_shop_review_mails($order_id)
+function mailer_send_shop_review_mails($order_id)
 {
     $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
 
@@ -720,10 +769,10 @@ function mailing_send_shop_review_mails($order_id)
 
         $params['account'] = $account;
         $params['order_info'] = _get_order_info($order_wr->value());
-        // drupal_mail('mailing', 'leave_shop_review', 'mega_comp@mail.ru', user_preferred_language($account), $params);
-        drupal_mail('mailing', 'leave_shop_review', $order_wr->mail->value(), user_preferred_language($account), $params);
+        // drupal_mail('mailer', 'leave_shop_review', 'mega_comp@mail.ru', user_preferred_language($account), $params);
+        drupal_mail('mailer', 'leave_shop_review', $order_wr->mail->value(), user_preferred_language($account), $params);
 
         // проблема с отправкой множества писем одному пользователю
-        // watchdog('mailing_shop', 'Отправка. Заказ ' . $order_id, [], WATCHDOG_DEBUG);
+        // watchdog('mailer_shop', 'Отправка. Заказ ' . $order_id, [], WATCHDOG_DEBUG);
     }
 }
