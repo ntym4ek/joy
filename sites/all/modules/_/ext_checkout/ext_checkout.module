@@ -223,11 +223,14 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   if (!empty($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors'])) {
     $delivery_text = array_shift($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors']);
   } else {
-    $delivery_text = $shipping_amount ? commerce_currency_format($shipping_amount, 'RUB') : t('free', [], ['context' => 'Checkout delivery cost']);
-  }
-
-  if ($reason_to_pay = ext_checkout_non_free_shipping($form_state['order'])) {
-    $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
+    if ($shipping_amount) {
+      $delivery_text = commerce_currency_format($shipping_amount, 'RUB');
+      if ($reason_to_pay = ext_checkout_non_free_shipping($form_state['order'])) {
+        $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
+      }
+    } else {
+      $delivery_text = t('free', [], ['context' => 'Checkout delivery cost']);
+    }
   }
 
   $total_amount += $shipping_amount;
