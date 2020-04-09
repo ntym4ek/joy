@@ -1,0 +1,6 @@
+name = Ext Order
+description = Изменения, связанные с заказами
+version = 7.x-1.0
+core = 7.x
+package = Custom
+

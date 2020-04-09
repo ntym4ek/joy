@@ -1,5 +1,47 @@
 <?php
 
+/**
+ * form callback: Рассылка SMS
+ */
+function mailer_sms_form($form, $form_state)
+{
+  $form['filter'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'Фильтр получателей',
+    '#options' => [
+      1 => 'Без заказов',
+      2 => 'С заказами',
+      3 => 'Только зарегистрированным за последние 2 недели',
+    ],
+  );
+
+  $form['message'] = array(
+    '#type' => 'text_format',
+    '#title' => 'Сообщение',
+    '#description' => 'Текст SMS',
+    '#required' => TRUE,
+  );
+
+  $form['actions'] = [
+    '#type' => 'container'
+  ];
+  $form['actions']['test'] = [
+    '#type' => 'submit',
+    '#value' => 'Сначала тест!',
+    '#description' => 'Отправить SMS на номер ' . variable_get('manager_phone', null),
+    '#validate' => ['mailer_sms_form_validate'],
+    '#submit' => ['mailer_sms_form_test_submit'],
+  ];
+  $form['actions']['spam'] = [
+    '#type' => 'submit',
+    '#value' => 'Начать спамить',
+    '#description' => 'Отправить письма заданному контингенту',
+    '#validate' => ['mailer_sms_form_filter_validate', 'mailer_smsl_form_validate'],
+    '#submit' => ['mailer_sms_form_spam_submit'],
+  ];
+
+  return $form;
+}
 
 /**
  * роутер
@@ -34,7 +76,7 @@ function mailer_send_sms($event, $params)
                 if ($params['userpoints']['points'] > 0) {
                   $text = 'JOY-MAGAZIN. Вам начислено '  . $pts . '. Оплачивайте до ' . variable_get('commerce_userpoints_discount_custom_order_total_cover_max_percent', '100') . '% стоимости.';
                 }
-                if ($params['userpoints']['points'] < 0) $text = 'JOY-MAGAZIN. Со счёта списано '  . $pts . '. Подробнее 8 (912)701-70-74';
+                if ($params['userpoints']['points'] < 0) $text = 'JOY-MAGAZIN. Со счёта списано '  . $pts . '. Подробнее ' . variable_get('manager_phone', '');
                 $result = mailer_process_send_sms($phone, $text, $event);
             }
             break;
