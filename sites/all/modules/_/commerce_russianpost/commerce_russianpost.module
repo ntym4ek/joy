@@ -199,7 +199,7 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
                         }
                         else {
                             foreach (commerce_russianpost_load_enabled_services() as $service_name => $service) {
-                              $message = empty($response["services"]["message"]["message"]) ? $response['services']['message']['error'] : $response["services"]["message"]["message"];
+                              $message = empty($response["services"]["message"]["message"]) ? t($response['services']['message']['error']) : t($response["services"]["message"]["message"]);
                               $rates[$service_name] = [
                                     'amount' => 0,
                                     'currency_code' => '',
