@@ -473,11 +473,6 @@ function commerce_helper_commerce_acf_commands_alter(&$commands, $cart_view)
     $commands[] = ajax_command_invoke('#cart', 'html', [trim(commerce_helper_cart_info_block())]);
 }
 
-
-
-
-
-
 /**
  * Processing Radios Element using #after_build property.
  * Adding the 'active' class attribute for selected item in Product display

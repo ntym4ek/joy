@@ -1,0 +1,111 @@
+<?php
+
+
+/**
+ * Implements hook_helper_commerce_order_presave
+ */
+function ext_order_commerce_order_presave($order)
+{
+
+  if (empty($order->original)) return;
+  $order_wr = entity_metadata_wrapper('commerce_order', $order);
+
+  // перенести из Rules отправку писем на оформление заказа и смену статуса
+  // варианты писем
+  // 1. оформление заказа Анонимом
+  // 2. оформление заказа Зарегистрированным
+  // 3. смена статуса заказа
+  //      - простое информирование о смене статуса
+  //      - информация об отправке
+
+  // определить событие
+  $event = '';
+  $params = [];
+  $mail_to_manager = false;
+  if (strpos($order->original->status, 'checkout_') === 0 && $order->status == 'pending') {
+    $event = 'order_creation';
+    $mail_to_manager = true;
+  }
+  if ($order->original->status != 'paid' && $order->status == 'paid') {
+    $event = 'order_paid';
+    $mail_to_manager = true;
+  }
+  if ($order->original->status != 'completed' && $order->status == 'completed') {
+
+    if ($order_wr->commerce_line_items->count()) {
+      $td = 'border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; padding: 4px 8px;';
+
+      $table = array(
+        'header' => array(
+          array('data' => 'Наименование', 'style' => $td . 'min-width: 350px; text-align:center;'),
+          array('data' => 'Упак.',        'style' => $td . 'width: 70px; text-align:center;'),
+          array('data' => 'Цена',         'style' => $td . 'width: 100px; text-align:center;'),
+          array('data' => 'Кол-во',       'style' => $td . 'width: 60px; text-align:center;'),
+          array('data' => 'Сумма',        'style' => $td . 'width: 150px; text-align:center;'),
+        ),
+      );
+      foreach ($order_wr->commerce_line_items as $item_wr) {
+        if ($item_wr->type->value() == 'product') {
+          $tare = $item_wr->commerce_product->field_p_tare->value() ? $item_wr->commerce_product->field_p_tare->name->value() : '';
+          $table['rows'][] = array(
+            array('data' => $item_wr->commerce_product->title->value(), 'style' => $td),
+            array('data' => $tare, 'style' => $td . ' text-align: center;'),
+            array('data' => commerce_currency_format($item_wr->commerce_unit_price->amount->value(), 'RUB', NULL, true), 'style' => $td . ' text-align: right;'),
+            array('data' => (int)$item_wr->quantity->value(), 'style' => $td . ' text-align: center;'),
+            array('data' => commerce_currency_format($item_wr->commerce_total->amount->value(), 'RUB', NULL, true), 'style' => $td . ' text-align: right;'),
+          );
+        } elseif ($item_wr->type->value() == 'shipping') {
+          $table['rows'][] = array(
+            array('data' => $item_wr->line_item_label->value(), 'colspan' => 4, 'style' => $td . ' text-align: right;'),
+            array('data' => commerce_currency_format($item_wr->commerce_total->amount->value(), 'RUB', NULL, true) , 'style' => $td . ' text-align: right;'),
+          );
+        }
+      }
+      // добавить в таблицу вес, объём, сумму
+      $weight = commerce_physical_order_weight($order, 'kg');
+
+      $table['rows'][] = array(
+        array('data' => t('Weight') . ': ' . $weight['weight'] . ' ' . t($weight['unit']), 'colspan' => 4, 'style' => $td),
+        array('data' => commerce_currency_format($order_wr->commerce_order_total->amount->value(), 'RUB', NULL, true) , 'style' => $td . ' text-align: right;'),
+      );
+      $params['table'] = $table;
+    }
+
+    $event = 'order_sent';
+  }
+  if ($order->original->status == 'pending' && $order->status == 'processing') {
+    $event = 'order_changed';
+  }
+
+  if ($event && strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+    $account = user_load($order->uid);
+    $params['account'] = $account;
+    $params['order_info'] = _get_order_info($order);
+
+    // письмо Пользователю
+    //        drupal_mail('mailer', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
+    if (!empty($order->mail)) {
+      drupal_mail('mailer', $event, $order->mail, user_preferred_language($account), $params);
+    }
+
+    // смс пользователю
+    // если есть, то на тлф из заказа, иначе с ЛК
+    if ($order_wr->field_phone->value()) {
+      $params['phone'] = $order_wr->field_phone->value();
+    }
+    mailer_send_sms($event, $params);
+
+    // письмо Менеджеру
+    if ($mail_to_manager) {
+      $params['mail_to_manager'] = $mail_to_manager;
+      $manager_mail = variable_get('support_email', 'help@joy-magazin.ru');
+      drupal_mail('mailer', $event, $manager_mail, user_preferred_language($account), $params);
+
+      // письмо Смирнову
+      if ($event == 'order_creation' && $order->mail != 'support@kccc.ru' && $manager_mail != 'mega_comp@mail.ru') {
+        drupal_mail('mailer', $event, 'ed_smr@kccc.ru', user_preferred_language($account), $params);
+      }
+    }
+
+  }
+}

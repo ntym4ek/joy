@@ -1,0 +1,7 @@
+name = Mailer
+description = Рассылки и уведомления по email и SMS
+package = Custom
+core = 7.x
+
+files[] = includes/mailer.email.inc
+files[] = includes/mailer.sms.inc

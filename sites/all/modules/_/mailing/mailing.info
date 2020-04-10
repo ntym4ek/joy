@@ -1,4 +1,0 @@
-name = Mailing
-description = "Всё что связано с рассылкой писем"
-package = Custom
-core = 7.x
