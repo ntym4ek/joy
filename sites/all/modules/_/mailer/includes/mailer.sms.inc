@@ -130,7 +130,6 @@ function mailer_sms_form_spam_submit($form, &$form_state)
   }
 
   // добавление в очередь отправки
-  $phones = ['79226646009'];
   if ($phones) {
     $params['message'] = $form_state['values']['message'];
 
@@ -157,7 +156,7 @@ function mailer_send_sms($event, $params)
     $result = false;
 
     // не отправлять при запуске на dev сервере
-    //if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) return false;
+    if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) return false;
 
     if (!variable_get('phone_registration', false)) return false;
 
