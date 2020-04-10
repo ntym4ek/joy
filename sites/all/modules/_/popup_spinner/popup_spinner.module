@@ -300,10 +300,10 @@ function popup_spinner_mail($key, &$message, $params)
 {
   $data = empty($params['data']) ? [] : $params['data'];
 
-  $message['subject'] = 'Новый пользователь сыграл в рулетку';
+  $message['subject'] = 'Новый пользователь испытал удачу в Колесе Фортуны';
   $message['body'][] = '' .
     '<h2>И снова здравствуйте!</h2>' .
-    '<p>Новый пользователь зарегистрировался и сыграл в рулетку:</p>' .
+    '<p>Новый пользователь зарегистрировался через Колесо Фортуны:</p>' .
     '<strong>Имя:</strong> ' . $data['name'] . '<br />' .
     '<strong>Телефон:</strong> ' . $data['phone'] . '<br />' .
     '<strong>Подарок:</strong> ' . $data['gift'] . '<br />';

@@ -215,7 +215,7 @@ function mailer_email_form($form, $form_state)
 
   $form['body'] = array(
     '#type' => 'text_format',
-    '#title' => 'Тело письма',
+    '#title' => 'Сообщение',
     '#description' => 'Письмо может содержать в тексте HTML разметку со встроенными стилями',
     '#required' => TRUE,
   );
@@ -328,20 +328,4 @@ function mailer_email_form_spam_submit($form, &$form_state)
   drupal_set_message('Письма поставлены в очередь и будут отправлены в ближайшее время');
 }
 
-function mailer_send_manual_mails($params)
-{
-  $will_get_email = true;
 
-  // проверить на наличие подписки на рекламную рассылку
-  if (!empty($params['account'])) {
-    $flag = flag_get_flag('email_marketing');
-    if ($flag && !$flag->is_flagged($params['account']->uid, $params['account']->uid)) {
-      $will_get_email = false;
-    }
-  }
-
-  if ($will_get_email) {
-    drupal_mail('mailer', 'manual_mail', $params['mail'], 'ru', $params);
-    //    drupal_mail('mailer', 'manual_mail', 'mega_comp@mail.ru', 'ru', $params);
-  }
-}

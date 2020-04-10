@@ -1,7 +1,8 @@
 <?php
 
 /**
- * form callback: Рассылка SMS
+ * --------------------------- Ручная рассылка SMS -----------------------------------------
+ * form callback
  */
 function mailer_sms_form($form, $form_state)
 {
@@ -16,9 +17,9 @@ function mailer_sms_form($form, $form_state)
   );
 
   $form['message'] = array(
-    '#type' => 'text_format',
+    '#type' => 'textfield',
     '#title' => 'Сообщение',
-    '#description' => 'Текст SMS',
+    '#description' => 'Текст SMS. Без "JOY-MAGAZIN" в начале.',
     '#required' => TRUE,
   );
 
@@ -27,16 +28,14 @@ function mailer_sms_form($form, $form_state)
   ];
   $form['actions']['test'] = [
     '#type' => 'submit',
-    '#value' => 'Сначала тест!',
-    '#description' => 'Отправить SMS на номер ' . variable_get('manager_phone', null),
+    '#value' => 'Сначала тест на ' . variable_get('manager_phone', null),
     '#validate' => ['mailer_sms_form_validate'],
     '#submit' => ['mailer_sms_form_test_submit'],
   ];
   $form['actions']['spam'] = [
     '#type' => 'submit',
     '#value' => 'Начать спамить',
-    '#description' => 'Отправить письма заданному контингенту',
-    '#validate' => ['mailer_sms_form_filter_validate', 'mailer_smsl_form_validate'],
+    '#validate' => ['mailer_sms_form_filter_validate', 'mailer_sms_form_validate'],
     '#submit' => ['mailer_sms_form_spam_submit'],
   ];
 
@@ -44,14 +43,121 @@ function mailer_sms_form($form, $form_state)
 }
 
 /**
- * роутер
+ * form validate callback.
+ */
+function mailer_sms_form_filter_validate($form, $form_state)
+{
+  if (!$form_state['input']['filter'][1] && !$form_state['input']['filter'][2]) {
+    form_set_error('filter', 'Выберите одну или несколько категорий получателей.' );
+  }
+}
+
+/**
+ * form validate callback.
+ */
+function mailer_sms_form_validate($form, $form_state)
+{
+  if (empty($form_state['input']['message'])) {
+    form_set_error('message', 'Текст сообщения обязателен к заполнению.' );
+  }
+}
+
+/**
+ * form submit callback.
+ */
+function mailer_sms_form_test_submit($form, &$form_state)
+{
+  $params['message'] = $form_state['values']['message'];
+  $params['phone'] = variable_get('manager_phone', null);
+
+  // SMS менеджеру
+  $result = mailer_send_sms('manual', $params);
+  if ($result['success']) {
+    drupal_set_message('SMS отправлено');
+  } elseif (!empty($result["error"]["descr"])) {
+    drupal_set_message($result["error"]["descr"], 'error');
+  } else {
+    drupal_set_message('Неизвестная ошибка при отправке', 'error');
+  }
+
+  // оставляем значения в форме
+  $form_state['rebuild'] = true;
+}
+
+/**
+ * form submit callback.
+ */
+function mailer_sms_form_spam_submit($form, &$form_state)
+{
+  // определение пула получателей
+  $query = db_select('field_data_field_phone', 'fp');
+  $query->condition('fp.entity_type', 'commerce_order');
+  $query->innerJoin('commerce_order', 'co', 'co.order_id = fp.entity_id');
+  $query->condition('co.status', ['paid', 'pending','processing', 'completed'], 'IN');
+  $query->fields('fp', ['field_phone_value']);
+  $query->distinct();
+  $phones_w_orders = $query->execute()->fetchCol();
+
+  $phones_users = [];
+  if ($form_state['values']['filter'][1]) {
+    $query = db_select('field_data_field_phone', 'fp');
+    $query->condition('fp.entity_type', 'user');
+    $query->innerJoin('users', 'u', 'u.uid = fp.entity_id');
+    $query->condition('u.status', 1);
+    if ($form_state['values']['filter'][3]) {
+      // только для пользователей не старше 2 недель
+      $query->condition('u.created', REQUEST_TIME - 1210100, '>');
+    }
+    $query->fields('fp', ['field_phone_value']);
+    $phones_users = $query->execute()->fetchCol();
+
+    // todo проверка подписки
+//    $flag = flag_get_flag('phone_marketing');
+//    if ($flag && !$flag->is_flagged($params['account']->uid, $params['account']->uid)) {
+//      $will_get_email = false;
+//    }
+  }
+
+  $phones_raw = $phones_w_orders;
+  if ($form_state['values']['filter'][1] && $form_state['values']['filter'][2]) $phones_raw = array_unique(array_merge($phones_users, $phones_w_orders));
+  if ($form_state['values']['filter'][1] && !$form_state['values']['filter'][2]) $phones_raw = array_diff($phones_users, $phones_w_orders);
+
+  // убрать дубликаты из-за разного написания в ЛК и заказе
+  $phones = [];
+  foreach ($phones_raw as $item) {
+    $item = ext_user_normalize_phone($item);
+    $phones[$item] = $item;
+  }
+
+  // добавление в очередь отправки
+  $phones = ['79226646009'];
+  if ($phones) {
+    $params['message'] = $form_state['values']['message'];
+
+    $queue = DrupalQueue::get('manual_sms_queue');
+    foreach($phones as $phone) {
+      if (ext_user_valid_phone($phone)) {
+        $params['phone'] = $phone;
+        $queue->createItem($params);
+      }
+    }
+  }
+
+  drupal_set_message('SMS поставлены в очередь и будут отправлены в ближайшее время');
+}
+
+
+
+
+/**
+ * --------------------------- Подготовка и отправка SMS -----------------------------------------
  */
 function mailer_send_sms($event, $params)
 {
     $result = false;
 
     // не отправлять при запуске на dev сервере
-    if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) return false;
+    //if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) return false;
 
     if (!variable_get('phone_registration', false)) return false;
 
@@ -70,6 +176,11 @@ function mailer_send_sms($event, $params)
     if (empty($phone)) return false;
 
     switch ($event) {
+        case 'manual':
+          $text = 'JOY-MAGAZIN. Код подтверждения: ' . $params['message'];
+          $result = mailer_process_send_sms($phone, $text, $event);
+          break;
+
         case 'points_add':
             if (!empty($params['userpoints'])) {
                 $pts = format_plural($params['userpoints']['points'],'@count point', '@count points');
@@ -156,7 +267,6 @@ function mailer_process_send_sms($phone, $text, $tag = null)
     ]);
 
     if ($result = curl_exec($ch)) {
-        $response = json_decode($result, TRUE);
-        return $response['success'];
+      return json_decode($result, TRUE);
     } else return false;
 }
