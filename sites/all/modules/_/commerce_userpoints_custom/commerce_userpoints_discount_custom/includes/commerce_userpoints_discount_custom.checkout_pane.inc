@@ -59,6 +59,18 @@ function commerce_userpoints_discount_custom_pane_checkout_form($form, &$form_st
         }
         if ($form_state['triggering_element']['#name'] == 'points_remove') {
             commerce_userpoints_discount_custom_clear_order($order->order_id);
+            if (!empty($_SESSION['messages']['status'])) {
+              $key = null;
+              foreach($_SESSION['messages']['status'] as $index => $message) {
+                if (strpos($message, 'You did not receive') !== false) {
+                  $key = $index;
+                }
+              }
+              if ($key !== null) {
+                unset($_SESSION['messages']['status'][$key]);
+                if (empty($_SESSION['messages']['status'])) unset($_SESSION['messages']['status']);
+              }
+            }
         }
     }
 

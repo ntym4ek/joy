@@ -178,8 +178,14 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
       '#markup' => theme('status_messages'),
       '#weight' => -1,
     );
-
   }
+
+  /** -------------------------------------------- настройка Commerce Userpoints ---------------------------------------------------- */
+  $form['commerce_userpoints_discount_custom']['cup_submit']['#ajax']['callback'] = 'ext_checkout_commerce_checkout_form_refresh';
+  if (isset($form['commerce_userpoints_discount_custom']['redeemed_points'])) {
+    $form['commerce_userpoints_discount_custom']['redeemed_points']['#ajax']['callback'] = 'ext_checkout_commerce_checkout_form_refresh';
+  }
+
 
   $form['buttons']['#type'] = 'container';
   $form['buttons']['cancel']['#access'] = false;
