@@ -134,25 +134,30 @@ function courier_service_details_form($pane_form, $pane_values, $checkout_pane, 
     $pane_form['username'] = array(
         '#title' => 'Фамилия, Имя, Отчество',
         '#type' => 'textfield',
+      '#default_value' => empty($user_info['name']['fullname']) ? '' : $user_info['name']['fullname'],
     );
     $pane_form['phone'] = array(
         '#title' => 'Телефон',
         '#type' => 'textfield',
         '#attributes' => ['class' => ['masked-phone']],
+      '#default_value' => empty($user_info['phone']) ? '' : $user_info['phone'],
     );
 
     $pane_form['addr'] = array(
         '#title' => 'Адрес',
         '#type' => 'textfield',
+      '#default_value' => empty($user_info['address']['address']) ? '' : $user_info['address']['address'],
     );
     $pane_form['office'] = array(
         '#title' => 'Квартира/Офис',
         '#type' => 'textfield',
+      '#default_value' => empty($user_info['address']['office']) ? '' : $user_info['address']['office'],
     );
 
     $pane_form['callme'] = array(
         '#title' => t('Call me to get details about my order and delivery'),
         '#type' => 'checkbox',
+      '#default_value' => empty($user_info['address']['callme']) ? '' : $user_info['address']['callme'],
     );
 
     return $pane_form;

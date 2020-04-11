@@ -77,7 +77,8 @@ function ext_order_commerce_order_presave($order)
     $event = 'order_changed';
   }
 
-  if ($event && strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+//  if ($event && strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+  if ($event && strpos($_SERVER['HTTP_HOST'], '.local') !== false) {
     $account = user_load($order->uid);
     $params['account'] = $account;
     $params['order_info'] = _get_order_info($order);

@@ -109,13 +109,13 @@ function pickup_service_details_form($pane_form, $pane_values, $checkout_pane, $
     $pane_form['username'] = array(
         '#title' => 'Фамилия, Имя, Отчество',
         '#type' => 'textfield',
-      '#default' => empty($user_info['name']['fullname']) ? '' : $user_info['name']['fullname'],
+        '#default_value' => empty($user_info['name']['fullname']) ? '' : $user_info['name']['fullname'],
     );
     $pane_form['phone'] = array(
         '#title' => 'Телефон',
         '#type' => 'textfield',
         '#attributes' => ['class' => ['masked-phone']],
-      '#default' => empty($user_info['phone']) ? '' : $user_info['phone'],
+        '#default_value' => empty($user_info['phone']) ? '' : $user_info['phone'],
     );
 
     $pane_form['notes'] = array(
@@ -127,7 +127,7 @@ function pickup_service_details_form($pane_form, $pane_values, $checkout_pane, $
     $pane_form['callme'] = array(
         '#title' => t('Call me to get details about my order and delivery'),
         '#type' => 'checkbox',
-      '#default' => empty($user_info['address']['callme']) ? '' : $user_info['address']['callme'],
+        '#default_value' => empty($user_info['address']['callme']) ? '' : $user_info['address']['callme'],
     );
 
     return $pane_form;

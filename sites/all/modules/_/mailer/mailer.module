@@ -60,61 +60,18 @@ function mailer_cron_queue_info()
     $queues['shop_review_mails_queue'] = array(
         'worker callback' => 'mailer_send_shop_review_mails',
     );
-    $queues['order_complete_mails_queue'] = array(
-        'worker callback' => 'mailer_send_order_complete_mails',
-    );
 
     $queues['manual_mails_queue'] = array(
       'worker callback' => 'mailer_send_manual_mails',
     );
 
-  $queues['manual_sms_queue'] = array(
+    $queues['manual_sms_queue'] = array(
         'worker callback' => 'mailer_send_manual_sms',
     );
 
     return $queues;
 }
 
-
-/**
- * отправка писем с уведомлением об оформленном заказе
- */
-//function mailer_queue_order_complete_mails($data)
-//{
-//    $queue = DrupalQueue::get('order_complete_mails_queue');
-//    $queue->createItem($data);
-//}
-//
-
-/**
- * cron queue worker callback
- */
-//function mailer_send_order_complete_mails($data) {
-//  $order = $data['order'];
-//  $account = user_load($order->uid);
-//  $params = $data['params'];
-//  $params['account'] = $account;
-//  $params['order_info'] = _get_order_info($order);
-//
-//  // письмо Пользователю
-//  //        drupal_mail('mailer', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
-//  if (strpos($_SERVER['HTTP_HOST'], '.local') === FALSE) {
-//    drupal_mail('mailer', $data['event'], $order->mail, user_preferred_language($account), $params);
-//  }
-//
-//    // письмо Менеджеру
-//    if ($data['mail_to_manager']) {
-//        $params['mail_to_manager'] = $data['mail_to_manager'];
-//        $manager_mail = variable_get('support_email', 'help@joy-magazin.ru');
-//        if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) $manager_mail = 'mega_comp@mail.ru';
-//        drupal_mail('mailer', $data['event'], $manager_mail, user_preferred_language($account), $params);
-//
-//        // письмо Смирнову
-//        if ($data['event'] == 'order_creation' && $order->mail != 'support@kccc.ru' && $manager_mail != 'mega_comp@mail.ru') {
-//            drupal_mail('mailer', $data['event'], 'ed_smr@kccc.ru', user_preferred_language($account), $params);
-//        }
-//    }
-//}
 
 /**
  * отправка письма с уведомлением о брошенной Корзине
