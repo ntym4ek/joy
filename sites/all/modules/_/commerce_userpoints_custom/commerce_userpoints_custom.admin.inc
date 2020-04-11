@@ -36,7 +36,8 @@ function commerce_userpoints_custom_currencies_page() {
 /**
  * Form builder function to add a new userpoints category.
  */
-function commerce_userpoints_custom_currencies_form($form, &$form_state, $currency = array()) {
+function commerce_userpoints_custom_currencies_form($form, &$form_state, $currency = array())
+{
   $currency += array(
     'code' => '',
     'name' => '',
@@ -96,7 +97,7 @@ function commerce_userpoints_custom_currencies_form($form, &$form_state, $curren
 
   $form['currencies']['#tree'] = TRUE;
   $rows = array();
-  
+
   $form['conversion_rate'] = array(
     '#type' => 'textfield',
     '#title' => t('Exchange rate'),

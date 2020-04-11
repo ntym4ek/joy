@@ -58,7 +58,7 @@ function commerce_userpoints_custom_menu() {
     'type' => MENU_LOCAL_ACTION,
     'file' => 'commerce_userpoints_custom.admin.inc',
   );
-  $items['admin/commerce/config/currency/userpoints/edit/%commerce_userpoints'] = array(
+  $items['admin/commerce/config/currency/userpoints/edit/%commerce_userpoints_custom'] = array(
     'title' => 'Edit',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('commerce_userpoints_custom_currencies_form', 6),
@@ -66,7 +66,7 @@ function commerce_userpoints_custom_menu() {
     'type' => MENU_LOCAL_TASK,
     'file' => 'commerce_userpoints_custom.admin.inc',
   );
-  $items['admin/commerce/config/currency/userpoints/delete/%commerce_userpoints'] = array(
+  $items['admin/commerce/config/currency/userpoints/delete/%commerce_userpoints_custom'] = array(
     'title' => 'Delete',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('commerce_userpoints_custom_currencies_delete', 6),

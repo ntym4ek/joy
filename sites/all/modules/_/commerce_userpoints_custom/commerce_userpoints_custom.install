@@ -1,0 +1,12 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the commerce_userpoints_discount_custom module.
+ */
+
+/**
+ * Implement hook_uninstall().
+ */
+function commerce_userpoints_custom_uninstall() {
+  variable_del('commerce_userpoints_custom_currencies');
+}
