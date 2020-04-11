@@ -1,4 +1,6 @@
 <?php
+require 'includes/mailer.email.inc';
+require 'includes/mailer.sms.inc';
 
 /**
  * Implements hook_menu()
@@ -333,6 +335,5 @@ function mailer_send_manual_mails($params)
  */
 function mailer_send_manual_sms($params)
 {
-  require 'includes/mailer.sms.inc';
   mailer_send_sms('manual', $params);
 }
