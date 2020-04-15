@@ -166,7 +166,7 @@ function mailer_mail($key, &$message, $params)
 
       break;
 
-    case 'manual_mail':
+    case 'manual':
       $message['subject'] = $params['subject'];
 
       $body = $params['body'];
@@ -190,6 +190,16 @@ function mailer_mail($key, &$message, $params)
   }
 }
 
+/**
+ * Implements hook_mail_alter
+ */
+function mailer_mail_alter(&$message)
+{
+  if (strpos($_SERVER['HTTP_HOST'], '.local') !== FALSE) {
+    $message['send'] = false;
+    watchdog('mailer', 'Эмуляция отправки E-Mail.<br />Почта: ' . $message['to'] . '.<br />Тема: ' . $message['subject'] . '<br />Текст: ' . var_dump($message['body']), [], WATCHDOG_DEBUG);
+  }
+}
 
 /**
  * --------------------------- Ручная рассылка E-Mail ---------------------------------------------------------------------
@@ -273,8 +283,8 @@ function mailer_email_form_test_submit($form, &$form_state)
   $params['body'] = $form_state['values']['body']['value'];
 
   // письмо Пользователю
-  drupal_mail('mailer', 'manual_mail', variable_get('support_email', 'help@joy-magazin.ru'), 'RU', $params);
-  //    drupal_mail('mailer', 'manual_mail', 'mega_comp@mail.ru', 'RU', $params);
+  drupal_mail('mailer', 'manual', variable_get('support_email', 'help@joy-magazin.ru'), 'RU', $params);
+  //    drupal_mail('mailer', 'manual', 'mega_comp@mail.ru', 'RU', $params);
 
   // оставляем значения в форме
   $form_state['rebuild'] = true;
@@ -320,8 +330,11 @@ function mailer_email_form_spam_submit($form, &$form_state)
 
       if (in_array($mail, $mails_users)) {
         $params['account'] = user_load_by_mail($mail);
+        // всем незарегистрированным или если есть подписка
+        if (!$params['account']->uid || mailer_check_subscription(SUBSCRIPTION_PROMO_EMAIL, $params['account']->uid)) {
+          $queue->createItem($params);
+        }
       }
-      $queue->createItem($params);
     }
   }
 

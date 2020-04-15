@@ -140,7 +140,7 @@ function popup_spinner_ajax_callback()
   elseif (!ext_user_valid_phone($phone)) {
     $error_id = 'phone'; $error_text = 'Укажите корректный номер телефона';
   }
-  elseif (ext_user_user_load_by_login($phone)) {
+  elseif (($account = ext_user_user_load_by_login($phone)) && $account->uid) {
     $error_id = 'phone'; $error_text = 'Акция доступна только для новых пользователей';
   }
 

@@ -860,57 +860,6 @@ function _commerce_helper_order_cancel_statuses($id = null)
  */
 
 /**
- * Информация о пользователе, опционально включая адрес из последнего заказа
- * @param $uid
- * @param bool $from_order нужно ли брать информацию из последнего заказа
- *
- * @return array|mixed
- */
-function commerce_helper_get_user_info($uid, $from_order = false) {
-  $data = &drupal_static(__FUNCTION__);
-  if (isset($data)) {
-    return $data;
-  }
-
-  $data = [];
-
-  // проверить наличие заказов и взять из последнего
-  if ($from_order) {
-    $order_id = db_select('commerce_order', 'co')
-      ->condition('co.uid', $uid)
-      ->condition('co.status', ['pending', 'completed', 'processing'], 'IN')
-      ->fields('co', ['order_id'])
-      ->execute()
-      ->fetchField();
-    if ($order_id) {
-      $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
-      $shipping_wr = $order_wr->commerce_customer_shipping;
-      $data['address']['zip'] = $shipping_wr->field_zipcode->value();
-      $data['address']['address'] = $shipping_wr->field_addr->value();
-      $data['address']['office'] = $shipping_wr->field_office->value();
-      $data['address']['callme'] = $shipping_wr->field_callme->value();
-      $data['name']['fullname'] = $order_wr->field_username->value();
-      $data['phone'] = $order_wr->field_phone->value();
-    }
-  }
-
-  // проверить аккаунт
-  if (!$data) {
-    $user_wr = entity_metadata_wrapper('user', $uid);
-    $data['name']['surname'] = $user_wr->field_surname->value();
-    $data['name']['name'] = $user_wr->field_name_first->value();
-    $data['name']['name2'] = $user_wr->field_name_second->value();
-    $data['name']['fullname'] = trim(implode(' ', $data['name']));
-    $data['name']['realname'] = $user_wr->value()->realname;
-    $data['phone'] = $user_wr->field_phone->value();
-    $data['email'] = $user_wr->mail->value();
-    $data['uid'] = $user_wr->uid->value();
-  }
-
-  return $data;
-}
-
-/**
  * Возвращает размер скидки (без учёта скидки по купонам)
  * @param $order
  *

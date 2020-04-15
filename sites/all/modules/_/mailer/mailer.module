@@ -2,6 +2,11 @@
 require 'includes/mailer.email.inc';
 require 'includes/mailer.sms.inc';
 
+define('SUBSCRIPTION_NOTIFY_EMAIL', 628);
+define('SUBSCRIPTION_NOTIFY_SMS', 629);
+define('SUBSCRIPTION_PROMO_EMAIL', 630);
+define('SUBSCRIPTION_PROMO_SMS', 631);
+
 /**
  * Implements hook_menu()
  */
@@ -36,14 +41,12 @@ function mailer_menu()
  */
 function mailer_cron()
 {
-    if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
-        // добавляем задания для рассылки уведомлений о брошенных Корзинах
-        mailer_queue_cart_orphan_mails();
-        // добавляем задания для рассылки уведомлений на Отзыв о товарах
-        mailer_queue_order_review_mails();
-        // добавляем задания для рассылки уведомлений на Отзыв о сервисе
-        mailer_queue_shop_review_mails();
-    }
+    // добавляем задания для рассылки уведомлений о брошенных Корзинах
+    mailer_queue_cart_orphan_mails();
+    // добавляем задания для рассылки уведомлений на Отзыв о товарах
+    mailer_queue_order_review_mails();
+    // добавляем задания для рассылки уведомлений на Отзыв о сервисе
+    mailer_queue_shop_review_mails();
 }
 
 /**
@@ -90,14 +93,13 @@ function mailer_queue_cart_orphan_mails()
     $query->fields('co', ['order_id']);
     $query->fields('ff', ['field_flags_value']);
     if ($results = $query->execute()->fetchAll()) {
-        // формируем очередь из операций уведомления
+        // сформировать очередь из операций уведомления
         $queue = DrupalQueue::get('cart_orphan_mails_queue');
         foreach($results as $item) {
-            // проверяем все на наличие неуведомлённых корзин
+            // проверяем на наличие неуведомлённых корзин
             if ((!$item->field_flags_value || !($item->field_flags_value & bindec('00000001')))) {
                 $queue->createItem($item->order_id);
-
-                // установить флаг
+                // установить флаг уведомления
                 $order_wr = entity_metadata_wrapper('commerce_order', $item->order_id);
                 $flags = $order_wr->field_flags->value();
                 $order_wr->field_flags = $flags | bindec('00000001');
@@ -112,19 +114,21 @@ function mailer_queue_cart_orphan_mails()
  */
 function mailer_send_cart_orphan_mails($order_id)
 {
-    $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+  $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+  $uid = $order_wr->uid->value();
+  $user_info = ext_user_get_user_info($uid, $order_id);
 
-    // отправить уведомление
-    $account = user_load($order_wr->uid->value());
-
-    // проверить на наличие подписки на рекламную рассылку
-    $flag = flag_get_flag('email_marketing');
-    if ($flag && $flag->is_flagged($GLOBALS['user']->uid, $GLOBALS['user']->uid)) {
-        $params['account'] = $account;
-        $params['order_info'] = _get_order_info($order_wr->value());
-        //                    drupal_mail('mailer', 'cart_orphan', 'mega_comp@mail.ru', user_preferred_language($account), $params);
-        drupal_mail('mailer', 'cart_orphan', $order_wr->mail->value(), user_preferred_language($account), $params);
-    }
+  // отправить всем незарегистрированным и зарегистрированным, если есть подписка
+  if ($user_info['email'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_PROMO_EMAIL, $uid))) {
+    $account = user_load($uid);
+    $params['account'] = $account;
+    $params['order_info'] = _get_order_info($order_wr->value());
+    drupal_mail('mailer', 'cart_orphan', $order_wr->mail->value(), user_preferred_language($account), $params);
+  }
+  if ($user_info['phone'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_PROMO_SMS, $uid))) {
+    $params['phone'] = $user_info['phone'];
+    mailer_send_sms('cart_orphan', $params);
+  }
 }
 
 
@@ -140,23 +144,23 @@ function mailer_queue_order_review_mails()
     $query->condition('co.mail', '', '<>');
     $query->condition('co.status', 'completed');
     $query->leftJoin('field_data_field_flags', 'ff', 'ff.entity_id = co.order_id');
-    $query->fields('co', ['order_id']);
+    $query->fields('co', ['order_id', 'uid']);
     $query->fields('ff', ['field_flags_value']);
     if ($results = $query->execute()->fetchAll()) {
         // формируем очередь из операций уведомления
         $queue = DrupalQueue::get('order_review_mails_queue');
         foreach($results as $item) {
-            // проверяем все на наличие неуведомлённых заказов
-            if ((!$item->field_flags_value || !($item->field_flags_value & bindec('00000010')))) {
-                $queue->createItem($item->order_id);
-//                watchdog('mailer_order', 'Постановка в очередь. Заказ ' . $item->order_id, [], WATCHDOG_DEBUG);
+          // проверяем все на наличие неуведомлённых заказов
+          if (!$item->field_flags_value || !($item->field_flags_value & bindec('00000010'))) {
+            $queue->createItem($item->order_id);
+            // watchdog('mailer_order', 'Постановка в очередь. Заказ ' . $item->order_id, [], WATCHDOG_DEBUG);
 
-                // установить флаг
-                $order_wr = entity_metadata_wrapper('commerce_order', $item->order_id);
-                $flags = $order_wr->field_flags->value();
-                $order_wr->field_flags = $flags | bindec('00000010');
-                $order_wr->save();
-            }
+            // установить флаг
+            $order_wr = entity_metadata_wrapper('commerce_order', $item->order_id);
+            $flags = $order_wr->field_flags->value();
+            $order_wr->field_flags = $flags | bindec('00000010');
+            $order_wr->save();
+          }
         }
     }
 }
@@ -166,80 +170,91 @@ function mailer_queue_order_review_mails()
  */
 function mailer_send_order_review_mails($order_id)
 {
-    $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+  $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+  $uid = $order_wr->uid->value();
+  $user_info = ext_user_get_user_info($uid, $order_id);
 
+  // отправить всем незарегистрированным и зарегистрированным, если есть подписка
+  if ($user_info['email'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_EMAIL, $uid))) {
+    $account = user_load($uid);
+    $params['account'] = $account;
+    $params['order_info'] = _get_order_info($order_wr->value());
     // таблица со списком препаратов
     $td = 'border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; padding: 4px 8px;';
     $table = 'Товары не найдены.';
     if ($order_wr->commerce_line_items->count()) {
-        $table = array(
-            'header' => array(
-                array('data' => 'Наименование', 'style' => $td . 'min-width: 350px; text-align: center;'),
-                array('data' => 'Ссылка',       'style' => $td . 'width: 150px; text-align: center;'),
-            ),
-        );
-        foreach ($order_wr->commerce_line_items as $item_wrapper) {
-            if ($item_wrapper->type->value() == 'product') {
-                $pid = $item_wrapper->commerce_product->product_id->value();
-                $title = $item_wrapper->commerce_product->title->value();
-                $nid = _get_product_display_by_product_id($pid);
-                $table['rows'][] = [
-                    ['data' => $title, 'style' => $td],
-                    ['data' => '<a href="' . url('node/' . $nid, ['absolute' => true, 'fragment' => 'scroll-to-block-views-product-reviews-block']) . '">поставить оценку</a>', 'style' => $td . 'text-align:center;'],
-                ];
-            }
+      $table = [
+        'header' => [
+          [
+            'data' => 'Наименование',
+            'style' => $td . 'min-width: 350px; text-align: center;'
+          ],
+          [
+            'data' => 'Ссылка',
+            'style' => $td . 'width: 150px; text-align: center;'
+          ],
+        ],
+      ];
+      foreach ($order_wr->commerce_line_items as $item_wrapper) {
+        if ($item_wrapper->type->value() == 'product') {
+          $pid = $item_wrapper->commerce_product->product_id->value();
+          $title = $item_wrapper->commerce_product->title->value();
+          $nid = _get_product_display_by_product_id($pid);
+          $table['rows'][] = [
+            ['data' => $title, 'style' => $td],
+            [
+              'data' => '<a href="' . url('node/' . $nid, [
+                  'absolute' => TRUE,
+                  'fragment' => 'scroll-to-block-views-product-reviews-block'
+                ]) . '">поставить оценку</a>',
+              'style' => $td . 'text-align:center;'
+            ],
+          ];
         }
+      }
     }
     $params['table'] = $table;
-
-    // отправить уведомление
-    $account = user_load($order_wr->uid->value());
-
-    // проверить на наличие подписки на рекламную рассылку
-    $flag = flag_get_flag('email_marketing');
-    if ($flag && $flag->is_flagged($GLOBALS['user']->uid, $GLOBALS['user']->uid)) {
-
-        $params['account'] = $account;
-        $params['order_info'] = _get_order_info($order_wr->value());
-        // drupal_mail('mailer', 'leave_review', 'mega_comp@mail.ru', user_preferred_language($account), $params);
-        drupal_mail('mailer', 'leave_review', $order_wr->mail->value(), user_preferred_language($account), $params);
-
-        // watchdog('mailer_order', 'Отправка. Заказ ' . $order_id, [], WATCHDOG_DEBUG);
-    }
+    drupal_mail('mailer', 'leave_review', $order_wr->mail->value(), user_preferred_language($account), $params);
+  }
+  if ($user_info['phone'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_SMS, $uid))) {
+    $params['phone'] = $user_info['phone'];
+    mailer_send_sms('leave_review', $params);
+  }
+  // watchdog('mailer_order', 'Отправка. Заказ ' . $order_id, [], WATCHDOG_DEBUG);
 }
 
 
 /**
- * отправка письма с просьбой оставить Отзыв для отправленных заказов
+ * отправка письма с просьбой оставить Отзыв на магазин
  * 00000100 - флаг отправленного уведомления
  * время с момента отправки > 2 недель и 2х дней
  */
 function mailer_queue_shop_review_mails()
 {
-    $query = db_select('commerce_order', 'co');
-    $query->condition('co.changed', REQUEST_TIME - 1382400, '<');
-    $query->condition('co.mail', '', '<>');
-    $query->condition('co.status', 'completed');
-    $query->leftJoin('field_data_field_flags', 'ff', 'ff.entity_id = co.order_id');
-    $query->fields('co', ['order_id']);
-    $query->fields('ff', ['field_flags_value']);
-    if ($results = $query->execute()->fetchAll()) {
-        // формируем очередь из операций уведомления
-        $queue = DrupalQueue::get('shop_review_mails_queue');
-        foreach($results as $index => $item) {
-            // проверяем все на наличие неуведомлённых заказов
-            if ((!$item->field_flags_value || !($item->field_flags_value & bindec('00000100')))) {
-                $queue->createItem($item->order_id);
-//                watchdog('mailer_shop', 'Постановка в очередь. Заказ ' . $item->order_id, [], WATCHDOG_DEBUG);
+  $query = db_select('commerce_order', 'co');
+  $query->condition('co.changed', REQUEST_TIME - 1382400, '<');
+  $query->condition('co.mail', '', '<>');
+  $query->condition('co.status', 'completed');
+  $query->leftJoin('field_data_field_flags', 'ff', 'ff.entity_id = co.order_id');
+  $query->fields('co', ['order_id', 'uid']);
+  $query->fields('ff', ['field_flags_value']);
+  if ($results = $query->execute()->fetchAll()) {
+    // формируем очередь из операций уведомления
+    $queue = DrupalQueue::get('shop_review_mails_queue');
+    foreach($results as $index => $item) {
+      // проверяем все на наличие неуведомлённых заказов
+      if ((!$item->field_flags_value || !($item->field_flags_value & bindec('00000100')))) {
+        $queue->createItem($item->order_id);
+        // watchdog('mailer_shop', 'Постановка в очередь. Заказ ' . $item->order_id, [], WATCHDOG_DEBUG);
 
-                // после поставновки сразу меняем флаг
-                $order_wr = entity_metadata_wrapper('commerce_order', $item->order_id);
-                $flags = $order_wr->field_flags->value();
-                $order_wr->field_flags = $flags | bindec('00000100');
-                $order_wr->save();
-            }
-        }
+        // после поставновки сразу меняем флаг
+        $order_wr = entity_metadata_wrapper('commerce_order', $item->order_id);
+        $flags = $order_wr->field_flags->value();
+        $order_wr->field_flags = $flags | bindec('00000100');
+        $order_wr->save();
+      }
     }
+  }
 }
 
 /**
@@ -247,23 +262,24 @@ function mailer_queue_shop_review_mails()
  */
 function mailer_send_shop_review_mails($order_id)
 {
-    $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+  $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+  $uid = $order_wr->uid->value();
+  $user_info = ext_user_get_user_info($uid, $order_id);
 
-    // отправить уведомление
-    $account = user_load($order_wr->uid->value());
+  // отправить всем незарегистрированным и зарегистрированным, если есть подписка
+  if ($user_info['email'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_EMAIL, $uid))) {
+    $account = user_load($uid);
+    $params['account'] = $account;
+    $params['order_info'] = _get_order_info($order_wr->value());
+    drupal_mail('mailer', 'leave_shop_review', $order_wr->mail->value(), user_preferred_language($account), $params);
+  }
+  if ($user_info['phone'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_SMS, $uid))) {
+    $params['phone'] = $user_info['phone'];
+    mailer_send_sms('leave_shop_review', $params);
+  }
 
-    // проверить на наличие подписки на рекламную рассылку
-    $flag = flag_get_flag('email_marketing');
-    if ($flag && $flag->is_flagged($GLOBALS['user']->uid, $GLOBALS['user']->uid)) {
-
-        $params['account'] = $account;
-        $params['order_info'] = _get_order_info($order_wr->value());
-        // drupal_mail('mailer', 'leave_shop_review', 'mega_comp@mail.ru', user_preferred_language($account), $params);
-        drupal_mail('mailer', 'leave_shop_review', $order_wr->mail->value(), user_preferred_language($account), $params);
-
-        // проблема с отправкой множества писем одному пользователю
-        // watchdog('mailer_shop', 'Отправка. Заказ ' . $order_id, [], WATCHDOG_DEBUG);
-    }
+  // проблема с отправкой множества писем одному пользователю
+  // watchdog('mailer_shop', 'Отправка. Заказ ' . $order_id, [], WATCHDOG_DEBUG);
 }
 
 /**
@@ -271,20 +287,7 @@ function mailer_send_shop_review_mails($order_id)
  */
 function mailer_send_manual_mails($params)
 {
-  $will_get_email = true;
-
-  // проверить на наличие подписки на рекламную рассылку
-  if (!empty($params['account'])) {
-    $flag = flag_get_flag('email_marketing');
-    if ($flag && !$flag->is_flagged($params['account']->uid, $params['account']->uid)) {
-      $will_get_email = false;
-    }
-  }
-
-  if ($will_get_email) {
-    drupal_mail('mailer', 'manual_mail', $params['mail'], 'ru', $params);
-    //    drupal_mail('mailer', 'manual_mail', 'mega_comp@mail.ru', 'ru', $params);
-  }
+   drupal_mail('mailer', 'manual', $params['mail'], 'ru', $params);
 }
 
 /**
@@ -293,4 +296,17 @@ function mailer_send_manual_mails($params)
 function mailer_send_manual_sms($params)
 {
   mailer_send_sms('manual', $params);
+}
+
+/**
+ * проверка наличия подписки у пользователя
+ */
+function mailer_check_subscription($subscription_tid, $user)
+{
+  if (is_numeric($user)) {
+    $user = user_load($user);
+  }
+
+  $flag = flag_get_flag('subscriptions');
+  return $user->uid && $flag && $flag->is_flagged($subscription_tid, $user->uid);
 }

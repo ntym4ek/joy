@@ -77,14 +77,12 @@ function ext_order_commerce_order_presave($order)
     $event = 'order_changed';
   }
 
-//  if ($event && strpos($_SERVER['HTTP_HOST'], '.local') === false) {
-  if ($event && strpos($_SERVER['HTTP_HOST'], '.local') !== false) {
+  if ($event) {
     $account = user_load($order->uid);
     $params['account'] = $account;
     $params['order_info'] = _get_order_info($order);
 
     // письмо Пользователю
-    //        drupal_mail('mailer', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
     if (!empty($order->mail)) {
       drupal_mail('mailer', $event, $order->mail, user_preferred_language($account), $params);
     }

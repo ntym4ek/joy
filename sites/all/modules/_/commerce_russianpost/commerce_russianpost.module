@@ -362,7 +362,7 @@ function commerce_russianpost_details_form($pane_form, $pane_values, $checkout_p
 {
     $pane_form = array();
 
-    $user_info = commerce_helper_get_user_info($order->uid, true);
+    $user_info = ext_user_get_user_info($order->uid, true);
 
     $pane_form['username'] = array(
         '#title' => 'Фамилия, Имя, Отчество',

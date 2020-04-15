@@ -110,12 +110,6 @@ function mailer_sms_form_spam_submit($form, &$form_state)
     }
     $query->fields('fp', ['field_phone_value']);
     $phones_users = $query->execute()->fetchCol();
-
-    // todo проверка подписки
-//    $flag = flag_get_flag('phone_marketing');
-//    if ($flag && !$flag->is_flagged($params['account']->uid, $params['account']->uid)) {
-//      $will_get_email = false;
-//    }
   }
 
   $phones_raw = $phones_w_orders;
@@ -136,8 +130,11 @@ function mailer_sms_form_spam_submit($form, &$form_state)
     $queue = DrupalQueue::get('manual_sms_queue');
     foreach($phones as $phone) {
       if (ext_user_valid_phone($phone)) {
-        $params['phone'] = $phone;
-        $queue->createItem($params);
+        $account = ext_user_user_load_by_phone($phone);
+        if (!$account->uid || mailer_check_subscription(SUBSCRIPTION_PROMO_SMS, $account->uid)) {
+          $params['phone'] = $phone;
+          $queue->createItem($params);
+        }
       }
     }
   }
@@ -154,9 +151,6 @@ function mailer_sms_form_spam_submit($form, &$form_state)
 function mailer_send_sms($event, $params)
 {
     $result = false;
-
-    // не отправлять при запуске на dev сервере
-    if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) return false;
 
     if (!variable_get('phone_registration', false)) return false;
 
@@ -228,6 +222,21 @@ function mailer_send_sms($event, $params)
                 $result = mailer_process_send_sms($phone, $text, $event);
             }
             break;
+
+        case 'cart_orphan':
+              $text = 'JOY-MAGAZIN. В вашей корзине остались товары. Тел.: 8(800)550-28-85 ';
+              $result = mailer_process_send_sms($phone, $text, $event);
+            break;
+
+        case 'leave_review':
+              $text = 'JOY-MAGAZIN. Оставьте свой отзыв о продукции на www.joy-magazin.ru';
+              $result = mailer_process_send_sms($phone, $text, $event);
+            break;
+
+        case 'leave_shop_review':
+              $text = 'JOY-MAGAZIN. Оцените работу интернет-магазина на help@joy-magazin.ru';
+              $result = mailer_process_send_sms($phone, $text, $event);
+            break;
     }
 
     return $result;
@@ -253,6 +262,8 @@ function mailer_process_send_sms($phone, $text, $tag = null)
 
     if ($tag) $request['tags'][] = $tag;
 
+  // для dev сервера только вывести в лог
+  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL => "https://lcab.talk-me.ru/json/v1.0/sms/send/text",
@@ -268,4 +279,7 @@ function mailer_process_send_sms($phone, $text, $tag = null)
     if ($result = curl_exec($ch)) {
       return json_decode($result, TRUE);
     } else return false;
+  } else {
+    watchdog('mailer', 'Эмуляция отправки СМС.<br />Телефон: ' . $phone . '.<br />Текст: ' . $text, [], WATCHDOG_DEBUG);
+  }
 }

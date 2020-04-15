@@ -105,7 +105,7 @@ function pickup_service_details_form($pane_form, $pane_values, $checkout_pane, $
         '#markup' => '<div class="form-item form-item-markup"><p>Забрать товар можно по адресу г. Кирово-Чепецк, ул. Производственная, д.6</p><p></p></div>',
     );
 
-  $user_info = commerce_helper_get_user_info($order->uid, true);
+  $user_info = ext_user_get_user_info($order->uid, true);
     $pane_form['username'] = array(
         '#title' => 'Фамилия, Имя, Отчество',
         '#type' => 'textfield',
