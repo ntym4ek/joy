@@ -38,6 +38,15 @@ function ext_user_module_implements_alter(&$implementations, $hook)
 //    }
 }
 
+/**
+ * Implements hook_views_api().
+ */
+function ext_user_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'ext_user') . '/views',
+  );
+}
 
 /**
  * Implements hook_user_insert().

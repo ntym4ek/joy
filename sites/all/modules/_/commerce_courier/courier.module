@@ -66,7 +66,7 @@ function courier_service_rate_order($shipping_service, $order)
             $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
 
             // возможно это Киров или Чепецк
-            if (in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])
+            if (isset($data["region"]) && in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])
                 && !ext_checkout_non_free_shipping($order)) {
               $rate['amount'] = 0;
             }

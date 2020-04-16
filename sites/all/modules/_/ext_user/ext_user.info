@@ -3,3 +3,5 @@ description = Дополнительный функционал пользова
 version = 7.x-1.0
 core = 7.x
 package = Custom
+
+files[] = views/ext_user_handler_orders_count.inc
