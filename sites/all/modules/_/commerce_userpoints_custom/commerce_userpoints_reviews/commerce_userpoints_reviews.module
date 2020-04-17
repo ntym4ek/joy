@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * Implements hook_userpoints_info().
+ */
+function commerce_userpoints_reviews_userpoints_info() {
+  return array(
+    'commerce_userpoints_reviews' => array(
+      'description' => t('Points for review'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function commerce_userpoints_reviews_node_update($node)
+{
+  if ($node->type == 'review') {
+    if ($node->status == 1) {
+      // проверить, начислены ли уже баллы
+      $txn_id = commerce_userpoints_reviews_get_record($node);
+      // начислить баллы при публикации
+      commerce_userpoints_reviews_charge($node, $txn_id);
+    } else {
+      // отменить начисление баллов при снятии с публикации
+      commerce_userpoints_reviews_discharge($node);
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_order_delete()
+ */
+function commerce_userpoints_reviews_node_delete($node)
+{
+  // отменить начисление баллов
+  commerce_userpoints_reviews_discharge($node);
+}
+
+function commerce_userpoints_reviews_charge($node, $txn_id = null)
+{
+    // Create the userpoints transaction.
+    $userpoints_params = [
+      'txn_id' => $txn_id ? $txn_id : NULL,
+      'points' => variable_get('commerce_userpoints_reviews_points', 10),
+      'uid' => $node->uid,
+      'operation' => 'commerce_userpoints_reviews',
+      'tid' => variable_get('commerce_userpoints_discount_custom_default_termid', userpoints_get_default_tid()),
+      'display' => FALSE,
+      'entity_id' => $node->nid,
+      'entity_type' => 'node',
+      'status' => USERPOINTS_TXN_STATUS_APPROVED,
+    ];
+    $result = userpoints_userpointsapi($userpoints_params);
+
+    if ($result['status']) {
+      drupal_set_message('Автору за отзыв начислено ' . format_plural(variable_get('commerce_userpoints_reviews_points', 10),'@count !point', '@count !points', userpoints_translation()) . '.');
+
+      // письмо или смс покупателю о начислении отправляются из модуля commerce_userpoints_custom
+    }
+}
+
+function commerce_userpoints_reviews_discharge($node)
+{
+  // определить ID
+  if ($txn_id = commerce_userpoints_reviews_get_record($node)) {
+
+    // Update the userpoints transaction.
+    $userpoints_params = [
+      'txn_id' => $txn_id,
+      'status' => USERPOINTS_TXN_STATUS_DECLINED,
+    ];
+    $result = userpoints_userpointsapi($userpoints_params);
+    if ($result['status']) {
+      drupal_set_message('У автора отзыва списано ' . format_plural(variable_get('commerce_userpoints_reviews_points', 10),'@count !point', '@count !points', userpoints_translation()) . '.');
+    }
+  }
+}
+
+function commerce_userpoints_reviews_get_record($node)
+{
+  $txn_id = null;
+  // найти запись для данного отзыва
+  $txn_id = db_query("SELECT txn_id from {userpoints_txn} WHERE uid = :uid AND entity_id = :entity_id AND entity_type = 'node' AND operation = 'commerce_userpoints_reviews'", array(':uid' => $node->uid, ':entity_id' => $node->nid))->fetchField();
+
+  return $txn_id ? $txn_id : false;
+}
+
+function commerce_userpoints_reviews_form_commerce_userpoints_discount_custom_settings_form_alter(&$form, $form_state)
+{
+  $form['commerce_userpoints_reviews_points'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Баллы за отзывы>',
+    '#description' => 'Количство баллов, начисляемое при публикации отзыва',
+    '#default_value' => variable_get('commerce_userpoints_reviews_points', 10),
+    '#size' => 5,
+    '#required' => TRUE,
+  );
+}

@@ -1,5 +1,5 @@
 name = Commerce Userpoints Custom
-description = Измененный функционал на базе Commerce Userpoints modules.
+description = Измененный функционал на базе Commerce Userpoints module
 core = 7.x
 configure = admin/commerce/config/currency/userpoints
 package = Custom

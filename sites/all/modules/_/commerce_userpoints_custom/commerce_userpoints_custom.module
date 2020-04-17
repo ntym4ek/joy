@@ -166,7 +166,6 @@ function commerce_userpoints_custom_userpoints($op, &$points_params = array())
     $params['userpoints'] = $points_params;
 
     // письмо Пользователю
-//    drupal_mail('mailer', $event, 'mega_comp@mail.ru', user_preferred_language($account), $params);
     if (!empty($account->mail)) {
         drupal_mail('mailer', $event, $account->mail, user_preferred_language($account), $params);
     }
