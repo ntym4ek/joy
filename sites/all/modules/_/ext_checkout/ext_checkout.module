@@ -376,11 +376,11 @@ function ext_checkout_commerce_coupon_discount_value_display_alter(&$text, $disc
 /**
  * alter commerce_coupon_evaluate_conditions function
  * дополнительная проверка условий применения купона
- * сумма купона на сумму не может превышать суммы товаров
  */
 function ext_checkout_commerce_coupon_condition_outcome_alter(&$outcome, &$context)
 {
   $offer = $context['coupon']->commerce_discount_reference[0]->commerce_discount_offer;
+  // сумма купона на сумму не может превышать суммы товаров
   if ($offer->type->value() == 'fixed_amount') {
     // получить размер скидки
     $offer_amount = $offer->commerce_fixed_amount->value()['amount'];
@@ -396,6 +396,17 @@ function ext_checkout_commerce_coupon_condition_outcome_alter(&$outcome, &$conte
       $outcome = FALSE;
       $error = &drupal_static('commerce_coupon_error_' . strtolower($context['coupon']->code->value()));
       $error = t('Coupon amount exceeds products amount.');
+    }
+  }
+
+  // запретить применение двух купонов одновременно
+  $coupon_wr = $context['coupon'];
+  $order_wr = $context['order'];
+  foreach($order_wr->commerce_coupons->getIterator() as $coupon_applied_wr) {
+    if ($coupon_applied_wr->coupon_id->value() != $coupon_wr->coupon_id->value()) {
+      $outcome = FALSE;
+      $error = &drupal_static('commerce_coupon_error_' . strtolower($coupon_wr->code->value()));
+      $error = t('Can\'t apply second coupon');
     }
   }
 }
