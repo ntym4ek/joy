@@ -712,14 +712,16 @@ function ext_user_get_user_info($uid, $from_order = false) {
   }
   if ($order_id) {
     $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
-    $shipping_wr = $order_wr->commerce_customer_shipping;
-    $data['address']['zip'] = $shipping_wr->field_zipcode->value();
-    $data['address']['address'] = $shipping_wr->field_addr->value();
-    $data['address']['office'] = $shipping_wr->field_office->value();
-    $data['address']['callme'] = $shipping_wr->field_callme->value();
-    $data['name']['fullname'] = $order_wr->field_username->value();
-    $data['email'] = $order_wr->mail->value();
-    $data['phone'] = $order_wr->field_phone->value();
+    if ($order_wr->commerce_customer_shipping->value()) {
+      $shipping_wr = $order_wr->commerce_customer_shipping;
+      $data['address']['zip'] = $shipping_wr->field_zipcode->value();
+      $data['address']['address'] = $shipping_wr->field_addr->value();
+      $data['address']['office'] = $shipping_wr->field_office->value();
+      $data['address']['callme'] = $shipping_wr->field_callme->value();
+      $data['name']['fullname'] = $order_wr->field_username->value();
+      $data['email'] = $order_wr->mail->value();
+      $data['phone'] = $order_wr->field_phone->value();
+    }
   }
 
   // проверить аккаунт

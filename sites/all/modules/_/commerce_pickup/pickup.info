@@ -1,5 +1,5 @@
-name = Pickup
-description = Доставка: самовывоз
+name = Доставка Самовывоз
+description = Доставка Самовывоз
 package = Commerce (shipping)
 dependencies[] = commerce
 dependencies[] = commerce_shipping

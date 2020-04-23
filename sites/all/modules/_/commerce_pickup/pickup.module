@@ -31,7 +31,7 @@ function pickup_commerce_shipping_service_info() {
     'display_title' => t('Pickup'),
     'shipping_method' => 'pickup_shipping_method',
     'price_component' => 'shipping',
-    'weight' => 2,
+    'weight' => 15,
     'callbacks' => array(
       'rate' => 'pickup_service_rate_order',
       'details_form' => 'pickup_service_details_form',

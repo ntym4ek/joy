@@ -1,4 +1,4 @@
-name = Russian Post
+name = Доставка Почта России
 description = Интеграция доставки Почтой России с автоматическим расчётом стоимости (на основе Commerce CanadaPost).
 package = Commerce (shipping)
 dependencies[] = commerce_physical
