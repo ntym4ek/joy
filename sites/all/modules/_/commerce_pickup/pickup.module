@@ -47,37 +47,22 @@ function pickup_commerce_shipping_service_info() {
  * Shipping service callback: returns a base price array for a shipping service
  * calculated for the given order.
  */
-function pickup_service_rate_order($shipping_service, $order) {
-    // в $order после ajax submit старые данные, загружаем заново
-    // $order = commerce_order_load($order->order_id);
+function pickup_service_rate_order($shipping_service, $order)
+{
+  $rate = array(
+    'amount' => 0,
+    'currency_code' => 'RUB',
+    'data' => [],
+  );
 
-  // оставить самовывоз только для служесного пользования
-  if (!_user_has_role('products manager') || $GLOBALS['user']->uid == 393) {
-    return false;
-  }
-
-  // проверить наличие в заказе купона на бесплатную доставку
-  $order_wr = entity_metadata_wrapper('commerce_order', $order);
-  if ($order_wr->commerce_coupons->value()) {
-    foreach ($order_wr->commerce_coupons as $coupon_wr) {
-      $discount = current($coupon_wr->commerce_discount_reference->value());
-      if (!empty($discount->name) && $discount->name == variable_get('free_shipping_discount_name', null)) {
-        $shipping_cost = 0;
-      }
+  if (arg(0) != 'checkout') {
+    // оставить самовывоз только для служесного пользования
+    if (user_has_role(PRODUCT_MANAGER_RID) && $GLOBALS['user']->uid != 393) {
+      return $rate;
     }
   }
 
-    $error = $message = '';
-    $shipping_cost = 0;
-
-    return array(
-        'amount' => $shipping_cost*100,
-        'currency_code' => $order_wr->commerce_order_total->currency_code->value(),
-        'data' => array(
-            'error' => $error,
-            'message' => $message,
-        ),
-    );
+  return false;
 }
 
 

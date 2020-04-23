@@ -661,6 +661,7 @@ $navbar-strada-toggle-border-color:       #ddd;
       .with-sidebar-first { padding-left: $grid-gutter-width*2; }
     }
     .content-title h2 { margin-top: 0; }
+  .page-checkout & { margin-top: $grid-gutter-width*6; }
 }
 
 .node-info {
@@ -1195,7 +1196,6 @@ $navbar-strada-toggle-border-color:       #ddd;
  * ----------------------------------- Checkout -
  */
 .commerce-checkout-form-checkout {
-    margin-top: $grid-gutter-width*6;
     h4 {
         font-weight: 700;
         margin: 40px 0 20px 0;

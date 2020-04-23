@@ -167,7 +167,6 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   // (commerce_payment проверяет и input, поэтому опция сохраняется)
   // добавляем commerce_shipping в валидацию при добавлении купона
   $form['commerce_coupon']['coupon_add']['#limit_validation_errors'][] = ['commerce_shipping'];
-  // todo проверить, обновляется ли список товаров, например при применении купона на подарок
   $form['commerce_coupon']['coupon_add']['#limit_validation_errors'][] = ['cart_contents'];
   // commerce_coupon не пишет причину отказа в применеии купона
   // костыль для вывода сообщения для неавторизованных пользователей
@@ -213,32 +212,40 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   $coupon_amount = commerce_helper_commerce_price_component_total_coupons($form_state['order'])['amount'];
   $total_amount = commerce_price_component_total($order_total)['amount'];
 
-  $shipping_service = $form['commerce_shipping']['shipping_service']['#default_value'];
-  $shipping_amount = $form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['amount'];
-  switch ($shipping_service) {
-    case 'dellin_shipping_service':
-      $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $form_state['order']->shipping_rates['dellin_shipping_service']);
-      $data = $line_item_wrapper->commerce_unit_price->data->value();
+  $shipping_amount = 0;
+  if (isset($form['commerce_shipping']['shipping_service']['#default_value'])) {
+    $shipping_service = $form['commerce_shipping']['shipping_service']['#default_value'];
+    $shipping_amount = $form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['amount'];
+    switch ($shipping_service) {
+      case 'dellin_shipping_service':
+        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $form_state['order']->shipping_rates['dellin_shipping_service']);
+        $data = $line_item_wrapper->commerce_unit_price->data->value();
 
-      foreach (commerce_dellin_get_options_list() as $option => $title) {
-        if (!empty($stored_service_details[$option])) $shipping_amount += $data[$option . '_amount'];
-      }
-      break;
-  }
-  $shipping_label = t($form['commerce_shipping']['shipping_rates']['#value'][$form['commerce_shipping']['shipping_service']['#default_value']]->line_item_label);
-  if (!empty($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors'])) {
-    $delivery_text = array_shift($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors']);
-  } else {
-    if ($shipping_amount) {
-      $delivery_text = commerce_currency_format($shipping_amount, 'RUB');
-      if ($reason_to_pay = ext_checkout_non_free_shipping($form_state['order'])) {
-        $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
-      }
-    } else {
-      $delivery_text = t('free', [], ['context' => 'Checkout delivery cost']);
+        foreach (commerce_dellin_get_options_list() as $option => $title) {
+          if (!empty($stored_service_details[$option])) {
+            $shipping_amount += $data[$option . '_amount'];
+          }
+        }
+        break;
     }
+    $shipping_label = str_replace('<br />', ' ', t($form['commerce_shipping']['shipping_rates']['#value'][$form['commerce_shipping']['shipping_service']['#default_value']]->line_item_label));
+    if (!empty($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors'])) {
+      $delivery_text = array_shift($form['commerce_shipping']['shipping_rates']['#value'][$shipping_service]->commerce_unit_price['und'][0]['data']['errors']);
+    }
+    else {
+      if ($shipping_amount) {
+        $delivery_text = commerce_currency_format($shipping_amount, 'RUB');
+        if ($reason_to_pay = ext_checkout_non_free_shipping($form_state['order'])) {
+          $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
+        }
+      }
+      else {
+        $delivery_text = t('free', [], ['context' => 'Checkout delivery cost']);
+      }
+    }
+  } else {
+    $form["commerce_shipping"]["message"]["#markup"] = '<div>Ищем способ доставить Вам посылку</div>';
   }
-
   $total_amount += $shipping_amount;
 
   $products_qty = commerce_line_items_quantity($order_wrapper->commerce_line_items, commerce_product_line_item_types());
@@ -255,7 +262,7 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
       ($discount_amount < 0 ? '<div class="cs-discount"><span class="label">Скидка</span><span class="value">' . commerce_currency_format($discount_amount, 'RUB') . '</span></div>' : '').
       ($coupon_amount < 0 ? '<div class="cs-discount"><span class="label">Промокод</span><span class="value">' . commerce_currency_format($coupon_amount, 'RUB') . '</span></div>' : '').
       '<div class="cs-weight"><span class="label">Вес</span><span class="value">' . $weight_text . '</span></div>' .
-      '<div class="cs-delivery"><span class="label">' . $shipping_label . '</span><span class="value">' . $delivery_text . '</span></div>' .
+      (empty($shipping_label) ? '' : '<div class="cs-delivery"><span class="label">' . $shipping_label . '</span><span class="value">' . $delivery_text . '</span></div>') .
       '<div class="cs-total"><span class="label">' . t('Total to pay') . '</span><span class="value">' . commerce_currency_format($total_amount, 'RUB') . '</span></div>' .
       '</div>',
   );
@@ -310,7 +317,8 @@ function ext_checkout_commerce_shipping_recalculate_services_submit($element, $f
   // при отсутствии создаётся профиль commerce_customer_shipping и его id заносится в $order->commerce_customer_shipping
   // но $order после этого не сохраняется в БД, а форма чекаута перед построением (и пересчётом доставки)
   // загружает заказ заново, затирая переменную $order->commerce_customer_shipping
-  if (isset($form_state['order'])) commerce_order_save($form_state['order']);
+  // todo закомментировано для проверки влияния сохранения заказа на несохранение бесплатного товара добавленного по купону
+//  if (isset($form_state['order'])) commerce_order_save($form_state['order']);
 }
 
 /**
@@ -319,7 +327,7 @@ function ext_checkout_commerce_shipping_recalculate_services_submit($element, $f
  */
 function ext_checkout_shipping_radios_alter($element, $form_state)
 {
-  if ($form_state['values']['commerce_shipping']['shipping_service']) {
+  if ($form_state["values"]["commerce_shipping"]["shipping_rates"] && $form_state['values']['commerce_shipping']['shipping_service']) {
     $radios_value = $form_state['values']['commerce_shipping']['shipping_service'];
     if (isset($element[$radios_value])) {
       $element[$radios_value]['#wrapper_attributes']['class'][] = 'active';

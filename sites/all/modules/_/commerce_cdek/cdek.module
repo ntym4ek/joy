@@ -47,92 +47,181 @@ function cdek_commerce_shipping_service_info()
  */
 function cdek_service_rate_order($shipping_service, $order)
 {
-    //подключаем файл с классом CalculatePriceDeliveryCdek
-    include_once("includes/CalculatePriceDeliveryCdek.php");
+  $rate = array(
+    'amount' => 0,
+    'currency_code' => 'RUB',
+    'data' => [],
+  );
 
-    $rate = array(
-        'amount' => 0,
-        'currency_code' => 'RUB',
-        'data' => array(),
-    );
-
-    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-
-    // Determine the shipping profile reference field name for the order.
-    $field_name = commerce_physical_order_shipping_field_name($order);
-    $shipping_profile = $order_wrapper->{$field_name}->value();
-
-    if (!empty($shipping_profile->field_data['und'][0]['value'])) {
-        $data = json_decode($shipping_profile->field_data['und'][0]['value'], true);
-        $data = empty($data['cdek']) ? [] : $data['cdek'];
-
-        $city = empty($data['city']) ? '' : $data['city'];
-        $courier = (int)(empty($data['courier']) ? false : true);
-        if ($city) {
-            $weight = commerce_physical_order_weight($order, 'kg')['weight'];
-            $volume = commerce_physical_order_volume($order, 'm')['volume'];
-            $amount = $order_wrapper->commerce_order_total->value()['amount']/100;
-
-            $cache_key = $city . $courier . $weight . $amount;
-            $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, variable_get('commerce_cdek_cache_timeout', 1)); // 86400 - день в кэше
-
-            if (!$cache) {
-                //создаём экземпляр объекта CalculatePriceDeliveryCdek
-                $calc = new CalculatePriceDeliveryCdek();
-
-                //Авторизация. Для получения логина/пароля (в т.ч. тестового) обратитесь к разработчикам СДЭК -->
-                $calc->setAuth('UBjaIOcwj8y2kC7zxZrXrgXLWZ9t35mq', '9t53FnSEEXLlP0fD25QVsaESMJA6SsAv');
-
-                //устанавливаем город-отправитель
-                $calc->setSenderCityId('415');
-                //устанавливаем город-получатель
-                $calc->setReceiverCityId($city);
-
-                //устанавливаем режим доставки (4 - склад-склад)
-                if (!empty($data['profiles'])) {
-                    if ($courier) {
-                        $calc->setTariffId($data['profiles']['courier']['tarif']);
-                    } else {
-                        $calc->setTariffId($data['profiles']['pickup']['tarif']);
-                    }
-                }
-
-                //добавляем места в отправление
-                $calc->addGoodsItemByVolume($weight, $volume);
-
-                if ($calc->calculate() === true) {
-                    $res = $calc->getResult();
-
-                    $rate['amount'] = $res['result']['price'] * 100;
-                    $rate['data']['delivery_time'] = $res['result']['deliveryPeriodMin'] . ($res['result']['deliveryPeriodMin'] == $res['result']['deliveryPeriodMax'] ? '' : '-' . $res['result']['deliveryPeriodMax']) . ' д.';
-                    $rate['data']['cdek'] = $data;
-
-                    $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
-                    if (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT > 0 && $products_amount_base >= CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT*100) {
-                        $rate['amount'] = 0;
-                    }
-
-                    // Cache these rates.
-                    commerce_shipping_rates_cache_set('cdek' . $cache_key, $order, $rate);
-
-                } else {
-                    $err = $calc->getError();
-                    if( isset($err['error']) && !empty($err) ) {
-                        foreach($err['error'] as $e) {
-                            $rate['data']['errors'][] = $e['text'];
-                        }
-                    }
-                }
-            } else {
-                $rate = $cache;
-            }
-        } else $rate['data']['errors'][] = 'ошибка на сервере СДЭК';
-    } else $rate['data']['errors'][] = 'пункт не выбран';
-
-
+  if (!ext_checkout_non_free_shipping($order)) {
     return $rate;
+  }
+
+  // при переходе на страницу оформления запрос на расчёт выполняется дважды:
+  // при первом построении формы и автонажатии кнопки Recalc
+  // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
+  if (arg(0) != 'checkout') {
+    $rates = &drupal_static(__FUNCTION__);
+    if (!$rates) {
+      $rate_request = cdek_build_rate_request($order);
+
+      if ($rate_request["receiver_zipcode"]) {
+        $cache_key = $rate_request["receiver_zipcode"] . $rate_request['weight'] . $rate_request['amount'];
+        //            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
+        // todo кеш не учитывает применение купона
+        //              $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400));
+        //            } else {
+        $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 1); // секунда в кэше
+        //            }
+
+        if (!$cache) {
+          $response = cdek_api_request($rate_request);
+
+          // поле с данными о доставке
+          $order_wr = entity_metadata_wrapper('commerce_order', $order);
+          $field_name = commerce_physical_order_shipping_field_name($order);
+          $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+
+          // если ошибка
+          if (isset($response["error"])) {
+            $rate['data']['errors'][] = $response["error"][0]["text"];
+            $field_data['cdek'] = [];
+          }
+          else {
+            // сохраняем стоимость доставки
+            if (empty($field_data['cdek'])) {
+              $field_data['cdek'] = [];
+            }
+            //            $field_data['cdek'] = [];
+            $field_data['cdek']['calc_backend'] = $response['result'];
+
+            $rate['amount'] = ceil($response['result']['price']) * 100;
+            $rate['data']['delivery_time'] = $response['result']['deliveryPeriodMax'];
+            if (!empty($field_data['cdek']['point']['address'])) {
+              $rate['data']['address'] = $field_data['cdek']['cityName'] . ', ' . $field_data['cdek']['point']['address'];
+            }
+
+            commerce_shipping_rates_cache_set('cdek' . $cache_key, $order, $rate);
+          }
+          $order_wr->{$field_name}->field_data = json_encode($field_data);
+          $order_wr->{$field_name}->save();
+        }
+        else {
+          $rate = $cache;
+        }
+      }
+      else {
+        $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+      }
+    }
+  }
+
+  // если доставка всё ещё равна нулю, то это ошибка
+  return ($rate['amount'] != 0 || isset($rate['data']['errors'])) ? $rate : false;
 }
 
+/**
+ * подготовить массив для запроса
+ */
+function cdek_build_rate_request($order)
+{
+  $order_wr = entity_metadata_wrapper('commerce_order', $order);
+
+  // Determine the shipping profile reference field name for the order.
+  $field_name = commerce_physical_order_shipping_field_name($order);
+  $shipping_profile = $order_wr->{$field_name}->value();
+
+  // базовые данные
+  $items = [];
+  $zipcode = $weight = $amount = $target_point = $order_weight = $tariff_id = $receiver_city_id = '';
+  if (isset($shipping_profile->field_data['und'][0]['value'])) {
+    $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+    $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
+    $order_weight = commerce_physical_order_weight($order, 'kg')['weight'];
+    $amount = $order_wr->commerce_order_total->value()['amount'] / 100;
+
+    // составить список товаров
+    foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
+      // Get the weight value of product line items.
+      if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
+        $weight = commerce_physical_product_line_item_weight($line_item_wr->value());
+        if (!empty($weight['weight'])) {
+          $weight['weight'] /= $line_item_wr->quantity->value();
+          $converted_weight = physical_weight_convert($weight, 'kg');
+          $dimensions = commerce_physical_product_line_item_dimensions($line_item_wr->value());
+          foreach ($dimensions as $dimensions_item) {
+            if (isset($dimensions_item['length'])) {
+              $converted_dimensions = physical_dimensions_convert($dimensions_item, 'cm');
+              $items[] = [
+                'weight' => $converted_weight['weight'],
+                'height' => $converted_dimensions['height'],
+                'width' => $converted_dimensions['width'],
+                'length' => $converted_dimensions['length'],
+              ];
+            }
+          }
+        }
+      }
+    }
+
+
+
+    // возможно пункт уже выбран, нужно получить данные о нём
+    if (!empty($data["cdek"]["point"]["id"])) {
+      $receiver_city_id = $data["cdek"]["city"];
+    }
+  }
+
+  // $calc->setAuth('UBjaIOcwj8y2kC7zxZrXrgXLWZ9t35mq', '9t53FnSEEXLlP0fD25QVsaESMJA6SsAv');
+  // $calc->setAuth('z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd', 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq'); тест
+  return [
+    'account' => 'z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd',
+    'pass' => 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq',
+    'sender_city_id' => 241,                                  // из Чепецка
+    'receiver_city_id' => $receiver_city_id,
+    'sender_zipcode' => '613040',                             // из Чепецка
+    'receiver_zipcode' => $zipcode,
+    'tariff_id' =>  136,                                      // устанавливаем режим доставки: склад-склад
+    'items' => $items,
+    'amount' => $amount,
+    'weight' => $order_weight,
+  ];
+}
+
+/**
+ * выполнить запрос стоимости
+ */
+function cdek_api_request($data)
+{
+  // Авторизация. Для получения логина/пароля (в т.ч. тестового) обратитесь к разработчикам СДЭК -->
+  include_once ('src/CdekSDK/CdekClient.php');
+  $client = new CdekClient();
+  $client->setAuth($data['account'], $data['pass']);
+
+
+  // id города установлен в случае его выбора в виджете
+  // то есть имеет приоритет
+  if ($data['receiver_city_id']) {
+      $client->setSenderCityId($data['sender_city_id']);
+      $client->setReceiverCityId($data['receiver_city_id']);
+  } else {
+    $client->setSenderCityPostCode($data['sender_zipcode']);
+    $client->setReceiverCityPostCode($data['receiver_zipcode']);
+  }
+
+  // выбираем тариф
+  $client->setTariffId($data['tariff_id']);
+  // добавляем места в отправление
+  foreach ($data['items'] as $item) {
+    $client->addGoodsItemBySize($item['weight'], $item['length'], $item['width'], $item['height']);
+  }
+
+  if ($client->calculate() === true) {
+    return $client->getResult();
+  }
+
+  return $client->getError();
+}
 
 /**
  * Allows modules to alter the options array generated to select a shipping
@@ -140,31 +229,23 @@ function cdek_service_rate_order($shipping_service, $order)
  */
 function cdek_commerce_shipping_service_rate_options_alter(&$options, $order)
 {
-    if (isset($order->shipping_rates['cdek_shipping_service'] )) {
-        $line_item = $order->shipping_rates['cdek_shipping_service'];
-        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-        $data = $line_item_wrapper->commerce_unit_price->data->value();
+  if (isset($order->shipping_rates['cdek_shipping_service'] )) {
+    $line_item = $order->shipping_rates['cdek_shipping_service'];
+    $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $data = $line_item_wr->commerce_unit_price->data->value();
 
-        $carrier_name = t($line_item->line_item_label);
-
-        $cost = '';
-        if (empty($data['errors'])) {
-
-            $currency_code = $line_item_wrapper->commerce_unit_price->currency_code->value();
-            $cost = $line_item_wrapper->commerce_unit_price->amount->value();
-            $delivery_time = 'Доставка: ' . $data['delivery_time'];
-            $message = $delivery_time;
-
-            $cost = $cost ? commerce_currency_format($cost, $currency_code) : t('free');
-        } elseif (!empty($data['errors'])) {
-            $message = 'До пункта выдачи или курьером';
-            $cost = array_shift($data['errors']);
-        }
-
-        $options['cdek_shipping_service'] = '<div class="carrier">' . $carrier_name . '</div>' .
-                                                '<div class="message">' . $message . '</div>' .
-                                                '<div class="cost">' . $cost . '</div>';
+    $message = $cost = '';
+    if (empty($data['errors'])) {
+      $cost = $line_item_wr->commerce_unit_price->amount->value();
+      $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
+    } else {
+      $message = implode('<br />', $data['errors']);
     }
+
+    $options['cdek_shipping_service'] = '<div class="carrier">Заберу в<br />СДЭК</div>' .
+      '<div class="message">' . $message . '</div>' .
+      '<div class="cost">' . $cost . '</div>';
+  }
 }
 
 
@@ -191,23 +272,35 @@ function cdek_service_details_form($pane_form, $pane_values, $checkout_pane, $or
     // выбор и ссылка на карту
     $method = '';
 
-    if (empty($data['cdek']['pvz']) && empty($data['cdek']['courier'])) $link = '<a href="#" id="cdek_link"><strong>Выбрать пункт выдачи на карте</strong></a>';
-    if (empty($data['cdek']['courier']) && !empty($data['cdek']['pvz'])) {
-        $method = $data['cdek']['cityName'] . ', ' . $data['cdek']['pvz']['address'] . ' (' . $data['cdek']['id'] . ')';
-        $link = '(<a href="#" id="cdek_link"><strong>изменить пункт выдачи или выбрать доставку курьером</strong></a>)';
-    }
-    if (!empty($data['cdek']['courier']) && empty($data['cdek']['pvz'])) {
-        $method = 'Курьером до двери';
-        $link = '(<a href="#"  id="cdek_link"><strong>получить в пункте выдачи</strong></a>' . ')';
-    }
+//    if (empty($data['cdek']['point']) && empty($data['cdek']['courier'])) $link = '<a href="#" id="cdek_link"><strong>Выбрать пункт выдачи на карте</strong></a>';
+//    if (empty($data['cdek']['courier']) && !empty($data['cdek']['pvz'])) {
+//        $method = $data['cdek']['cityName'] . ', ' . $data['cdek']['pvz']['address'] . ' (' . $data['cdek']['id'] . ')';
+//        $link = '(<a href="#" id="cdek_link"><strong>изменить пункт выдачи или выбрать доставку курьером</strong></a>)';
+//    }
+//    if (!empty($data['cdek']['courier']) && empty($data['cdek']['pvz'])) {
+//        $method = 'Курьером до двери';
+//        $link = '(<a href="#"  id="cdek_link"><strong>получить в пункте выдачи</strong></a>' . ')';
+//    }
+//
+//    // адрес пункта выдачи
+//    $pane_form['select'] = [
+//        '#markup' => '<div class="col-xs-12 form-item form-type-select form-group">' .
+//                        '<label class="control-label">Адрес пункта выдачи</label>' .
+//                        '<div><span class="cdek_addr">' . $method . '</span> ' . $link . '</div>' .
+//                    '</div>'
+//        ];
+  $pane_form['select'] = [
+    '#type' => 'item',
+    '#markup' => '' .
+      '<label class="control-label">Адрес пункта выдачи</label>' .
+      '<div><span class="cdek_addr">' . (empty($data['address']) ? '' : $data['address']) . '</span> ' .
+      (empty($data['address']) ?
+        '<a href="#" id="cdek_link"><strong>Выбрать пункт выдачи на карте</strong></a>'
+        : ' (' . '<a href="#"  id="cdek_link"><strong>изменить пункт выдачи</strong></a>' . ')') .
+      '</div>' .
+      ''
+  ];
 
-    // адрес пункта выдачи
-    $pane_form['select'] = [
-        '#markup' => '<div class="col-xs-12 form-item form-type-select form-group">' .
-                        '<label class="control-label">Адрес пункта выдачи</label>' .
-                        '<div><span class="cdek_addr">' . $method . '</span> ' . $link . '</div>' .
-                    '</div>'
-        ];
 
     if (!empty($data['cdek']['courier'])) {
         $pane_form['addr'] = [

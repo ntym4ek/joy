@@ -185,10 +185,10 @@ function popup_spinner_ajax_callback()
         $rand = rand(1, 100);
         if      ($rand <= 15)                $gift_id = 1;
         elseif  ($rand <= 45  && $rand > 15) $gift_id = 2;
-        elseif  ($rand <= 60  && $rand > 45) $gift_id = 3;
+        elseif  ($rand <= 60  && $rand > 45) $gift_id = 6;
         elseif  ($rand <= 85  && $rand > 60) $gift_id = 4;
         elseif  ($rand <= 90  && $rand > 85) $gift_id = 5;
-        elseif  ($rand <= 100 && $rand > 90) $gift_id = 6;
+        elseif  ($rand <= 100 && $rand > 90) $gift_id = 3;
     }
 
     $error = $gift_full_name = '';
@@ -219,10 +219,10 @@ function popup_spinner_ajax_callback()
 
         break;
       case '3':
-        $gift_text_1 = 'Вы выиграли купон на скидку 15%';
+        $gift_text_1 = 'Вы выиграли купон на скидку 10%';
         $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
-        $gift_name = variable_get('popup_spinner_coupon_15', '');
-        $gift_full_name = 'Cкидка 15%';
+        $gift_name = variable_get('popup_spinner_coupon_10', '');
+        $gift_full_name = 'Cкидка 10%';
         break;
       case '4':
         $gift_text_1 = 'Вы выиграли купон на подарок JOY "Клеща нет" 12 мл';
@@ -237,10 +237,22 @@ function popup_spinner_ajax_callback()
         $gift_full_name = 'Бесплатная доставка';
         break;
       case '6':
-        $gift_text_1 = 'Вы выиграли купон на скидку 30%';
-        $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
-        $gift_name = variable_get('popup_spinner_coupon_30', '');
-        $gift_full_name = 'Cкидка 30%';
+        $gift_text_1 = 'Вы выиграли бонусные баллы';
+        $gift_text_2 = 'Вы можете использовать баллы при оформлении заказа. 1 балл = 1 рубль.';
+        $gift_full_name = '200 баллов';
+        $gift_name = '200 баллов';
+
+        // Create the userpoints transaction.
+        $userpoints_params = [
+          'txn_id' => NULL,
+          'points' => 200,
+          'uid' => $uid,
+          'operation' => 'new_user_gift',
+          'tid' => variable_get('commerce_userpoints_discount_custom_default_termid', userpoints_get_default_tid()),
+          'display' => FALSE,
+          'status' => USERPOINTS_TXN_STATUS_APPROVED,
+        ];
+        userpoints_userpointsapi($userpoints_params);
         break;
     }
     $gift = [

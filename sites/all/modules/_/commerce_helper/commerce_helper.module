@@ -452,7 +452,8 @@ function commerce_helper_form_views_form_commerce_cart_form_submit($form, &$form
     $order = $form_state['order'];
     foreach ($form_state['line_items'] as $line_item) {
         $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
-        if ($line_item_wr->commerce_product->field_p_out_of_stock->value()) {
+        $product_node = _get_product_display_by_product_id($line_item_wr->commerce_product->product_id->value(), false);
+        if (!$product_node->status || $line_item_wr->commerce_product->field_p_out_of_stock->value()) {
             $order = commerce_cart_order_product_line_item_delete($order, $line_item->line_item_id, TRUE);
             $out_of_stock_found = true;
         }

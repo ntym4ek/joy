@@ -36,6 +36,8 @@
                         if (!$('.commerce-checkout-form-checkout .has-error').is('div')) {
                             updatePage(user_region);
                         }
+                    } else {
+                      Drupal.getCityByIp().done(onSelect);
                     }
                 });
 
@@ -87,11 +89,10 @@
                     }
 
                     // если сменили город, очистить поле с данными пункта выдачи при несовпадении
-                    if (data.boxberry) {
-                        if (!data.region || data.region.data.kladr_id != suggestion.data.kladr_id) {
-                            delete data.boxberry;
-                            $(".field-name-field-data textarea").val(JSON.stringify(data));
-                        }
+                    if (!data.region || data.region.data.kladr_id != suggestion.data.kladr_id) {
+                        delete data.boxberry;
+                        delete data.cdek;
+                        $(".field-name-field-data textarea").val(JSON.stringify(data));
                     }
 
                     // без индекса адрес не принимаем

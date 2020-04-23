@@ -83,7 +83,7 @@
                 <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
                 <div class="topbar-phone" style="color:red;">
-                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank" style="color:#e53123;">7 (912) 701-70-74</a>
+                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank" style="color:#e53123;"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a>
                 </div>
 
                 <div class="topbar-menu hidden-sm">
@@ -106,7 +106,7 @@
             <div class="navbar-header">
                 <div class="navbar-logo">
                     <a class="logo" href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>">
-                        <img class="img-responsive" src="/sites/all/themes/strada/logo.png" alt="<?php print t('Home'); ?>" />
+                        <img class="img-responsive" src="/sites/all/themes/strada/logo.png" alt="<?php print $site_name; ?>" />
                     </a>
                 </div>
 
@@ -159,7 +159,7 @@
     <div class="line-2-1 hidden-sm hidden-md hidden-lg">
         <div class="topbar-phone">
             <div><a href="tel:88005502885">8-800-550-28-85</a></div>
-            <div>WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank">7 (912) 701-70-74</a></div>
+            <div>WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a></div>
         </div>
     </div>
 

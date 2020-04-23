@@ -26,13 +26,13 @@ function commerce_helper_settings($form, &$form_state)
         '#required' => TRUE,
     );
 
-    $form['courier_delivery_cost'] = array(
-        '#type' => 'textfield',
-        '#title' => 'Стоимость доставки курьером',
-        '#description' => 'Сумма прибавляется к стоимости доставки до ПВЗ. 1 - стоимость будет браться с сервера Boxberry',
-        '#default_value' => variable_get('courier_delivery_cost', 150),
-        '#required' => TRUE,
-    );
+//    $form['courier_delivery_cost'] = array(
+//        '#type' => 'textfield',
+//        '#title' => 'Стоимость доставки курьером',
+//        '#description' => 'Сумма прибавляется к стоимости доставки до ПВЗ. 1 - стоимость будет браться с сервера Boxberry',
+//        '#default_value' => variable_get('courier_delivery_cost', 150),
+//        '#required' => TRUE,
+//    );
 
 
     // получить список регионов

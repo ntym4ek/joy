@@ -29,17 +29,11 @@ function popup_spinner_settings()
     '#required' => TRUE,
     '#default_value' => variable_get('popup_spinner_coupon_free_shipping', ''),
   );
-  $form['popup_spinner_coupon_15'] = array(
+  $form['popup_spinner_coupon_10'] = array(
     '#type' => 'textfield',
-    '#title' => 'Код купона на 15% скидку',
+    '#title' => 'Код купона на 10% скидку',
     '#required' => TRUE,
-    '#default_value' => variable_get('popup_spinner_coupon_15', ''),
-  );
-  $form['popup_spinner_coupon_30'] = array(
-    '#type' => 'textfield',
-    '#title' => 'Код купона на 30% скидку',
-    '#required' => TRUE,
-    '#default_value' => variable_get('popup_spinner_coupon_30', ''),
+    '#default_value' => variable_get('popup_spinner_coupon_10', ''),
   );
   $form['popup_spinner_test_gift'] = array(
     '#type' => 'textfield',

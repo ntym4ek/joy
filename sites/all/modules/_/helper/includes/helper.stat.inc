@@ -105,7 +105,7 @@ function helper_stat_carts_form($form, $form_state)
   $query->condition('co.status', ['cart', 'checkout_checkout', 'wishlist'], 'NOT IN');
   $orders_count = $query->countQuery()->execute()->fetchField();
 
-  // todo вывести результаты
+  // вывести результаты
   $form['container2'] = [
     '#type' => 'container',
   ];

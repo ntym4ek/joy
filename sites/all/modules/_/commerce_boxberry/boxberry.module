@@ -26,7 +26,7 @@ function boxberry_commerce_shipping_service_info()
 {
   $shipping_services['boxberry_shipping_service'] = array(
     'title' => t('Boxberry shipping service'),
-    'display_title' => 'Пункт выдачи',
+    'display_title' => 'Boxberry',
     'shipping_method' => 'boxberry_shipping_method',
     'price_component' => 'shipping',
     'weight' => 1,
@@ -53,82 +53,84 @@ function boxberry_service_rate_order($shipping_service, $order)
         'data' => [],
     );
 
+  if (!ext_checkout_non_free_shipping($order)) {
+    return $rate;
+  }
+
+  // при переходе на страницу оформления запрос на расчёт выполняется дважды:
+  // при первом построении формы и автонажатии кнопки Recalc
+  // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
+  if (arg(0) != 'checkout') {
     $rates = &drupal_static(__FUNCTION__);
     if (!$rates) {
-        $rate_request = boxberry_build_rate_request($order);
+      $rate_request = boxberry_build_rate_request($order);
 
-        if ($rate_request['zipcode']) {
-            $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
-//            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
-              // todo кеш не учитывает применение купона
-//              $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400));
-//            } else {
-                $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // секунда в кэше
-//            }
+      if ($rate_request['zipcode']) {
+        $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
+        //            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
+        // todo кеш не учитывает применение купона
+        //              $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400));
+        //            } else {
+        $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // секунда в кэше
+        //            }
 
-            if (!$cache) {
-                // при переходе на страницу оформления запрос на расчёт выполняется дважды:
-                // при первом построении формы и автонажатии кнопки Recalc
-                // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
-                if (arg(0) != 'checkout') {
+        if (!$cache) {
+          $response = boxberry_api_request($rate_request);
 
-                    $response = boxberry_api_request($rate_request);
+          // поле с данными о доставке
+          $order_wr = entity_metadata_wrapper('commerce_order', $order);
+          $field_name = commerce_physical_order_shipping_field_name($order);
+          $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
-                    if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
-                        $rate['data']['errors'][] = $response['cost_data'][0]['err'];
-                    }
-                    elseif ($response["cost_data"]["price_base"] == 0) {
-//                      $rate['data']['errors'][] = 'Пунктов выдачи не найдено';
-                      return false;
-                    }
-                    else {
-                        // записать в field_data данные запроса
-                        $order_wr = entity_metadata_wrapper('commerce_order', $order);
-                        $field_name = commerce_physical_order_shipping_field_name($order);
-
-                        // сохраняем стоимость доставки
-                        $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
-                        if (empty($field_data['boxberry'])) $field_data['boxberry'] = [];
-                        $field_data['boxberry'] = array_merge($field_data['boxberry'], $response);
-                        $order_wr->{$field_name}->field_data = json_encode($field_data);
-                        $order_wr->{$field_name}->save();
-
-                        $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
-                        $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
-                        if (!empty($field_data['boxberry']['point_data']['address'])) {
-                            $rate['data']['address'] = $field_data['boxberry']['point_data']['address'];
-                        }
-
-                        if (!ext_checkout_non_free_shipping($order)) {
-                            $rate['amount'] = 0;
-                        } else {
-                            // для Владивостока и многих других почему-то выдаёт нулевую стоимость
-                            if ($rate['amount'] == 0) {
-//                                $rate['data']['errors'][] = 'ошибка при расчёте стоимости';
-                                return false;
-                            }
-                        }
-
-                        // Cache these rates.
-                        commerce_shipping_rates_cache_set('boxberry' . $cache_key, $order, $rate);
-                    }
-                } else {
-//                    $rate['data']['errors'][] = 'выполняется расчёт...';
-                    return false;
-                }
+          // если пустой ответ или ошибка
+          if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
+            $rate['data']['errors'][] = $response['cost_data'][0]['err'];
+            $field_data['boxberry'] = [];
+          }
+          // если стомость нулевая
+          elseif ($response["cost_data"]["price_base"] == 0) {
+            $field_data['boxberry'] = [];
+            //                      $rate['data']['errors'][] = 'Пунктов выдачи не найдено';
+            return FALSE;
+          }
+          // расчёт выполнен
+          else {
+            // сохраняем стоимость доставки
+            if (empty($field_data['boxberry'])) {
+              $field_data['boxberry'] = [];
             }
-            else {
-                $rate = $cache;
+            $field_data['boxberry'] = array_merge($field_data['boxberry'], $response);
+
+            $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
+            $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
+            if (!empty($field_data['boxberry']['point_data']['address'])) {
+              $rate['data']['address'] = $field_data['boxberry']['point_data']['address'];
             }
-        } else {
-            $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+
+            // Cache these rates.
+            commerce_shipping_rates_cache_set('boxberry' . $cache_key, $order, $rate);
+          }
+
+          $order_wr->{$field_name}->field_data = json_encode($field_data);
+          $order_wr->{$field_name}->save();
         }
+        else {
+          $rate = $cache;
+        }
+      }
+      else {
+        $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+      }
     }
+  }
 
-
-    return $rate;
+  // если доставка всё ещё равна нулю, то это ошибка
+  return ($rate['amount'] != 0 || isset($rate['data']['errors'])) ? $rate : false;
 }
 
+/**
+ * подготовить массив для запроса
+ */
 function boxberry_build_rate_request($order)
 {
     $order_wr = entity_metadata_wrapper('commerce_order', $order);
@@ -149,16 +151,6 @@ function boxberry_build_rate_request($order)
         $target_point = empty($data['region']['data']['boxberry_id']) ? NULL : $data['region']['data']['boxberry_id'];
         if (!empty($data['boxberry'])) {
             $target_point = empty($data['boxberry']['point']['id']) ? '' : $data['boxberry']['point']['id'];
-
-            // удаление старых неактуальных данных, занесенных Сдэком в старом формате
-            if (isset($data['profiles'])) {
-                $shipping_profile_wr = $order_wr->{$field_name};
-                $shipping_profile_wr->field_data->set(NULL);
-                $shipping_profile_wr->save();
-
-                $rate['data']['errors'][] = 'выбрать пункт';
-                return $rate;
-            }
         }
     }
 
@@ -172,6 +164,9 @@ function boxberry_build_rate_request($order)
     return $request;
 }
 
+/**
+ * выполнить запрос стоимости
+ */
 function boxberry_api_request($data)
 {
     // стоимость доставки
@@ -223,7 +218,7 @@ function boxberry_commerce_shipping_service_rate_options_alter(&$options, $order
             $message = implode('<br />', $data['errors']);
         }
 
-        $options['boxberry_shipping_service'] = '<div class="carrier">Заберу<br />в пункте выдачи</div>' .
+        $options['boxberry_shipping_service'] = '<div class="carrier">Заберу в<br />Boxberry</div>' .
                                                 '<div class="message">' . $message . '</div>' .
                                                 '<div class="cost">' . $cost . '</div>';
     }

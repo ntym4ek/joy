@@ -27,6 +27,12 @@ function helper_settings($form, &$form_state)
         '#default_value' => variable_get('manager_phone', '8-912-701-70-74'),
         '#required' => TRUE,
     );
+    $form['main']['manager_whatsapp'] = array(
+        '#type' => 'textfield',
+        '#title' => 'WhatsApp',
+        '#default_value' => variable_get('manager_whatsapp', '8-922-910-99-40'),
+        '#required' => TRUE,
+    );
     $form['main']['support_email'] = array(
         '#type' => 'textfield',
         '#title' => 'Электропочта',

@@ -161,71 +161,81 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
         'data' => array(),
     );
 
+  if (!ext_checkout_non_free_shipping($order)) {
+    return $rate;
+  }
+  // при переходе на страницу оформления запрос на расчёт выполняется дважды:
+  // при первом построении формы и автонажатии кнопки Recalc
+  // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
+  if (arg(0) != 'checkout') {
     $rates = &drupal_static(__FUNCTION__);
     if (!$rates) {
 
-        // Build the rate request for the current order.
-        module_load_include('inc', 'commerce_russianpost', 'includes/commerce_russianpost.rates');
-        $rate_request = commerce_russianpost_build_rate_request($order);
+      // Build the rate request for the current order.
+      module_load_include('inc', 'commerce_russianpost', 'includes/commerce_russianpost.rates');
+      $rate_request = commerce_russianpost_build_rate_request($order);
 
-        // если запрос сформирован
-        if (!empty($rate_request['postal-code']) && !empty($rate_request['weight'])) {
-            // поднять из кэша расчёт для этого Индекса-Суммы-Веса
-            $cache_key = $rate_request['postal-code'] . $rate_request['content-value'] . $rate_request['weight'];
-//            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
-              // todo кеш не учитывает применение купона
-//              $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, variable_get('commerce_russianpost_cache_timeout', 600));
-//            } else {
-                $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, 1);
-//            }
+      // если запрос сформирован
+      if (!empty($rate_request['postal-code']) && !empty($rate_request['weight'])) {
+        // поднять из кэша расчёт для этого Индекса-Суммы-Веса
+        $cache_key = $rate_request['postal-code'] . $rate_request['content-value'] . $rate_request['weight'];
+        //            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
+        // todo кеш не учитывает применение купона
+        //              $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, variable_get('commerce_russianpost_cache_timeout', 600));
+        //            } else {
+        $cache = commerce_shipping_rates_cache_get('russianpost' . $cache_key, $order, 1);
+        //            }
 
-            if (!$cache) {
-                // при переходе на страницу оформления запрос на расчёт выполняется дважды
-                // при первом построении формы и автонажатии кнопки Recalc
-                // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
-                if (arg(0) != 'checkout') {
-                    $rates = [];
-                    $response = commerce_russianpost_api_request($rate_request, t('Requesting shipping rates for package in Order @order_number', ['@order_number' => $order->order_number]));
+        if (!$cache) {
+          $rates = [];
+          $response = commerce_russianpost_api_request($rate_request, t('Requesting shipping rates for package in Order @order_number', ['@order_number' => $order->order_number]));
 
-                    if ($response) {
-                        if (empty($response['services']['message']['error'])) {
-                            foreach (commerce_russianpost_parse_rate_response($response['services']) as $service_name => $rate) {
-                                if (!ext_checkout_non_free_shipping($order)) {
-                                    $rate['amount'] = 0;
-                                }
-                                $rate['amount'] = ceil($rate['amount'] / 100) * 100;
-                                $rates[$service_name] = $rate;
-                            }
-                        }
-                        else {
-                            foreach (commerce_russianpost_load_enabled_services() as $service_name => $service) {
-                              $message = empty($response["services"]["message"]["message"]) ? t($response['services']['message']['error']) : t($response["services"]["message"]["message"]);
-                              $rates[$service_name] = [
-                                    'amount' => 0,
-                                    'currency_code' => '',
-                                    'data' => [
-                                        'errors' => [$message],
-                                    ],
-                                ];
-                            }
-                        }
-
-                        commerce_shipping_rates_cache_set('russianpost' . $cache_key, $order, $rates);
-                    }
-                } else {
-                    $rate['data']['errors'][] = 'выполняется расчёт...';
-                }
-            } else {
-                $rates = $cache;
+          if ($response) {
+            if (empty($response['services']['message']['error'])) {
+              foreach (commerce_russianpost_parse_rate_response($response['services']) as $service_name => $rate) {
+                $rate['amount'] = ceil($rate['amount'] / 100) * 100;
+                $rates[$service_name] = $rate;
+              }
             }
-        } else {
-            if (empty($rate_request['postal-code'])) $rate['data']['errors'][] = 'выберите населенный пункт из списка';
-            if (empty($rate_request['weight'])) $rate['data']['errors'][] = 'Расчёт не выполнен, так не удалось определить вес.';
+            else {
+              foreach (commerce_russianpost_load_enabled_services() as $service_name => $service) {
+                $message = empty($response["services"]["message"]["message"]) ? t($response['services']['message']['error']) : t($response["services"]["message"]["message"]);
+                $rates[$service_name] = [
+                  'amount' => 0,
+                  'currency_code' => '',
+                  'data' => [
+                    'errors' => [$message],
+                  ],
+                ];
+              }
+            }
+
+            commerce_shipping_rates_cache_set('russianpost' . $cache_key, $order, $rates);
+          }
+
         }
+        else {
+          $rates = $cache;
+        }
+      }
+      else {
+        if (empty($rate_request['postal-code'])) {
+          $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+        }
+        if (empty($rate_request['weight'])) {
+          $rate['data']['errors'][] = 'Расчёт не выполнен, так не удалось определить вес.';
+        }
+      }
     }
 
+    // находим выбранный пользователем расчёт
+    if (isset($rates[$shipping_service['name']])) {
+      $rate = $rates[$shipping_service['name']];
+    }
+  }
 
-    return isset($rates[$shipping_service['name']]) ? $rates[$shipping_service['name']] : $rate;
+  // если доставка всё ещё равна нулю, то это ошибка
+  return ($rate['amount'] != 0 || isset($rate['data']['errors'])) ? $rate : false;
 }
 
 /**

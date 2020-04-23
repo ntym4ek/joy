@@ -51,11 +51,12 @@
                         path: Drupal.settings.basePath + 'sites/all/modules/_/commerce_cdek/widget/scripts/',
                         country: 'Россия',
                         defaultCity: city,
-                        cityFrom: 'Киров',
+                        cityFrom: 'Кирово-Чепецк',
                         link: containerId,
                         hidedress: true,
                         hidecash: true,
-                        // hidedelt: true,
+                        hidedelt: true,
+                        region: true,
                         goods: [{
                             length: 1,
                             width: 1,
@@ -63,7 +64,6 @@
                             weight: order_weight
                         }],
                         onChoose: onChoose,
-                        onChooseProfile: onChooseProfile,
                         onCalculate: onCalculate
                     });
 
@@ -72,44 +72,33 @@
                 });
             });
 
-
+            // сохранить новыe параметры расчёта
             function onCalculate(result) {
-                // при выборе нового города, сохранить новый параметры расчёта
-                $(".field-name-field-data textarea").val(JSON.stringify(result));
+              var data = JSON.parse($(".field-name-field-data textarea").val());
+              if (!data.cdek) data.cdek = {};
+              $.extend(data.cdek, result);
+              $(".field-name-field-data textarea").val(JSON.stringify(data));
             }
 
+            // сохранить выбранный пункт
             function onChoose(result) {
-                $(".cdek_addr").html(result.cityName + ', ' + result.PVZ.Address + " (id " + result.id + ")");
+              var data = JSON.parse($(".field-name-field-data textarea").val());
+              if (!data.cdek) data.cdek = {};
+              $.extend(data.cdek, {
+                city: result.city,
+                price: result.price,
+                cityName: result.cityName,
+                point: {
+                  id: result.id,
+                  address: result.PVZ.Address
+                },
+              });
+              $(".field-name-field-data textarea").val(JSON.stringify(data));
 
-                var data = {};
-                try { data = JSON.parse($(".field-name-field-data textarea").val()); }
-                catch(error) {}
-                data.cdek = {
-                        city: result.city,
-                        cityName: result.cityName,
-                        pvz: {address: result.PVZ.Address},
-                        id: result.id
-                    };
-                $(".field-name-field-data textarea").val(JSON.stringify(data));
-
-                $('#forpvz').dialog('close');
-                $("[id^='edit-commerce-shipping-recalc']").click();
+              $(".cdek_addr").html(result.cityName + ', ' + result.PVZ.Address);
+              $('#forpvz').dialog('close');
+              $("[id^='edit-commerce-shipping-recalc']").click();
             }
-
-            function onChooseProfile(result) {
-                // при выборе курьера
-                $(".cdek_addr_show").html('Курьером до двери');
-                var storage = JSON.parse($(".field-name-field-data textarea").val());
-                $.extend(storage, {
-                    courier: true,
-                });
-                $(".field-name-field-data textarea").val(JSON.stringify(storage));
-                $('#forpvz').dialog('close');
-                $("[id^='edit-commerce-shipping-recalc']").click();
-            }
-
-
-
         }
     }
 

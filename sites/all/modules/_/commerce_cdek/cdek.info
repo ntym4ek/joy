@@ -1,8 +1,8 @@
 name = Доставка СДЭК
 description = Courier delivery
 package = Commerce (shipping)
-dependencies[] = commerce
-dependencies[] = commerce_shipping
 core = 7.x
 
-
+dependencies[] = commerce
+dependencies[] = commerce_shipping
+dependencies[] = xautoload (>= 7.x-5.0)

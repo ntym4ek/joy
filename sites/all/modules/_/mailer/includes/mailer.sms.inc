@@ -170,7 +170,7 @@ function mailer_send_sms($event, $params)
 
     switch ($event) {
         case 'manual':
-          $text = 'JOY-MAGAZIN. Код подтверждения: ' . $params['message'];
+          $text = 'JOY-MAGAZIN. ' . $params['message'];
           $result = mailer_process_send_sms($phone, $text, $event);
           break;
 
