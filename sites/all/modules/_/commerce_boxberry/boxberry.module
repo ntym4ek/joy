@@ -29,7 +29,7 @@ function boxberry_commerce_shipping_service_info()
     'display_title' => 'Boxberry',
     'shipping_method' => 'boxberry_shipping_method',
     'price_component' => 'shipping',
-    'weight' => 1,
+    'weight' => 2,
     'callbacks' => array(
       'rate' => 'boxberry_service_rate_order',
       'details_form' => 'boxberry_service_details_form',

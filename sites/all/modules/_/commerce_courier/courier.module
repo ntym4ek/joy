@@ -29,7 +29,7 @@ function courier_commerce_shipping_service_info()
     'display_title' => t('Courier'),
     'shipping_method' => 'courier_shipping_method',
     'price_component' => 'shipping',
-    'weight' => 2,
+    'weight' => 10,
     'callbacks' => array(
       'rate' => 'courier_service_rate_order',
       'details_form' => 'courier_service_details_form',

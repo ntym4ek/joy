@@ -29,7 +29,7 @@ function cdek_commerce_shipping_service_info()
     'display_title' => t('СДЭК'),
     'shipping_method' => 'cdek_shipping_method',
     'price_component' => 'cdek',
-    'weight' => 1,
+    'weight' => 5,
     'callbacks' => array(
       'rate' => 'cdek_service_rate_order',
       'details_form' => 'cdek_service_details_form',
