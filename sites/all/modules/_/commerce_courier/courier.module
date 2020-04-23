@@ -121,7 +121,7 @@ function courier_commerce_shipping_service_rate_options_alter(&$options, $order)
           $cost = $line_item_wr->commerce_unit_price->amount->value();
           $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
         } else {
-            $message = implode('<br />', $data['errors']);
+          $message = 'Ошибка расчёта: ' . drupal_strtolower(implode(', ', $data['errors']));
         }
 
         $options['courier_shipping_service'] =  '<div class="carrier">Привезёт<br />курьер</div>' .

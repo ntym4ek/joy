@@ -140,7 +140,7 @@ function commerce_russianpost_commerce_shipping_service_rate_options_alter(&$opt
             $cost = $line_item_wr->commerce_unit_price->amount->value();
             $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
         } else {
-            $message = implode('<br />', $data['errors']);
+          $message = '<span class="text-danger">' . 'Ошибка расчёта: ' . drupal_strtolower(implode(', ', $data['errors'])) . '</span>';
         }
 
         $options['rp_cennayaposylka'] =   '<div class="carrier">Заберу<br />на почте</div>' .
@@ -176,7 +176,7 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
       $rate_request = commerce_russianpost_build_rate_request($order);
 
       // если запрос сформирован
-      if (!empty($rate_request['postal-code']) && !empty($rate_request['weight'])) {
+      if (empty($rate_request["errors"])) {
         // поднять из кэша расчёт для этого Индекса-Суммы-Веса
         $cache_key = $rate_request['postal-code'] . $rate_request['content-value'] . $rate_request['weight'];
         //            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
@@ -219,13 +219,16 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
         }
       }
       else {
-        if (empty($rate_request['postal-code'])) {
-          $rate['data']['errors'][] = 'выберите населенный пункт из списка';
-        }
-        if (empty($rate_request['weight'])) {
-          $rate['data']['errors'][] = 'Расчёт не выполнен, так не удалось определить вес.';
-        }
+        $rate['data']['errors'] = $rate_request['errors'];
       }
+//      else {
+//        if (empty($rate_request['postal-code'])) {
+//          $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+//        }
+//        if (empty($rate_request['weight'])) {
+//          $rate['data']['errors'][] = 'Расчёт не выполнен, так не удалось определить вес.';
+//        }
+//      }
     }
 
     // находим выбранный пользователем расчёт

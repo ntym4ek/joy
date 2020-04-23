@@ -58,9 +58,9 @@ function cdek_service_rate_order($shipping_service, $order)
   }
 
   // todo для проверки только манагерам
-  if (!user_has_role(PRODUCT_MANAGER_RID)) {
-    return false;
-  }
+//  if (!user_has_role(PRODUCT_MANAGER_RID)) {
+  ////    return false;
+  ////  }
 
   // при переходе на страницу оформления запрос на расчёт выполняется дважды:
   // при первом построении формы и автонажатии кнопки Recalc
@@ -70,7 +70,12 @@ function cdek_service_rate_order($shipping_service, $order)
     if (!$rates) {
       $rate_request = cdek_build_rate_request($order);
 
-      if ($rate_request["receiver_zipcode"]) {
+      // поле с данными о доставке
+      $order_wr = entity_metadata_wrapper('commerce_order', $order);
+      $field_name = commerce_physical_order_shipping_field_name($order);
+      $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+
+      if (empty($rate_request["errors"])) {
         $cache_key = $rate_request["receiver_zipcode"] . $rate_request['weight'] . $rate_request['amount'];
         //            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
         // todo кеш не учитывает применение купона
@@ -82,11 +87,6 @@ function cdek_service_rate_order($shipping_service, $order)
         if (!$cache) {
           $response = cdek_api_request($rate_request);
 
-          // поле с данными о доставке
-          $order_wr = entity_metadata_wrapper('commerce_order', $order);
-          $field_name = commerce_physical_order_shipping_field_name($order);
-          $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
-
           // если ошибка
           if (isset($response["error"])) {
             $rate['data']['errors'][] = $response["error"][0]["text"];
@@ -97,7 +97,6 @@ function cdek_service_rate_order($shipping_service, $order)
             if (empty($field_data['cdek'])) {
               $field_data['cdek'] = [];
             }
-            //            $field_data['cdek'] = [];
             $field_data['cdek']['calc_backend'] = $response['result'];
 
             $rate['amount'] = ceil($response['result']['price']) * 100;
@@ -108,16 +107,18 @@ function cdek_service_rate_order($shipping_service, $order)
 
             commerce_shipping_rates_cache_set('cdek' . $cache_key, $order, $rate);
           }
-          $order_wr->{$field_name}->field_data = json_encode($field_data);
-          $order_wr->{$field_name}->save();
         }
         else {
           $rate = $cache;
         }
       }
       else {
-        $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+        $rate['data']['errors'] = $rate_request['errors'];
+        $field_data['cdek'] = [];
       }
+
+      $order_wr->{$field_name}->field_data = json_encode($field_data);
+      $order_wr->{$field_name}->save();
     }
   }
 
@@ -130,6 +131,7 @@ function cdek_service_rate_order($shipping_service, $order)
  */
 function cdek_build_rate_request($order)
 {
+  $request = [];
   $order_wr = entity_metadata_wrapper('commerce_order', $order);
 
   // Determine the shipping profile reference field name for the order.
@@ -141,56 +143,84 @@ function cdek_build_rate_request($order)
   $zipcode = $weight = $amount = $target_point = $order_weight = $tariff_id = $receiver_city_id = '';
   if (isset($shipping_profile->field_data['und'][0]['value'])) {
     $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
-    $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
+    if (empty($data['region']['data']['postal_code'])) {
+      $request['errors']['zipcode'] = 'Не задан индекс';
+    } else {
+      $zipcode = $data['region']['data']['postal_code'];
+    }
     $order_weight = commerce_physical_order_weight($order, 'kg')['weight'];
     $amount = $order_wr->commerce_order_total->value()['amount'] / 100;
 
-    // составить список товаров
-    foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
-      // Get the weight value of product line items.
-      if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
-        $weight = commerce_physical_product_line_item_weight($line_item_wr->value());
-        if (!empty($weight['weight'])) {
-          $weight['weight'] /= $line_item_wr->quantity->value();
-          $converted_weight = physical_weight_convert($weight, 'kg');
-          $dimensions = commerce_physical_product_line_item_dimensions($line_item_wr->value());
-          foreach ($dimensions as $dimensions_item) {
-            if (isset($dimensions_item['length'])) {
-              $converted_dimensions = physical_dimensions_convert($dimensions_item, 'cm');
-              $items[] = [
-                'weight' => $converted_weight['weight'],
-                'height' => $converted_dimensions['height'],
-                'width' => $converted_dimensions['width'],
-                'length' => $converted_dimensions['length'],
-              ];
-            }
-          }
-        }
+    $check = ext_order_check_product_parameters($order);
+    if ($check['weight']['weight'] > 100) {
+      $request['errors']['weight'] = 'Вес превышает 100 кг';
+    }
+    elseif (empty($check['errors'])) {
+      foreach ($check['products'] as $product) {
+        $weight = physical_weight_convert($product['weight'], 'kg');
+        $dimentions = physical_dimensions_convert($product['dimentions'], 'cm');
+        $items[] = [
+          'weight' => $weight['weight'],
+          'height' => $dimentions['height'],
+          'width' => $dimentions['width'],
+          'length' => $dimentions['length'],
+        ];
       }
+    } else {
+      $request['errors'] = $check['errors'];
     }
 
-
+    // составить список товаров
+//    foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
+//      // Get the weight value of product line items.
+//      if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
+//        $weight = commerce_physical_product_line_item_weight($line_item_wr->value());
+//        if (!empty($weight['weight'])) {
+//          $weight['weight'] /= $line_item_wr->quantity->value();
+//          $converted_weight = physical_weight_convert($weight, 'kg');
+//          $dimensions = commerce_physical_product_line_item_dimensions($line_item_wr->value());
+//          foreach ($dimensions as $dimensions_item) {
+//            if (empty($dimensions_item['length']) || empty($dimensions_item['height']) || empty($dimensions_item['width'])) {
+//              $request['errors']['dimentions'] = 'Не заданы размеры';
+//            } else {
+//              $converted_dimensions = physical_dimensions_convert($dimensions_item, 'cm');
+//              $items[] = [
+//                'weight' => $converted_weight['weight'],
+//                'height' => $converted_dimensions['height'],
+//                'width' => $converted_dimensions['width'],
+//                'length' => $converted_dimensions['length'],
+//              ];
+//            }
+//          }
+//        } else {
+//          $request['errors']['weight'] = 'Не задан вес товара';
+//          break;
+//        }
+//      }
+//    }
 
     // возможно пункт уже выбран, нужно получить данные о нём
     if (!empty($data["cdek"]["point"]["id"])) {
       $receiver_city_id = $data["cdek"]["city"];
     }
+
+    // $calc->setAuth('UBjaIOcwj8y2kC7zxZrXrgXLWZ9t35mq', '9t53FnSEEXLlP0fD25QVsaESMJA6SsAv');
+    // $calc->setAuth('z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd', 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq'); тест
+    $request += [
+      'account' => 'z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd',
+      'pass' => 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq',
+      'sender_city_id' => 241,                                  // из Чепецка
+      'receiver_city_id' => $receiver_city_id,
+      'sender_zipcode' => '613040',                             // из Чепецка
+      'receiver_zipcode' => $zipcode,
+      'tariff_id' =>  136,                                      // устанавливаем режим доставки: склад-склад
+      'items' => $items,
+      'amount' => $amount,
+      'weight' => $order_weight,
+    ];
   }
 
-  // $calc->setAuth('UBjaIOcwj8y2kC7zxZrXrgXLWZ9t35mq', '9t53FnSEEXLlP0fD25QVsaESMJA6SsAv');
-  // $calc->setAuth('z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd', 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq'); тест
-  return [
-    'account' => 'z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd',
-    'pass' => 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq',
-    'sender_city_id' => 241,                                  // из Чепецка
-    'receiver_city_id' => $receiver_city_id,
-    'sender_zipcode' => '613040',                             // из Чепецка
-    'receiver_zipcode' => $zipcode,
-    'tariff_id' =>  136,                                      // устанавливаем режим доставки: склад-склад
-    'items' => $items,
-    'amount' => $amount,
-    'weight' => $order_weight,
-  ];
+  return $request;
 }
 
 /**
@@ -244,7 +274,7 @@ function cdek_commerce_shipping_service_rate_options_alter(&$options, $order)
       $cost = $line_item_wr->commerce_unit_price->amount->value();
       $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
     } else {
-      $message = implode('<br />', $data['errors']);
+      $message = '<span class="text-danger">' . 'Ошибка расчёта: ' . drupal_strtolower(implode(', ', $data['errors'])) . '</span>';
     }
 
     $options['cdek_shipping_service'] = '<div class="carrier">Заберу в<br />СДЭК</div>' .

@@ -21,7 +21,7 @@ function commerce_russianpost_build_rate_request($order)
     $customer_number = variable_get('commerce_russianpost_customer_number');
     $api_key = variable_get('commerce_russianpost_api_key', '');
 
-    $rate_request = array(
+    $request = array(
         'key' => $api_key,
     );
 
@@ -37,27 +37,34 @@ function commerce_russianpost_build_rate_request($order)
         $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
         $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
     }
+    if (empty($zipcode)) {
+      $request['errors']['zipcode'] = 'выберите населенный пункт из списка';
+    }
 
     // Calculate order total (products only) and convert it to RUB.
     $order_total = commerce_line_items_total($order_wrapper->commerce_line_items, array('product'));
-    $rate_request['content-value'] = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], 'RUB')/100;
+    $request['content-value'] = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], 'RUB')/100;
 
     // Build rate request
-    $rate_request['origin-postal-code'] = variable_get('commerce_russianpost_origin');
+    $request['origin-postal-code'] = variable_get('commerce_russianpost_origin');
     $physical_weight = commerce_physical_order_weight($order, 'g');
-    $rate_request['weight'] = $physical_weight['weight'];
+    if (empty($physical_weight['weight'])) {
+      $request['errors']['weight'] = 'Не задан вес товара';
+    } else {
+      $request['weight'] = $physical_weight['weight'];
+    }
 
     // Set shipping destination.
-    $rate_request['country-code'] = 'RU';
-    $rate_request['postal-code'] = $zipcode;
+    $request['country-code'] = 'RU';
+    $request['postal-code'] = $zipcode;
 
     // Calculate expected mailing date.
     $turnaround_time = variable_get('commerce_russianpost_turnaround');
     if ($turnaround_time) {
-        $rate_request['expected-mailing-date'] = date('d.m.Y', strtotime('+' . $turnaround_time . ' hours'));
+        $request['expected-mailing-date'] = date('d.m.Y', strtotime('+' . $turnaround_time . ' hours'));
     }
 
-    return $rate_request;
+    return $request;
 }
 
 /**

@@ -65,7 +65,12 @@ function boxberry_service_rate_order($shipping_service, $order)
     if (!$rates) {
       $rate_request = boxberry_build_rate_request($order);
 
-      if ($rate_request['zipcode']) {
+      // поле с данными о доставке
+      $order_wr = entity_metadata_wrapper('commerce_order', $order);
+      $field_name = commerce_physical_order_shipping_field_name($order);
+      $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+
+      if (empty($rate_request["errors"])) {
         $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
         //            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
         // todo кеш не учитывает применение купона
@@ -76,11 +81,6 @@ function boxberry_service_rate_order($shipping_service, $order)
 
         if (!$cache) {
           $response = boxberry_api_request($rate_request);
-
-          // поле с данными о доставке
-          $order_wr = entity_metadata_wrapper('commerce_order', $order);
-          $field_name = commerce_physical_order_shipping_field_name($order);
-          $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
           // если пустой ответ или ошибка
           if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
@@ -110,17 +110,18 @@ function boxberry_service_rate_order($shipping_service, $order)
             // Cache these rates.
             commerce_shipping_rates_cache_set('boxberry' . $cache_key, $order, $rate);
           }
-
-          $order_wr->{$field_name}->field_data = json_encode($field_data);
-          $order_wr->{$field_name}->save();
         }
         else {
           $rate = $cache;
         }
       }
       else {
-        $rate['data']['errors'][] = 'выберите населенный пункт из списка';
+        $rate['data']['errors'] = $rate_request['errors'];
+        $field_data['boxberry'] = [];
       }
+
+      $order_wr->{$field_name}->field_data = json_encode($field_data);
+      $order_wr->{$field_name}->save();
     }
   }
 
@@ -133,33 +134,48 @@ function boxberry_service_rate_order($shipping_service, $order)
  */
 function boxberry_build_rate_request($order)
 {
-    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+  $request = [];
 
-    // Determine the shipping profile reference field name for the order.
+  // проверка веса и размеров
+  $check = ext_order_check_product_parameters($order);
+  if ($check['weight']['weight'] > 100) {
+    $request['errors']['weight'] = 'Вес превышает 100 кг';
+  }
+  elseif (!empty($check['errors'])) {
+    $request['errors'] = $check['errors'];
+  }
+
+  if (empty($check['errors'])) {
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
     $field_name = commerce_physical_order_shipping_field_name($order);
     $shipping_profile = $order_wr->{$field_name}->value();
 
     // базовые данные
     $zipcode = $weight = $amount = $target_point = '';
     if (isset($shipping_profile->field_data['und'][0]['value'])) {
-        $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
-        $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
-        $weight = commerce_physical_order_weight($order, 'g')['weight'];
-        $amount = $order_wr->commerce_order_total->value()['amount'] / 100;
+      $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+      $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
+      $weight = commerce_physical_order_weight($order, 'g')['weight'];
+      $amount = $order_wr->commerce_order_total->value()['amount'] / 100;
 
-        // возможно пункт уже выбран, нужно получить данные о нём
-        $target_point = empty($data['region']['data']['boxberry_id']) ? NULL : $data['region']['data']['boxberry_id'];
-        if (!empty($data['boxberry'])) {
-            $target_point = empty($data['boxberry']['point']['id']) ? '' : $data['boxberry']['point']['id'];
-        }
+      // возможно пункт уже выбран, нужно получить данные о нём
+      $target_point = empty($data['region']['data']['boxberry_id']) ? NULL : $data['region']['data']['boxberry_id'];
+      if (!empty($data['boxberry'])) {
+        $target_point = empty($data['boxberry']['point']['id']) ? '' : $data['boxberry']['point']['id'];
+      }
     }
 
-    $request = [
-        'zipcode' => $zipcode,
-        'weight' => $weight,
-        'amount' => $amount,
-        'target_point' => $target_point,
-    ];
+    if (empty($zipcode)) {
+      $request['errors']['zipcode'] = 'Выберите населенный пункт из списка';
+    }
+  }
+
+  $request += [
+      'zipcode' => $zipcode,
+      'weight' => $weight,
+      'amount' => $amount,
+      'target_point' => $target_point,
+  ];
 
     return $request;
 }
@@ -215,7 +231,7 @@ function boxberry_commerce_shipping_service_rate_options_alter(&$options, $order
             $cost = $line_item_wr->commerce_unit_price->amount->value();
             $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
         } else {
-            $message = implode('<br />', $data['errors']);
+          $message = '<span class="text-danger">' . 'Ошибка расчёта: ' . drupal_strtolower(implode(', ', $data['errors'])) . '</span>';
         }
 
         $options['boxberry_shipping_service'] = '<div class="carrier">Заберу в<br />Boxberry</div>' .

@@ -661,7 +661,7 @@ $navbar-strada-toggle-border-color:       #ddd;
       .with-sidebar-first { padding-left: $grid-gutter-width*2; }
     }
     .content-title h2 { margin-top: 0; }
-  .page-checkout & { margin-top: $grid-gutter-width*6; }
+    .page-checkout & { margin-top: $grid-gutter-width*6; }
 }
 
 .node-info {
@@ -1267,6 +1267,7 @@ $navbar-strada-toggle-border-color:       #ddd;
             .message {
                 font-size: 12px; line-height: 13px;
                 flex-basis: 100%;
+              .text-danger { text-shadow: 1px 1px 1px #ddd; }
             }
             .cost {
                 flex-basis: 100%;

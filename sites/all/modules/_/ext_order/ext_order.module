@@ -1,5 +1,63 @@
 <?php
 
+/**
+ * Implements hook_cron().
+ */
+function ext_order_cron()
+{
+  /**
+   * -------------------------------------- Удаление устаревших корзин анонимов --------------------------------------
+   * http://xandeadx.ru/blog/drupal/907
+   */
+  if (module_exists('commerce_order')) {
+    $order_ids = db_select('commerce_order', 'o')
+      ->fields('o', array('order_id'))
+      ->condition('o.uid', 0)
+      ->condition('o.status', array('cart', 'checkout_checkout'))
+      ->condition('o.changed', REQUEST_TIME - max(ini_get('session.gc_maxlifetime'), 15592000), '<') // месяц
+      ->range(0, 100)
+      ->execute()
+      ->fetchCol();
+
+    if ($order_ids) {
+      commerce_order_delete_multiple($order_ids);
+      watchdog('commerce_cart', 'Удалено ' . count($order_ids) . ' анонимных корзин', NULL);
+    }
+  }
+}
+
+/**
+ * проверка параметров Вес и Размеры
+ */
+function ext_order_check_product_parameters($order)
+{
+  $result = [];
+  $order_wr = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wr->commerce_line_items->getIterator() as $delta => $line_item_wr) {
+    if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
+      $weight = commerce_physical_product_line_item_weight($line_item_wr->value());
+      if (empty($weight['weight'])) {
+        $result['errors']['weight'] = 'Не задан вес товара';
+      } else {
+        $weight = physical_weight_convert($weight, 'kg');
+      }
+      $result['products'][$line_item_wr->commerce_product->product_id->value()]['weight'] = $weight;
+
+      if ($dimensions = commerce_physical_product_line_item_dimensions($line_item_wr->value())) {
+        $dimensions_item = array_shift($dimensions);
+        if (empty($dimensions_item['length']) || empty($dimensions_item['height']) || empty($dimensions_item['width'])) {
+          $request['errors']['dimentions'] = 'Не заданы размеры';
+        } else {
+          $dimensions_item = physical_dimensions_convert($dimensions_item, 'cm');
+        }
+        $result['products'][$line_item_wr->commerce_product->product_id->value()]['dimentions'] = $dimensions_item;
+      }
+    }
+  }
+  $result['weight'] = physical_weight_convert(commerce_physical_order_weight($order), 'kg');
+
+  return $result;
+}
 
 /**
  * Implements hook_helper_commerce_order_presave

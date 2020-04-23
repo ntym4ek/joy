@@ -96,33 +96,6 @@ function commerce_helper_theme() {
 }
 
 /**
- * Implements hook_cron().
- */
-function commerce_helper_cron() {
-    /**
-     * -------------------------------------- Удаление устаревших корзин анонимов --------------------------------------
-     * http://xandeadx.ru/blog/drupal/907
-     */
-    if (module_exists('commerce_order')) {
-        $order_ids = db_select('commerce_order', 'o')
-            ->fields('o', array('order_id'))
-            ->condition('o.uid', 0)
-            ->condition('o.status', array('cart', 'checkout_checkout'))
-            ->condition('o.changed', REQUEST_TIME - max(ini_get('session.gc_maxlifetime'), 15592000), '<') // месяц
-            ->range(0, 100)
-            ->execute()
-            ->fetchCol();
-
-        if ($order_ids) {
-            commerce_order_delete_multiple($order_ids);
-            watchdog('commerce_cart', 'Удалено ' . count($order_ids) . ' анонимных корзин', NULL);
-        }
-    }
-}
-
-
-
-/**
  * Preprocess function for theme_html()
  */
 function commerce_helper_preprocess_html(&$vars)
