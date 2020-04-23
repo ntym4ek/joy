@@ -145,7 +145,7 @@ function boxberry_build_rate_request($order)
     $request['errors'] = $check['errors'];
   }
 
-  if (empty($check['errors'])) {
+  if (empty($request['errors'])) {
     $order_wr = entity_metadata_wrapper('commerce_order', $order);
     $field_name = commerce_physical_order_shipping_field_name($order);
     $shipping_profile = $order_wr->{$field_name}->value();

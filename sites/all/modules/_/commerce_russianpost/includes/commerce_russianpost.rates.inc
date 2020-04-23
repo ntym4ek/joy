@@ -18,12 +18,20 @@
  */
 function commerce_russianpost_build_rate_request($order)
 {
-    $customer_number = variable_get('commerce_russianpost_customer_number');
-    $api_key = variable_get('commerce_russianpost_api_key', '');
+  // проверка веса и размеров
+  $check = ext_order_check_product_parameters($order);
+  if ($check['weight']['weight'] > 20) {
+    $request['errors']['weight'] = 'Вес превышает 20 кг';
+  }
+  elseif (!empty($check['errors'])) {
+    $request['errors'] = $check['errors'];
+  }
 
-    $request = array(
-        'key' => $api_key,
-    );
+  if (empty($request['errors'])) {
+    $api_key = variable_get('commerce_russianpost_api_key', '');
+    $request = [
+      'key' => $api_key,
+    ];
 
     // если выполняется запрос доступных сервисов
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
@@ -34,23 +42,24 @@ function commerce_russianpost_build_rate_request($order)
 
     $zipcode = '';
     if (isset($shipping_profile->field_data['und'][0]['value'])) {
-        $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
-        $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
+      $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+      $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
     }
     if (empty($zipcode)) {
       $request['errors']['zipcode'] = 'выберите населенный пункт из списка';
     }
 
     // Calculate order total (products only) and convert it to RUB.
-    $order_total = commerce_line_items_total($order_wrapper->commerce_line_items, array('product'));
-    $request['content-value'] = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], 'RUB')/100;
+    $order_total = commerce_line_items_total($order_wrapper->commerce_line_items, ['product']);
+    $request['content-value'] = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], 'RUB') / 100;
 
     // Build rate request
     $request['origin-postal-code'] = variable_get('commerce_russianpost_origin');
     $physical_weight = commerce_physical_order_weight($order, 'g');
     if (empty($physical_weight['weight'])) {
       $request['errors']['weight'] = 'Не задан вес товара';
-    } else {
+    }
+    else {
       $request['weight'] = $physical_weight['weight'];
     }
 
@@ -61,10 +70,11 @@ function commerce_russianpost_build_rate_request($order)
     // Calculate expected mailing date.
     $turnaround_time = variable_get('commerce_russianpost_turnaround');
     if ($turnaround_time) {
-        $request['expected-mailing-date'] = date('d.m.Y', strtotime('+' . $turnaround_time . ' hours'));
+      $request['expected-mailing-date'] = date('d.m.Y', strtotime('+' . $turnaround_time . ' hours'));
     }
+  }
 
-    return $request;
+  return $request;
 }
 
 /**
