@@ -45,7 +45,7 @@ function ext_checkout_theme() {
 function ext_checkout_preprocess_page(&$vars)
 {
   // добавляем скрипты
-  if (strpos($_GET['q'], 'checkout') === 0) {
+  if (strpos($_GET['q'], 'checkout') === 0 && empty(arg(2))) {
     drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js');
     drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
     drupal_set_title('');

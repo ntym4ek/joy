@@ -58,9 +58,9 @@ function cdek_service_rate_order($shipping_service, $order)
   }
 
   // todo для проверки только манагерам
-//  if (!user_has_role(PRODUCT_MANAGER_RID)) {
-  ////    return false;
-  ////  }
+  if (!user_has_role(PRODUCT_MANAGER_RID)) {
+    return false;
+  }
 
   // при переходе на страницу оформления запрос на расчёт выполняется дважды:
   // при первом построении формы и автонажатии кнопки Recalc
@@ -204,7 +204,7 @@ function cdek_build_rate_request($order)
       $receiver_city_id = $data["cdek"]["city"];
     }
 
-    // $calc->setAuth('UBjaIOcwj8y2kC7zxZrXrgXLWZ9t35mq', '9t53FnSEEXLlP0fD25QVsaESMJA6SsAv');
+    // $calc->setAuth('DCCP2Y0vHfQJXdxesgu5xcfZzAXB5kMx', '2IHAf3whPpeUz85BPqrVuQGz21B9dfDV');
     // $calc->setAuth('z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd', 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq'); тест
     $request += [
       'account' => 'DCCP2Y0vHfQJXdxesgu5xcfZzAXB5kMx',
