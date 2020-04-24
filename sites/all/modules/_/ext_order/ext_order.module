@@ -45,8 +45,8 @@ function ext_order_check_product_parameters($order)
 
       if ($dimensions = commerce_physical_product_line_item_dimensions($line_item_wr->value())) {
         $dimensions_item = array_shift($dimensions);
-        if (empty($dimensions_item['length']) || empty($dimensions_item['height']) || empty($dimensions_item['width'])) {
-          $request['errors']['dimentions'] = 'Не заданы размеры';
+        if (empty($dimensions_item['length']) || $dimensions_item['length'] == 0 || $dimensions_item['height'] == 0 || $dimensions_item['width'] == 0) {
+          $result['errors']['dimentions'] = 'Не заданы размеры';
         } else {
           $dimensions_item = physical_dimensions_convert($dimensions_item, 'cm');
         }
