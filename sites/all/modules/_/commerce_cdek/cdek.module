@@ -207,8 +207,8 @@ function cdek_build_rate_request($order)
     // $calc->setAuth('UBjaIOcwj8y2kC7zxZrXrgXLWZ9t35mq', '9t53FnSEEXLlP0fD25QVsaESMJA6SsAv');
     // $calc->setAuth('z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd', 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq'); тест
     $request += [
-      'account' => 'z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd',
-      'pass' => 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq',
+      'account' => 'DCCP2Y0vHfQJXdxesgu5xcfZzAXB5kMx',
+      'pass' => '2IHAf3whPpeUz85BPqrVuQGz21B9dfDV',
       'sender_city_id' => 241,                                  // из Чепецка
       'receiver_city_id' => $receiver_city_id,
       'sender_zipcode' => '613040',                             // из Чепецка
