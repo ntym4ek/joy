@@ -26,8 +26,8 @@
                             // Close dialog when prooer target clicked
                             $('.ui-widget-overlay').bind('click', function (event) {
                                 if ($(event.target).hasClass('ui-widget-overlay')) {
-                                    $dialog.dialog('close');
-                                    // $dialog.remove();
+                                    // $dialog.dialog('close');
+                                    $dialog.remove();
                                 }
                             });
                         }
@@ -40,8 +40,8 @@
                         city = location.data.city;
                     }
 
-                    var order_amount = $(".cdek-order-amount").val();
-                    var order_weight = $(".cdek-order-weight").val();
+                  var products_total = Drupal.settings.ext_checkout.products_total;
+                  var products_weight = Drupal.settings.ext_checkout.products_weight;
                     var widjet = new ISDEKWidjet({
                         showWarns: true,
                         showErrors: true,
@@ -61,7 +61,7 @@
                             length: 1,
                             width: 1,
                             height: 1,
-                            weight: order_weight
+                            weight: products_weight
                         }],
                         onChoose: onChoose,
                         onCalculate: onCalculate
@@ -96,7 +96,8 @@
               $(".field-name-field-data textarea").val(JSON.stringify(data));
 
               $(".cdek_addr").html(result.cityName + ', ' + result.PVZ.Address);
-              $('#forpvz').dialog('close');
+              // $('#forpvz').dialog('close');
+              $('#forpvz').remove();
               $("[id^='edit-commerce-shipping-recalc']").click();
             }
         }

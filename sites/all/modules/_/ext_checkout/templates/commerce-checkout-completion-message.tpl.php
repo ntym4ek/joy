@@ -2,6 +2,7 @@
 // подготовка переменных для вывода
 $order_info = _get_order_info($order);
 $shipping = $order_info['shipping'];
+$coupons = $order_info['coupons'];
 $payment = $order_info['payment'];
 $user = $order_info['user'];
 
@@ -78,6 +79,15 @@ if ($payment['before_shipping']) {
                 <p><?php print $order_info['products']['qty_txt']; ?></p>
                 <p><?php if (is_array($order_info['weight'])): ?>Вес: <?php print $order_info['weight']['weight'] . ' ' . t($order_info['weight']['unit']); endif; ?></p>
             </dd>
+
+          <? if ($coupons): ?>
+            <dt>Купоны</dt>
+            <dd>
+              <? foreach($coupons as $coupon):  ?>
+                <p><?php print $coupon['code']; ?></p>
+              <? endforeach;  ?>
+            </dd>
+          <? endif; ?>
 
             <dt><?php print $payment_label; ?></dt>
             <dd class="oc-total">

@@ -123,20 +123,24 @@ function pickup_service_details_form($pane_form, $pane_values, $checkout_pane, $
  */
 function pickup_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
 {
-    $fields = array();
-    if (drupal_strlen($details_values['username']) < 8) { $fields[] = 'username'; }
-    if (drupal_strlen($details_values['phone']) < 5) { $fields[] = 'phone'; }
+  $validate = true;
 
-    if ($fields) {
-        $message = 'Поля, выделенные красным, не заполнены или заполнены с ошибкой.';
-        foreach($fields as $field) {
-            form_set_error(implode('][', array_merge($form_parents, array($field))), $message);
-            $message = '';
-        }
-        return false;
-    } else {
-        return true;
-    }
+  $field = 'username';
+  if (empty($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните это поле');
+    $validate = false;
+  }
+  if (drupal_strlen($details_values[$field]) < 5) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно');
+    $validate = false;
+  }
+  $field = 'phone';
+  if (!ext_user_valid_phone($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате 7 (xxx) xxx-xxxx');
+    $validate = false;
+  }
+
+  return $validate;
 }
 
 /**

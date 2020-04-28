@@ -114,10 +114,10 @@ function commerce_helper_preprocess_page(&$vars)
     // страницы обновляются по AJAX, но если пользователь перешёл на странице по кнопкам
     // Назад или Вперёд в браузере, то открывается кэшированная страница с данными до обновления по AJAX
     // запрещаем кэширование этих страниц
-    if (in_array(arg(0), ['cart', 'checkout'])) {
+    if (arg(0) == 'cart' || arg(0) == 'checkout' && empty(arg(3))) {
         // устанавливаем заголовки
-        drupal_add_http_header('Cache-Control', 'no-cache; no-store; must-revalidate');
-        drupal_add_http_header('Expires', '0');
+        drupal_add_http_header('Cache-Control', 'max-age=0, private, no-cache, no-store, must-revalidate, no-transform');
+        drupal_add_http_header('Expires', gmdate("D, d M Y H:i:s \G\M\T", date(time()) - 86400));
     }
 
     // заменить шаблон страницы для печати user/%/orders/%/print
@@ -1091,6 +1091,16 @@ function _get_order_info($order, $including_products = false)
         }
     }
 
+    // купоны
+    $coupons = [];
+    foreach ($order_wr->commerce_coupons->getIterator() as $coupon_wr) {
+//      $coupon = $coupon_wr->value();
+      $coupons[] = [
+        'type' => $coupon_wr->type->value(),
+        'code' => $coupon_wr->code->value(),
+      ];
+    }
+
     // инфо о пользователе
     $user_phone = empty($order_wr->field_phone->value()) ? '' : $order_wr->field_phone->value();
     $user_name = empty($order_wr->field_username->value()) ? '' : $order_wr->field_username->value();
@@ -1129,6 +1139,7 @@ function _get_order_info($order, $including_products = false)
             'qty_txt' => $product_count_text,
             'items' => $products,
         ],
+        'coupons' => $coupons,
         'shipping' => $shipping,
         'payment' => [
             'title' => $payment_title,

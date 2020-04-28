@@ -12,10 +12,10 @@
             function boxberry_open() {
                 var user_region = JSON.parse($.cookie('user_region'));
                 var city = user_region.value;
-                var order_amount = $(".boxberry-order-amount").val();
-                var order_weight = $(".boxberry-order-weight").val();
+                var products_total = Drupal.settings.ext_checkout.products_total;
+                var products_weight = Drupal.settings.ext_checkout.products_weight*1000;
 
-                boxberry.open(callback_function,"1$qeQK1y01FnbNoAqY8dMwu21099cJ6zlc", city, "", order_amount, order_weight, 0 );
+                boxberry.open(callback_function,"1$qeQK1y01FnbNoAqY8dMwu21099cJ6zlc", city, "", products_total, products_weight, 0 );
             }
 
             function callback_function(result) {
@@ -24,7 +24,6 @@
                 data.boxberry.point_data = result;
                 $(".field-name-field-data textarea").val(JSON.stringify(data));
 
-                $('.boxberry-set').val('1');
                 // обновление страницы
                 $("[id^='edit-commerce-shipping-recalc']").click();
             }

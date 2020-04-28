@@ -40,12 +40,25 @@ function ext_checkout_theme() {
 }
 
 /**
+ * Preprocess function for theme_html()
+ */
+function ext_checkout_preprocess_html(&$vars)
+{
+  if (strpos($_GET['q'], 'checkout') === 0 && empty(arg(2))) {
+    $vars['classes_array'][] = 'page-checkout-checkout';
+  }
+}
+
+/**
  * Implements hook_preprocess_page
  */
 function ext_checkout_preprocess_page(&$vars)
 {
-  // добавляем скрипты
   if (strpos($_GET['q'], 'checkout') === 0 && empty(arg(2))) {
+    // убрать шапку и прочие элементы
+    $vars['tsss'] = true;
+
+    // добавляем скрипты
     drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js');
     drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
     drupal_set_title('');
@@ -61,9 +74,9 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
 {
   // check if shipping details form has values & put them to storage
   $stored_service_details = &$form_state['storage']['service_details'];
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $form_state['order']);
-  $shipping_profile = $order_wrapper->commerce_customer_shipping->value();
-  $shipping_profile_wr = $order_wrapper->commerce_customer_shipping;
+  $order_wr = entity_metadata_wrapper('commerce_order', $form_state['order']);
+  $shipping_profile = $order_wr->commerce_customer_shipping->value();
+  $shipping_profile_wr = $order_wr->commerce_customer_shipping;
 
   // сохранить данные с панели доставки
   if (isset($form_state['values']['commerce_shipping']['service_details'])) {
@@ -78,15 +91,6 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
       $stored_service_details['addr'] = $shipping_profile_wr->field_addr->value();
       $stored_service_details['office'] = $shipping_profile_wr->field_office->value();
       $stored_service_details['callme'] = $shipping_profile_wr->field_callme->value();
-      //            $stored_service_details['passport'] = $shipping_profile_wr->field_passport->value();
-    }
-    $user_wr = entity_metadata_wrapper('user', $GLOBALS['user']);
-
-    if (empty($stored_service_details['username'])) {
-      $stored_service_details['username'] = $user_wr->field_surname->value() . ($user_wr->field_name_first->value() ? ' ' . $user_wr->field_name_first->value() : '') . ($user_wr->field_name_second->value() ? ' ' . $user_wr->field_name_second->value() : '');
-    }
-    if (empty($stored_service_details['phone'])) {
-      $stored_service_details['phone'] = $user_wr->field_phone->value();
     }
   }
 
@@ -140,13 +144,13 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   }
 
   // если было выведено сообщение при сабмите, то после ввода данных и обновления формы оно остаётся
-  if (isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == 'Recalculate shipping'
-    && isset($form_state['storage']['errors']['commerce_shipping][service_details][boxberry_set'])) {
-    if (!empty($form_state['values']['customer_profile_shipping']['field_data']['und'][0]['value'])) {
-      $data = json_decode($form_state['values']['customer_profile_shipping']['field_data']['und'][0]['value'], true);
-      if (!empty($data['boxberry'])) unset($form['commerce_shipping']['commerce_shipping_messages']);
-    }
-  }
+//  if (isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == 'Recalculate shipping'
+//    && isset($form_state['storage']['errors']['commerce_shipping][service_details][boxberry_set'])) {
+//    if (!empty($form_state['values']['customer_profile_shipping']['field_data']['und'][0]['value'])) {
+//      $data = json_decode($form_state['values']['customer_profile_shipping']['field_data']['und'][0]['value'], true);
+//      if (!empty($data['boxberry'])) unset($form['commerce_shipping']['commerce_shipping_messages']);
+//    }
+//  }
 
   $form['commerce_payment']['#prefix'] = '<h4>' . t('Payment service') . '</h4>';
   $form['commerce_payment']['payment_method']['#after_build'][] = 'ext_checkout_payment_radios_alter';
@@ -203,9 +207,8 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   commerce_shipping_delete_shipping_line_items($form_state['order']);
 
   // сформировать блок Order Summary
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $form_state['order']);
-
-  $order_total = $order_wrapper->commerce_order_total->value();
+  $order_wr = entity_metadata_wrapper('commerce_order', $form_state['order']);
+  $order_total = $order_wr->commerce_order_total->value();
   $products_amount = commerce_price_component_total($order_total, 'base_price')['amount'];
   $userpoints_amount = commerce_price_component_total($order_total, 'userpoints')['amount'];
   $discount_amount = commerce_helper_commerce_price_component_total_discounts($form_state['order'])['amount'];
@@ -248,7 +251,7 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   }
   $total_amount += $shipping_amount;
 
-  $products_qty = commerce_line_items_quantity($order_wrapper->commerce_line_items, commerce_product_line_item_types());
+  $products_qty = commerce_line_items_quantity($order_wr->commerce_line_items, commerce_product_line_item_types());
 
   // вес заказа
   $weight = commerce_physical_order_weight($form_state['order'], 'kg')['weight'];
@@ -266,6 +269,14 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
       '<div class="cs-total"><span class="label">' . t('Total to pay') . '</span><span class="value">' . commerce_currency_format($total_amount, 'RUB') . '</span></div>' .
       '</div>',
   );
+
+  // передать параметры заказа в скрипты
+  // todo проверить: купон на подарок меняет массу, изменение не передаётся с ajax
+  $parameters = [
+    'products_weight' => $weight,
+    'products_total' => $products_amount/100,
+  ];
+  drupal_add_js(array('ext_checkout' => $parameters), 'setting');
 
   // замена ajax обработчика кнопки Recalculate, чтобы возвращать не только панель с деталями, а всю форму
   $form['commerce_shipping']['recalc'] = $form['commerce_shipping']['recalculate'];
@@ -448,7 +459,7 @@ function ext_checkout_free_shipping_validate($form, $form_state)
 
     // проверка стоимости выбранной доставки, пришедшей с Оформления и имеющегося права на бесплатную доставку
     $shipping_service = $form_state['values']['commerce_shipping']['shipping_rates'][$form_state['values']['commerce_shipping']['shipping_service']];
-    if ($shipping_service->commerce_unit_price['und'][0]['amount'] == 0 && !$has_free_shipping) {
+    if ($shipping_service->commerce_unit_price['und'][0]['amount'] <= 0 && !$has_free_shipping) {
       form_set_error('customer_profile_shipping][field_city][und][0][value', 'Ошибка при расчёте стоимости доставки для населенного пункта');
     }
   }

@@ -181,14 +181,33 @@ function courier_service_details_form($pane_form, $pane_values, $checkout_pane, 
  */
 function courier_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
 {
+  $validate = true;
+
     $field = 'username';
-    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните это поле'); }
-    if (drupal_strlen($details_values[$field]) < 5) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно'); }
+    if (empty($details_values[$field])) {
+      form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните это поле');
+      $validate = false;
+    }
+    if (drupal_strlen($details_values[$field]) < 5) {
+      form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно');
+      $validate = false;
+    }
     $field = 'phone';
-    if (drupal_strlen($details_values[$field]) < 10) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате +7 (xxx) xxx-xxxx'); }
+  if (!ext_user_valid_phone($details_values[$field])) {
+      form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате 7 (xxx) xxx-xxxx');
+      $validate = false;
+    }
     $field = 'addr';
-    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Адрес необходим для доставки курьером'); }
-    if (drupal_strlen($details_values[$field]) < 4) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Слишком короткий адрес'); }
+    if (empty($details_values[$field])) {
+      form_set_error(implode('][', array_merge($form_parents, [$field])), 'Адрес необходим для доставки курьером');
+      $validate = false;
+    }
+    if (drupal_strlen($details_values[$field]) < 4) {
+      form_set_error(implode('][', array_merge($form_parents, [$field])), 'Слишком короткий адрес');
+      $validate = false;
+    }
+
+    return $validate;
 }
 
 /**

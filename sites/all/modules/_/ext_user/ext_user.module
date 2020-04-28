@@ -720,7 +720,7 @@ function ext_user_get_user_info($uid, $from_order = false) {
       $data['address']['callme'] = $shipping_wr->field_callme->value();
       $data['name']['fullname'] = $order_wr->field_username->value();
       $data['email'] = $order_wr->mail->value();
-      $data['phone'] = $order_wr->field_phone->value();
+      $data['phone'] = ext_user_normalize_phone($order_wr->field_phone->value());
     }
   }
 
@@ -732,7 +732,7 @@ function ext_user_get_user_info($uid, $from_order = false) {
     $data['name']['name2'] = $user_wr->field_name_second->value();
     $data['name']['fullname'] = trim(implode(' ', $data['name']));
     $data['name']['realname'] = $user_wr->value()->realname;
-    $data['phone'] = $user_wr->field_phone->value();
+    $data['phone'] = ext_user_normalize_phone($user_wr->field_phone->value());
     $data['email'] = $user_wr->mail->value();
     $data['uid'] = $user_wr->uid->value();
   }

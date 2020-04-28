@@ -77,7 +77,7 @@
 <header id="navbar" role="banner" class="<?php print $navbar_classes; ?>">
 
     <div class="line-1 row hidden-xs">
-        <?php if (!$tsss): ?>
+        <?php if (empty($tsss)): ?>
         <div class="<?php print $container_class; ?>">
             <div class="topbar">
                 <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
@@ -110,7 +110,7 @@
                     </a>
                 </div>
 
-                <?php if (!$tsss): ?>
+                <?php if (empty($tsss)): ?>
                 <div class="navbar-menu" role="navigation">
                     <?php print render($main_menu_mobile); ?>
                 </div>
@@ -120,7 +120,7 @@
                 <a href="tel:88005502885" tabindex="0" role="button" class="btn btn-brand">8-800-550-28-85<br /><div>круглосуточно</div></a>
               </div>
 
-              <?php if (!$tsss): ?>
+              <?php if (empty($tsss)): ?>
                 <div class="navbar-search">
                         <div class="navbar-search-mobile"><a class="btn btn-link"><i class="far fa-search"></i></a></div>
                         <div class="navbar-search-pane">
@@ -134,19 +134,19 @@
                 </div>
                 <?php endif; ?>
 
-                <?php if (!$tsss): ?>
+                <?php if (empty($tsss)): ?>
                 <div class="navbar-user" role="navigation">
                     <?php print render($user_menu); ?>
                 </div>
                 <?php endif; ?>
 
-                <?php if (!$tsss): ?>
+                <?php if (empty($tsss)): ?>
                 <div class="navbar-wishlist" role="navigation">
                     <?php print '<a id="wishlist" href="/user/' . $GLOBALS['user']->uid . '/wishlist' . '" class="btn btn-link" title="Отложенные товары">' . commerce_helper_wishlist_info_block() . '</a>'; ?>
                 </div>
                 <?php endif; ?>
 
-                <?php if (!$tsss): ?>
+                <?php if (empty($tsss)): ?>
                 <div class="navbar-cart" role="navigation">
                     <?php print '<a id="cart" href="/cart" class="btn btn-link" title="Корзина">' . commerce_helper_cart_info_block() . '</a>'; ?>
                 </div>
@@ -163,7 +163,7 @@
         </div>
     </div>
 
-    <?php if (!$tsss): ?>
+    <?php if (empty($tsss)): ?>
     <div class="line-3 row hidden-xs">
         <div class="<?php print $container_class; ?>">
             <?php print render($main_menu); ?>
@@ -187,7 +187,7 @@
 
         <?php if (!empty($breadcrumb) || !empty($title) || !empty($tabs['#primary']) || !empty($tabs['#secondary']) || !empty($page['help']) || !empty($action_links)): ?>
         <section class="col-sm-12 content-header">
-            <?php if (!empty($breadcrumb) && (!$tsss)): print $breadcrumb; endif;?>
+            <?php if (!empty($breadcrumb) && (empty($tsss))): print $breadcrumb; endif;?>
 
             <a id="main-content"></a>
 

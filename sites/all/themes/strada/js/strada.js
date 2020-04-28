@@ -208,7 +208,7 @@ var popupStatus = 0;
             if ($('#user_region').is('a')) {
                 var city = $('.select-region-form input');
                 var options = {
-                    token: "9948c242cbb5e110b4c488f61fe347c9fd038640",
+                    token: token,
                     type: "ADDRESS",
                     hint: false,
                     constraints: false,

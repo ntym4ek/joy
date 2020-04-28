@@ -154,16 +154,12 @@ function commerce_russianpost_commerce_shipping_service_rate_options_alter(&$opt
  */
 function commerce_russianpost_service_rate_order($shipping_service, $order)
 {
-    //$start = microtime(true);
-    $rate = array(
-        'amount' => 0,
-        'currency_code' => 'RUB',
-        'data' => array(),
-    );
+  $rate = array(
+      'amount' => -1,
+      'currency_code' => 'RUB',
+      'data' => array(),
+  );
 
-  if (!ext_checkout_non_free_shipping($order)) {
-    return $rate;
-  }
   // при переходе на страницу оформления запрос на расчёт выполняется дважды:
   // при первом построении формы и автонажатии кнопки Recalc
   // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
@@ -194,6 +190,9 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
             if (empty($response['services']['message']['error'])) {
               foreach (commerce_russianpost_parse_rate_response($response['services']) as $service_name => $rate) {
                 $rate['amount'] = ceil($rate['amount'] / 100) * 100;
+                if (!ext_checkout_non_free_shipping($order)) {
+                  $rate['amount'] = 0;
+                }
                 $rates[$service_name] = $rate;
               }
             }
@@ -201,7 +200,7 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
               foreach (commerce_russianpost_load_enabled_services() as $service_name => $service) {
                 $message = empty($response["services"]["message"]["message"]) ? t($response['services']['message']['error']) : t($response["services"]["message"]["message"]);
                 $rates[$service_name] = [
-                  'amount' => 0,
+                  'amount' => -1,
                   'currency_code' => '',
                   'data' => [
                     'errors' => [$message],
@@ -212,7 +211,6 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
 
             commerce_shipping_rates_cache_set('russianpost' . $cache_key, $order, $rates);
           }
-
         }
         else {
           $rates = $cache;
@@ -221,14 +219,6 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
       else {
         $rate['data']['errors'] = $rate_request['errors'];
       }
-//      else {
-//        if (empty($rate_request['postal-code'])) {
-//          $rate['data']['errors'][] = 'выберите населенный пункт из списка';
-//        }
-//        if (empty($rate_request['weight'])) {
-//          $rate['data']['errors'][] = 'Расчёт не выполнен, так не удалось определить вес.';
-//        }
-//      }
     }
 
     // находим выбранный пользователем расчёт
@@ -238,7 +228,7 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
   }
 
   // если доставка всё ещё равна нулю, то это ошибка
-  return ($rate['amount'] != 0 || isset($rate['data']['errors'])) ? $rate : false;
+  return ($rate['amount'] != -1 || isset($rate['data']['errors'])) ? $rate : false;
 }
 
 /**
@@ -419,17 +409,42 @@ function commerce_russianpost_details_form($pane_form, $pane_values, $checkout_p
  */
 function commerce_russianpost_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
 {
-    $field = 'username';
-    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните ФИО получателя'); }
-    if (drupal_strlen($details_values[$field]) < 5) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно'); }
-    $field = 'phone';
-    if (drupal_strlen($details_values[$field]) < 10) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате +7 (xxx) xxx-xxxx'); }
-    $field = 'addr';
-    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Адрес необходим для доставки уведомления'); }
-    if (drupal_strlen($details_values[$field]) < 4) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Слишком короткий адрес'); }
-    $field = 'zipcode';
-    if (empty($details_values[$field])) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Индекс обязателен'); }
-    if (drupal_strlen($details_values[$field]) != 6) { form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите шестизначный индекс'); }
+  $validate = true;
+
+  $field = 'username';
+  if (empty($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните ФИО получателя');
+    $validate = false;
+  }
+  elseif (drupal_strlen($details_values[$field]) < 5) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно');
+    $validate = false;
+  }
+  $field = 'phone';
+  if (!ext_user_valid_phone($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате 7 (xxx) xxx-xxxx');
+    $validate = false;
+  }
+  $field = 'addr';
+  if (empty($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Адрес необходим для доставки уведомления');
+    $validate = false;
+  }
+  elseif (drupal_strlen($details_values[$field]) < 4) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Слишком короткий адрес');
+    $validate = false;
+  }
+  $field = 'zipcode';
+  if (empty($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Индекс обязателен');
+    $validate = false;
+  }
+  elseif (drupal_strlen($details_values[$field]) != 6) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите шестизначный индекс');
+    $validate = false;
+  }
+
+  return $validate;
 }
 
 /**
@@ -484,7 +499,7 @@ function rp_cennayaposylka_info($item)
     $component_data = empty($item->commerce_total['und'][0]['data']) ? [] : $item->commerce_total['und'][0]['data'];
     return [
         'title' => 'Почта России, Ценная посылка',
-        'method' => $item->commerce_shipping_service,
+        'method' => $item->commerce_shipping_service['und'][0]['value'],
         'address' => empty($component_data['address']) ? '' : $component_data['address'],
     ];
 }

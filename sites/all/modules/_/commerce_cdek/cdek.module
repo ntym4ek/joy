@@ -48,14 +48,10 @@ function cdek_commerce_shipping_service_info()
 function cdek_service_rate_order($shipping_service, $order)
 {
   $rate = array(
-    'amount' => 0,
+    'amount' => -1,
     'currency_code' => 'RUB',
     'data' => [],
   );
-
-  if (!ext_checkout_non_free_shipping($order)) {
-    return $rate;
-  }
 
   // todo для проверки только манагерам
   if (!user_has_role(PRODUCT_MANAGER_RID)) {
@@ -105,6 +101,10 @@ function cdek_service_rate_order($shipping_service, $order)
               $rate['data']['address'] = $field_data['cdek']['cityName'] . ', ' . $field_data['cdek']['point']['address'];
             }
 
+            if (!ext_checkout_non_free_shipping($order)) {
+              $rate['amount'] = 0;
+            }
+
             commerce_shipping_rates_cache_set('cdek' . $cache_key, $order, $rate);
           }
         }
@@ -123,7 +123,7 @@ function cdek_service_rate_order($shipping_service, $order)
   }
 
   // если доставка всё ещё равна нулю, то это ошибка
-  return ($rate['amount'] != 0 || isset($rate['data']['errors'])) ? $rate : false;
+  return ($rate['amount'] != -1 || isset($rate['data']['errors'])) ? $rate : false;
 }
 
 /**
@@ -169,35 +169,6 @@ function cdek_build_rate_request($order)
     } else {
       $request['errors'] = $check['errors'];
     }
-
-    // составить список товаров
-//    foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
-//      // Get the weight value of product line items.
-//      if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
-//        $weight = commerce_physical_product_line_item_weight($line_item_wr->value());
-//        if (!empty($weight['weight'])) {
-//          $weight['weight'] /= $line_item_wr->quantity->value();
-//          $converted_weight = physical_weight_convert($weight, 'kg');
-//          $dimensions = commerce_physical_product_line_item_dimensions($line_item_wr->value());
-//          foreach ($dimensions as $dimensions_item) {
-//            if (empty($dimensions_item['length']) || empty($dimensions_item['height']) || empty($dimensions_item['width'])) {
-//              $request['errors']['dimentions'] = 'Не заданы размеры';
-//            } else {
-//              $converted_dimensions = physical_dimensions_convert($dimensions_item, 'cm');
-//              $items[] = [
-//                'weight' => $converted_weight['weight'],
-//                'height' => $converted_dimensions['height'],
-//                'width' => $converted_dimensions['width'],
-//                'length' => $converted_dimensions['length'],
-//              ];
-//            }
-//          }
-//        } else {
-//          $request['errors']['weight'] = 'Не задан вес товара';
-//          break;
-//        }
-//      }
-//    }
 
     // возможно пункт уже выбран, нужно получить данные о нём
     if (!empty($data["cdek"]["point"]["id"])) {
@@ -289,87 +260,46 @@ function cdek_commerce_shipping_service_rate_options_alter(&$options, $order)
  */
 function cdek_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
 {
-    $pane_form = array();
-
-    if (!empty($order->shipping_rates['cdek_shipping_service'])) {
-        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates['cdek_shipping_service']);
-        if ($line_item_wrapper->value()) $data = $line_item_wrapper->commerce_unit_price->data->value();
+  $pane_form = array();
+  if (!empty($order->shipping_rates['cdek_shipping_service'])) {
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates['cdek_shipping_service']);
+    if ($line_item_wrapper->value()) {
+      $data = $line_item_wrapper->commerce_unit_price->data->value();
     }
+  }
 
-    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-    $weight = commerce_physical_order_weight($order, 'kg')['weight'];
-
-    $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
-
-    $pane_form['order_amount'] = ['#type' => 'hidden', '#value' => $products_amount_base/100, '#attributes' => ['class' => ['cdek-order-amount']]];
-    $pane_form['order_weight'] = ['#type' => 'hidden', '#value' => $weight, '#attributes' => ['class' => ['cdek-order-weight']]];
-
-    // выбор и ссылка на карту
-    $method = '';
-
-//    if (empty($data['cdek']['point']) && empty($data['cdek']['courier'])) $link = '<a href="#" id="cdek_link"><strong>Выбрать пункт выдачи на карте</strong></a>';
-//    if (empty($data['cdek']['courier']) && !empty($data['cdek']['pvz'])) {
-//        $method = $data['cdek']['cityName'] . ', ' . $data['cdek']['pvz']['address'] . ' (' . $data['cdek']['id'] . ')';
-//        $link = '(<a href="#" id="cdek_link"><strong>изменить пункт выдачи или выбрать доставку курьером</strong></a>)';
-//    }
-//    if (!empty($data['cdek']['courier']) && empty($data['cdek']['pvz'])) {
-//        $method = 'Курьером до двери';
-//        $link = '(<a href="#"  id="cdek_link"><strong>получить в пункте выдачи</strong></a>' . ')';
-//    }
-//
-//    // адрес пункта выдачи
-//    $pane_form['select'] = [
-//        '#markup' => '<div class="col-xs-12 form-item form-type-select form-group">' .
-//                        '<label class="control-label">Адрес пункта выдачи</label>' .
-//                        '<div><span class="cdek_addr">' . $method . '</span> ' . $link . '</div>' .
-//                    '</div>'
-//        ];
   $pane_form['select'] = [
     '#type' => 'item',
-    '#markup' => '' .
+    '#markup' =>
       '<label class="control-label">Адрес пункта выдачи</label>' .
       '<div><span class="cdek_addr">' . (empty($data['address']) ? '' : $data['address']) . '</span> ' .
       (empty($data['address']) ?
         '<a href="#" id="cdek_link"><strong>Выбрать пункт выдачи на карте</strong></a>'
         : ' (' . '<a href="#"  id="cdek_link"><strong>изменить пункт выдачи</strong></a>' . ')') .
-      '</div>' .
-      ''
+      '</div>'
   ];
 
+  $user_info = ext_user_get_user_info($order->uid, true);
 
-    if (!empty($data['cdek']['courier'])) {
-        $pane_form['addr'] = [
-            '#title' => 'Адрес',
-            '#type' => 'textfield',
-        ];
-        $pane_form['office'] = [
-            '#title' => 'Квартира/Офис',
-            '#type' => 'textfield',
-        ];
-    }
+  $pane_form['username'] = array(
+    '#title' => 'Фамилия, Имя, Отчество',
+    '#type' => 'textfield',
+    '#default_value' => empty($user_info['name']['fullname']) ? '' : $user_info['name']['fullname'],
+  );
+  $pane_form['phone'] = array(
+    '#title' => 'Телефон',
+    '#type' => 'textfield',
+    '#attributes' => ['class' => ['masked-phone']],
+    '#default_value' => empty($user_info['phone']) ? '' : $user_info['phone'],
+  );
 
-    $pane_form['username'] = array(
-        '#title' => 'Фамилия, Имя, Отчество',
-        '#type' => 'textfield',
-    );
-    $pane_form['phone'] = array(
-        '#title' => 'Телефон',
-        '#type' => 'textfield',
-        '#attributes' => ['class' => ['masked-phone']],
-    );
+  $pane_form['callme'] = array(
+    '#title' => t('Call me to get details about my order and delivery'),
+    '#type' => 'checkbox',
+    '#default_value' => empty($user_info['address']['callme']) ? '' : $user_info['address']['callme'],
+  );
 
-    // комментарий к заказу
-    $pane_form['notes'] = array(
-        '#title' => t('Notes to order'),
-        '#type' => 'textarea',
-        '#rows' => 2,
-    );
-    $pane_form['callme'] = array(
-        '#title' => t('Call me to get details about my order and delivery'),
-        '#type' => 'checkbox',
-    );
-
-    return $pane_form;
+  return $pane_form;
 }
 
 /**
@@ -377,25 +307,32 @@ function cdek_service_details_form($pane_form, $pane_values, $checkout_pane, $or
  */
 function cdek_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
 {
-    if (isset($details_values['addr']) && drupal_strlen($details_values['addr']) < 8)     {
-        form_set_error(implode('][', array_merge($form_parents, ['addr'])), 'Укажите адрес доставки для курьера.');
-        return false;
-    }
+  $order_wr = entity_metadata_wrapper('commerce_order', $order);
+  $field_name = commerce_physical_order_shipping_field_name($order);
+  $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
-    $fields = array();
-    if (drupal_strlen($details_values['username']) < 8) { $fields[] = 'username'; }
-    if (drupal_strlen($details_values['phone']) < 5) { $fields[] = 'phone'; }
+  $validate = true;
+  if (empty($field_data["cdek"]["point"]["id"])) {
+    form_set_error(implode('][', array_merge($form_parents, ['select'])), 'Выберите пункт доставки на карте и нажмите "Выбрать"');
+    $validate = false;
+  }
 
-    if ($fields) {
-        $message = 'Поля, выделенные красным, не заполнены или заполнены с ошибкой.';
-        foreach($fields as $field) {
-            form_set_error(implode('][', array_merge($form_parents, array($field))), $message);
-            $message = '';
-        }
-        return false;
-    } else {
-        return true;
-    }
+  $field = 'username';
+  if (empty($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните это поле');
+    $validate = false;
+  }
+  if (drupal_strlen($details_values[$field]) < 5) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно');
+    $validate = false;
+  }
+  $field = 'phone';
+  if (!ext_user_valid_phone($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате 7 (xxx) xxx-xxxx');
+    $validate = false;
+  }
+
+  return $validate;
 }
 
 /**
@@ -414,6 +351,18 @@ function cdek_service_details_form_submit($details_form, $details_values, $line_
     $order_wrapper->save();
 }
 
+// callback функция, возвращающая информацию о доставке для заказов
+function cdek_shipping_service_info($item, $shipping_profile)
+{
+  $field_data = empty($shipping_profile->field_data['und'][0]['value']) ? null : json_decode($shipping_profile->field_data['und'][0]['value'], true);
+
+  return [
+    'title' => $item->line_item_label,
+    'method' => $item->commerce_shipping_service['und'][0]['value'],
+    'address' => empty($field_data["cdek"]["point"]["address"]) ? '' : $field_data["cdek"]["point"]["address"],
+    'point_id' => empty($field_data["cdek"]["point"]["id"]) ? '' : $field_data["cdek"]["point"]["id"],
+  ];
+}
 
 /**
  * Implements hook_preprocess_page

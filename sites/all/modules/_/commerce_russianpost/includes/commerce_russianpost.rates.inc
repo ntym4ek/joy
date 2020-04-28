@@ -23,7 +23,7 @@ function commerce_russianpost_build_rate_request($order)
   if ($check['weight']['weight'] > 20) {
     $request['errors']['weight'] = 'Вес превышает 20 кг';
   }
-  elseif (!empty($check['errors'])) {
+  elseif (!empty($check['errors']['weight'])) {
     $request['errors'] = $check['errors'];
   }
 
