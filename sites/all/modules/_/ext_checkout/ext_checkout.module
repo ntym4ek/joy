@@ -247,7 +247,7 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
       }
     }
   } else {
-    $form["commerce_shipping"]["message"]["#markup"] = '<div>Ищем способ доставить Вам посылку</div>';
+    $form["commerce_shipping"]["message"]["#markup"] = '<div class="commerce-shipping-search">Ищем способ доставить Вам посылку <span><img src="/sites/all/themes/strada/images/loader.gif" /></span></div>';
   }
   $total_amount += $shipping_amount;
 
@@ -625,7 +625,7 @@ function ext_checkout_non_free_shipping($order)
               $reason = [
                 'reason' => 'amount',
                 'amount' => $non_free_amount,
-                'text' => '<a href="/info/delivery" class="text-warning">добавьте товаров на ' . number_format($non_free_amount - $products_amount_base / 100, 0, ',', '') . ' руб. для бесплатной доставки</a>'
+                'text' => '<a href="/" class="text-warning">добавьте товаров на ' . number_format($non_free_amount - $products_amount_base / 100, 0, ',', '') . ' руб. для бесплатной доставки</a>'
               ];
             }
             break;
