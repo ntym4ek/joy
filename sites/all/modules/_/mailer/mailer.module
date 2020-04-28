@@ -119,13 +119,13 @@ function mailer_send_cart_orphan_mails($order_id)
   $user_info = ext_user_get_user_info($uid, $order_id);
 
   // отправить всем незарегистрированным и зарегистрированным, если есть подписка
-  if ($user_info['email'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_PROMO_EMAIL, $uid))) {
+  if (!empty($user_info['email']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_PROMO_EMAIL, $uid))) {
     $account = user_load($uid);
     $params['account'] = $account;
     $params['order_info'] = _get_order_info($order_wr->value());
     drupal_mail('mailer', 'cart_orphan', $order_wr->mail->value(), user_preferred_language($account), $params);
   }
-  if ($user_info['phone'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_PROMO_SMS, $uid))) {
+  if (!empty($user_info['phone']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_PROMO_SMS, $uid))) {
     $params['phone'] = $user_info['phone'];
     mailer_send_sms('cart_orphan', $params);
   }
@@ -175,7 +175,7 @@ function mailer_send_order_review_mails($order_id)
   $user_info = ext_user_get_user_info($uid, $order_id);
 
   // отправить всем незарегистрированным и зарегистрированным, если есть подписка
-  if ($user_info['email'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_EMAIL, $uid))) {
+  if (!empty($user_info['email']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_EMAIL, $uid))) {
     $account = user_load($uid);
     $params['account'] = $account;
     $params['order_info'] = _get_order_info($order_wr->value());
@@ -216,7 +216,7 @@ function mailer_send_order_review_mails($order_id)
     $params['table'] = $table;
     drupal_mail('mailer', 'leave_review', $order_wr->mail->value(), user_preferred_language($account), $params);
   }
-  if ($user_info['phone'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_SMS, $uid))) {
+  if (!empty($user_info['phone']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_SMS, $uid))) {
     $params['phone'] = $user_info['phone'];
     mailer_send_sms('leave_review', $params);
   }
@@ -267,13 +267,13 @@ function mailer_send_shop_review_mails($order_id)
   $user_info = ext_user_get_user_info($uid, $order_id);
 
   // отправить всем незарегистрированным и зарегистрированным, если есть подписка
-  if ($user_info['email'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_EMAIL, $uid))) {
+  if (!empty($user_info['email']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_EMAIL, $uid))) {
     $account = user_load($uid);
     $params['account'] = $account;
     $params['order_info'] = _get_order_info($order_wr->value());
     drupal_mail('mailer', 'leave_shop_review', $order_wr->mail->value(), user_preferred_language($account), $params);
   }
-  if ($user_info['phone'] && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_SMS, $uid))) {
+  if (!empty($user_info['phone']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_SMS, $uid))) {
     $params['phone'] = $user_info['phone'];
     mailer_send_sms('leave_shop_review', $params);
   }

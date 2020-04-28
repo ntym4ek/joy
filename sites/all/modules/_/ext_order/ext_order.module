@@ -166,3 +166,224 @@ function ext_order_commerce_order_presave($order)
 
   }
 }
+
+/**
+ * извлечь и оформить полную информацию о заказе
+ *
+ * @param $order
+ *
+ * @return array
+ */
+function _get_order_info($order, $including_products = false)
+{
+  $order_wr = entity_metadata_wrapper('commerce_order', $order);
+
+  // товары
+  $product_count = 0;
+
+  // доставка
+  $products = [];
+  $shipping = [];
+  $shipping_profile_wr = $order_wr->commerce_customer_shipping;
+  if ($shipping_profile_wr->value()) {
+    foreach ($order_wr->commerce_line_items as $item_wr) {
+      if ($item_wr->value()) {
+        if ($item_wr->type->value() == 'shipping') {
+          $shipping_method = $item_wr->commerce_shipping_service->value();
+
+          // если есть данные, помимо стандартных
+          $function = $shipping_method . '_info';
+          if (function_exists($function)) {
+            $shipping = $function($item_wr->value(), $shipping_profile_wr->value());
+          }
+          if (!$shipping) {
+            $shipping = [
+              'title' => t($item_wr->line_item_label->value()),
+              'method' => $item_wr->commerce_shipping_service->value(),
+            ];
+          }
+
+          $shipping['cost'] = commerce_currency_format($item_wr->commerce_total->amount->value() / 100, $item_wr->commerce_total->currency_code->value(), NULL, FALSE);
+        }
+        elseif (in_array($item_wr->type->value(), ['product', 'product_discount'])) {
+          $product_count++;
+          if ($including_products) {
+            $products[] = _get_line_item_info($item_wr->value());
+          }
+        }
+      }
+    }
+    if (empty($shipping['address'])) {
+      $shipping['address'] = ($shipping_profile_wr->field_zipcode->value() ? $shipping_profile_wr->field_zipcode->value() . ', ': '')
+        . ($shipping_profile_wr->field_city->value() ? $shipping_profile_wr->field_city->value() : '')
+        . ($shipping_profile_wr->field_addr->value() ? ', ' . $shipping_profile_wr->field_addr->value() : '')
+        . ($shipping_profile_wr->field_office->value() ? ' - ' . $shipping_profile_wr->field_office->value() : '');
+    }
+    $shipping['callme'] = $shipping_profile_wr->field_callme->value();
+    $shipping['passport'] = $shipping_profile_wr->field_passport->value();
+    $shipping['parcel_number'] = '';
+    if (!empty($shipping_profile_wr->value()->field_parcel_number['und']))
+      $shipping['parcel_number'] = $shipping_profile_wr->field_parcel_number->value();
+    if (!empty($shipping_profile_wr->value()->field_parcel_photo['und']))
+      $shipping['parcel_photo_url'] = file_create_url($shipping_profile_wr->field_parcel_photo->file->value()->uri);
+  }
+
+  $product_count_text = format_plural($product_count, '@count item', '@count items', [], ['context' => 'product count on a Commerce order']);
+
+  //оплата
+  $balance = $order_wr->commerce_order_total->amount->value();
+  $payment_title = $payment_method = $payment_addon = '';
+  $payment_before_shipping = $is_online = FALSE;
+  if (!empty($order_wr->value()->data['payment_method'])) {
+    $payment_method = $order_wr->value()->data['payment_method'];
+    switch ($payment_method) {
+      case 'commerce_rbspayment|commerce_payment_commerce_rbspayment':
+        $payment_title = 'Онлайн, через сервис Сбербанка';
+        $payment_before_shipping = TRUE;
+        $is_online = true;
+        break;
+
+      case 'ya_commerce_api|commerce_payment_ya_commerce_api':
+        $payment_title = 'Онлайн, через сервис Яндекс.Касса';
+        $payment_before_shipping = TRUE;
+        $is_online = true;
+        ext_payment_ya_commerce_api_check_order_paid($order_wr->value());
+        break;
+
+      case 'pay_on_delivery|commerce_payment_pay_on_delivery':
+        $payment_title = 'Оплата при получении';
+        break;
+
+      case 'bank_transfer|commerce_payment_bank_transfer':
+        $payment_title = 'Банковским переводом';
+        $payment_before_shipping = TRUE;
+        $payment_addon = '<p>Счёт на оплату можно распечатать по <a href="/checkout/' . $order_wr->order_id->value() . '/complete/invoice" target="_blank">ссылке</a>.</p>';
+        break;
+    }
+
+    // проверка оплаты
+    if ($balance = commerce_payment_order_balance($order_wr->value())) {
+      $balance = $balance['amount'];
+    }
+  }
+
+  // купоны
+  $coupons = [];
+  foreach ($order_wr->commerce_coupons->getIterator() as $coupon_wr) {
+    //      $coupon = $coupon_wr->value();
+    $coupons[] = [
+      'type' => $coupon_wr->type->value(),
+      'code' => $coupon_wr->code->value(),
+    ];
+  }
+
+  // инфо о пользователе
+  $user_phone = empty($order_wr->field_phone->value()) ? '' : $order_wr->field_phone->value();
+  $user_name = empty($order_wr->field_username->value()) ? '' : $order_wr->field_username->value();
+
+  // компоненты итоговой цены (скидки и прочее)
+  $components = [];
+  $component_titles = commerce_price_component_titles();
+  foreach($order_wr->commerce_order_total->data->value()['components'] as $component) {
+    if ($component['included']) {
+      $title = isset($component_titles[$component['name']]) ? $component_titles[$component['name']] : '';
+      if (!$title && !empty($component['price']['data']['discount_component_title'])) {
+        $title = $component['price']['data']['discount_component_title'];
+      }
+
+      $components[$component['name']] = [
+        'title' => $title,
+        'amount' => $component['price']['amount'],
+      ];
+    }
+  }
+
+  return [
+    'id' => $order_wr->order_id->value(),
+    'number' => $order_wr->order_number->value(),
+    'url' => $GLOBALS['base_root'] . '/user/' . $order_wr->uid->value() . '/orders/' . $order_wr->order_id->value(),
+    'placed' => $order_wr->placed->value(),
+    'status' => $order_wr->status->value(),
+    'user' => [
+      'uid' => $order_wr->uid->value(),
+      'mail' => $order_wr->mail->value(),
+      'name' => $user_name,
+      'phone' => $user_phone,
+    ],
+    'products' => [
+      'qty' => $product_count,
+      'qty_txt' => $product_count_text,
+      'items' => $products,
+    ],
+    'coupons' => $coupons,
+    'shipping' => $shipping,
+    'payment' => [
+      'title' => $payment_title,
+      'method' => $payment_method,
+      'before_shipping' => $payment_before_shipping,
+      'is_online' => $is_online,
+      'balance' => $balance, // неоплаченный остаток (или вся сумма)
+      'balance_formatted' => commerce_currency_format($balance, 'RUB'),
+      'paid_formatted' => commerce_currency_format($order_wr->commerce_order_total->amount->value() - $balance, 'RUB'),
+      'addon' => $payment_addon,
+    ],
+    'weight' => commerce_physical_order_weight($order, 'kg'),
+    'amount' => $order_wr->commerce_order_total->amount->value(),
+    'total_formatted' => commerce_currency_format($order_wr->commerce_order_total->amount->value(), 'RUB'),
+    'order' => $order_wr->value(),
+    'total' => [
+      'components' => $components,
+      'amount' => $order_wr->commerce_order_total->amount->value(),
+      'formatted' => commerce_currency_format($order_wr->commerce_order_total->amount->value(), 'RUB'),
+    ],
+  ];
+}
+
+/**
+ * @param $line_item
+ *
+ * @return array
+ */
+function _get_line_item_info($line_item)
+{
+  $result = [];
+  if (is_numeric($line_item)) $line_item = commerce_line_item_load($line_item);
+  if ($line_item) {
+    $pid = $line_item->commerce_product['und'][0]['product_id'];
+    if ($product = commerce_product_load($pid)) {
+      if ($node = _get_product_display_by_product_id($pid, FALSE)) {
+        $title = l($node->title, 'node/' . $node->nid, ['query' => ['id' => $pid]]);
+      }
+      if (empty($title)) {
+        $title = $product->title;
+      }
+
+      $options = [];
+      // перебрать опции
+      $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
+      foreach ((array) $line_item as $field_name => $field) {
+        if (strpos($field_name, '_option_') && $line_item_wr->{$field_name}->value()) {
+          $options[] = $line_item_wr->{$field_name}->info()['label'] . ': ' . $line_item_wr->{$field_name}->label();
+        }
+      }
+
+      // перебрать атрибуты
+      $product_wr = entity_metadata_wrapper('commerce_product', $product);
+      foreach ((array) $product as $field_name => $field) {
+        if ((strpos($field_name, '_attribute_') || $field_name == 'field_p_tare') && $product_wr->{$field_name}->value()) {
+          $options[] = $product_wr->{$field_name}->info()['label'] . ': ' . $product_wr->{$field_name}->label();
+        }
+      }
+
+      $result = [
+        'title' => $title,
+        'options' => $options,
+        'price' => $line_item_wr->commerce_unit_price->amount->value(),
+        'qty' => $line_item_wr->quantity->value(),
+        'total' => $line_item_wr->commerce_total->amount->value(),
+        'stock' => empty($product->field_p_out_of_stock['und'][0]['value']),
+      ];
+    }
+  }
+  return $result;
+}

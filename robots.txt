@@ -16,7 +16,10 @@
 sitemap: https://joy-magazin.ru/sitemap.xml
 
 User-agent: *
+Host: https://joy-magazin.ru
+
 Crawl-delay: 10
+
 # CSS, JS, Images
 Allow: /misc/*.css$
 Allow: /misc/*.css?
@@ -50,7 +53,6 @@ Allow: /themes/*.gif
 Allow: /themes/*.jpg
 Allow: /themes/*.jpeg
 Allow: /themes/*.png
-Host: https://joy-magazin.ru
 
 # Directories
 Disallow: /includes/

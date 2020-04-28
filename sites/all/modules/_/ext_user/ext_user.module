@@ -689,7 +689,8 @@ function ext_user_user_authenticate($name, $password)
  *
  * @return array|mixed
  */
-function ext_user_get_user_info($uid, $from_order = false) {
+function ext_user_get_user_info($uid, $from_order = false)
+{
   $data = &drupal_static(__FUNCTION__);
   if (isset($data)) {
     return $data;
@@ -697,44 +698,47 @@ function ext_user_get_user_info($uid, $from_order = false) {
 
   $data = [];
 
-  // проверить наличие заказов и взять из последнего или заданного в $from_order
-  $order_id = false;
-  if ($from_order === true) {
-    $order_id = db_select('commerce_order', 'co')
-      ->condition('co.uid', $uid)
-      ->condition('co.status', ['pending', 'completed', 'processing'], 'IN')
-      ->fields('co', ['order_id'])
-      ->orderBy('co.order_id', 'DESC')
-      ->execute()
-      ->fetchField();
-  } elseif (is_numeric($from_order)) {
-    $order_id = $from_order;
-  }
-  if ($order_id) {
-    $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
-    if ($order_wr->commerce_customer_shipping->value()) {
-      $shipping_wr = $order_wr->commerce_customer_shipping;
-      $data['address']['zip'] = $shipping_wr->field_zipcode->value();
-      $data['address']['address'] = $shipping_wr->field_addr->value();
-      $data['address']['office'] = $shipping_wr->field_office->value();
-      $data['address']['callme'] = $shipping_wr->field_callme->value();
-      $data['name']['fullname'] = $order_wr->field_username->value();
-      $data['email'] = $order_wr->mail->value();
-      $data['phone'] = ext_user_normalize_phone($order_wr->field_phone->value());
+  if ($uid) {
+    // проверить наличие заказов и взять из последнего или заданного в $from_order
+    $order_id = FALSE;
+    if ($from_order === TRUE) {
+      $order_id = db_select('commerce_order', 'co')
+        ->condition('co.uid', $uid)
+        ->condition('co.status', ['pending', 'completed', 'processing'], 'IN')
+        ->fields('co', ['order_id'])
+        ->orderBy('co.order_id', 'DESC')
+        ->execute()
+        ->fetchField();
     }
-  }
+    elseif (is_numeric($from_order)) {
+      $order_id = $from_order;
+    }
+    if ($order_id) {
+      $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+      if ($order_wr->commerce_customer_shipping->value()) {
+        $shipping_wr = $order_wr->commerce_customer_shipping;
+        $data['address']['zip'] = $shipping_wr->field_zipcode->value();
+        $data['address']['address'] = $shipping_wr->field_addr->value();
+        $data['address']['office'] = $shipping_wr->field_office->value();
+        $data['address']['callme'] = $shipping_wr->field_callme->value();
+        $data['name']['fullname'] = $order_wr->field_username->value();
+        $data['email'] = $order_wr->mail->value();
+        $data['phone'] = ext_user_normalize_phone($order_wr->field_phone->value());
+      }
+    }
 
-  // проверить аккаунт
-  if (!$data) {
-    $user_wr = entity_metadata_wrapper('user', $uid);
-    $data['name']['surname'] = $user_wr->field_surname->value();
-    $data['name']['name'] = $user_wr->field_name_first->value();
-    $data['name']['name2'] = $user_wr->field_name_second->value();
-    $data['name']['fullname'] = trim(implode(' ', $data['name']));
-    $data['name']['realname'] = $user_wr->value()->realname;
-    $data['phone'] = ext_user_normalize_phone($user_wr->field_phone->value());
-    $data['email'] = $user_wr->mail->value();
-    $data['uid'] = $user_wr->uid->value();
+    // проверить аккаунт
+    if (!$data) {
+      $user_wr = entity_metadata_wrapper('user', $uid);
+      $data['name']['surname'] = $user_wr->field_surname->value();
+      $data['name']['name'] = $user_wr->field_name_first->value();
+      $data['name']['name2'] = $user_wr->field_name_second->value();
+      $data['name']['fullname'] = trim(implode(' ', $data['name']));
+      $data['name']['realname'] = $user_wr->value()->realname;
+      $data['phone'] = ext_user_normalize_phone($user_wr->field_phone->value());
+      $data['email'] = $user_wr->mail->value();
+      $data['uid'] = $user_wr->uid->value();
+    }
   }
 
   return $data;
