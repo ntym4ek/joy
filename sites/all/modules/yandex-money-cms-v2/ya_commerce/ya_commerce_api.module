@@ -405,6 +405,7 @@ function ya_commerce_api_set_receipt_if_needed($builder, $order, $order_wrapper)
     }
 
     $builder->setReceiptEmail($order->mail);
+    $builder->setReceiptPhone($order_wrapper->field_phone->value());
     // посчитать сумму всех скидок на фиксированную сумму и сумму товаров
     $discount_total = $product_total = 0;
     foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
@@ -826,6 +827,11 @@ function ya_commerce_api_capture_payment($payment, $order)
         ya_commerce_api_set_receipt_if_needed($builder, $order, $order_wrapper);
 
         $request  = $builder->build();
+
+      if ($request->getReceipt() !== null) {
+        $request->getReceipt()->normalize($request->getAmount());
+      }
+
         $response = $apiClient->capturePayment($request, $payment->getId());
     } catch (\Exception $e) {
         $this->module->log('error', 'Capture error: '.$e->getMessage());

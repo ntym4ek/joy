@@ -229,7 +229,7 @@ function courier_service_details_form_submit($details_form, $details_values, $li
 {
     $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
     $order_wrapper->field_username = $details_values['username'];
-    $order_wrapper->field_phone = $details_values['phone'];
+    $order_wrapper->field_phone = ext_user_normalize_phone($details_values['phone']);
     $order_wrapper->commerce_customer_shipping->field_addr = $details_values['addr'];
     $order_wrapper->commerce_customer_shipping->field_office = $details_values['office'];
     $order_wrapper->commerce_customer_shipping->field_callme = $details_values['callme'];
