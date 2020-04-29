@@ -498,7 +498,7 @@ function rp_cennayaposylka_info($item)
 {
     $component_data = empty($item->commerce_total['und'][0]['data']) ? [] : $item->commerce_total['und'][0]['data'];
     return [
-        'title' => 'Почта России, Ценная посылка',
+        'title' => 'Почта России',
         'method' => $item->commerce_shipping_service['und'][0]['value'],
         'address' => empty($component_data['address']) ? '' : $component_data['address'],
     ];

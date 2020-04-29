@@ -472,11 +472,14 @@ function ext_checkout_commerce_checkout_complete($order)
 {
   // перенести номер телефона в ЛК при необходимости
   $order_wr = entity_metadata_wrapper('commerce_order', $order);
-  $order_phone = $order_wr->field_phone->value();
-  $user_wr = entity_metadata_wrapper('user', $order_wr->uid->value());
-  if (!$user_wr->field_phone->value()) {
-    $user_wr->field_phone = ext_user_normalize_phone($order_phone);
-    $user_wr->save();
+  if ($uid = $order_wr->uid->value()) {
+    $order_phone = $order_wr->field_phone->value();
+    $user_wr = entity_metadata_wrapper('user', $uid);
+    if (!$user_wr->field_phone->value()) {
+      $order_phone = ext_user_normalize_phone($order_phone);
+      $user_wr->field_phone->set($order_phone);
+      $user_wr->save();
+    }
   }
 }
 
@@ -526,9 +529,14 @@ function ext_checkout_commerce_order_presave($order)
 
   // при онлайн оплате время заказа не проставится, если пользователь не вернется на сайт
   // поэтому проставляем принудительно
-  if (($order->original->status == 'checkout_checkout' && $order->status == 'pending')
-    || ($order->original->status == 'checkout_checkout' && $order->status == 'checkout_payment')){
-    $order->placed = REQUEST_TIME;
+  if (empty($order->original->placed)) {
+    if  (($order->original->status == 'checkout_checkout' && $order->status == 'pending')
+      || ($order->original->status == 'checkout_checkout' && $order->status == 'checkout_payment')
+      || ($order->original->status == 'cart' && $order->status == 'pending')                        // при оформлении заказа менеджером
+      || ($order->original->status == 'cart' && $order->status == 'processing')                     // при оформлении заказа менеджером
+    ) {
+      $order->placed = REQUEST_TIME;
+    }
   }
 
   // модуль сбера при удачной оплате ставит статус Завершено
