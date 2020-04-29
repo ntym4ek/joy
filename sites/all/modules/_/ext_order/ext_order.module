@@ -103,7 +103,7 @@ function ext_order_commerce_order_presave($order)
         ),
       );
       foreach ($order_wr->commerce_line_items as $item_wr) {
-        if ($item_wr->type->value() == 'product') {
+        if (in_array($item_wr->type->value(),commerce_product_line_item_types())) {
           $tare = $item_wr->commerce_product->field_p_tare->value() ? $item_wr->commerce_product->field_p_tare->name->value() : '';
           $table['rows'][] = array(
             array('data' => $item_wr->commerce_product->title->value(), 'style' => $td),

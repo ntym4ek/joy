@@ -407,7 +407,7 @@ function ext_checkout_commerce_coupon_condition_outcome_alter(&$outcome, &$conte
     // получить сумму товаров в заказе, так как скидки только на них
     $products_amount = 0;
     foreach ($context['order']->commerce_line_items as $line_item_wr) {
-      if ($line_item_wr->type->value() == "product") {
+      if (in_array($line_item_wr->type->value(), commerce_product_line_item_types())) {
         $products_amount += $line_item_wr->commerce_total->value()['amount'];
       }
     }

@@ -299,8 +299,7 @@ function ya_commerce_api_submit_form_submit($payment_method, $pane_form, $pane_v
             };
         }
 
-        $builder        = ya_commerce_api_get_create_payment_request_builder($order, $amount, $paymentMethod,
-            $order_wrapper);
+        $builder        = ya_commerce_api_get_create_payment_request_builder($order, $amount, $paymentMethod, $order_wrapper);
         $paymentRequest = $builder->build();
         $serializer     = new CreatePaymentRequestSerializer();
         $serializedData = $serializer->serialize($paymentRequest);
@@ -406,13 +405,14 @@ function ya_commerce_api_set_receipt_if_needed($builder, $order, $order_wrapper)
 
     $builder->setReceiptEmail($order->mail);
     $builder->setReceiptPhone($order_wrapper->field_phone->value());
+
     // посчитать сумму всех скидок на фиксированную сумму и сумму товаров
     $discount_total = $product_total = 0;
     foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
         if ($line_item_wrapper->value()->type == 'commerce_discount') {
             $discount_total += $line_item_wrapper->commerce_total->value()['amount'];
         }
-        if ($line_item_wrapper->value()->type == 'product') {
+        if (in_array($line_item_wrapper->value()->type, commerce_product_line_item_types())) {
             $product_total += $line_item_wrapper->commerce_total->value()['amount'];
         }
     }
@@ -426,7 +426,7 @@ function ya_commerce_api_set_receipt_if_needed($builder, $order, $order_wrapper)
     // добавить товары с доставкой в чек
     // на стоимость товаров раскинуть сумму фиксированной скидки
     foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-        if ($line_item_wrapper->value()->type == 'product') {
+        if (in_array($line_item_wrapper->value()->type, commerce_product_line_item_types())) {
             $product    = $line_item_wrapper->commerce_product->value();
             $line_item  = $line_item_wrapper->value();
 
