@@ -68,12 +68,11 @@ function boxberry_service_rate_order($shipping_service, $order)
 
       if (empty($rate_request["errors"])) {
         $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
-        //            if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
-        // todo кеш не учитывает применение купона
-        //              $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, variable_get('commerce_boxberry_cache_timeout', 86400));
-        //            } else {
-        $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1); // секунда в кэше
-        //            }
+        if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
+          $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 600);
+        } else {
+          $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 0);
+        }
 
         if (!$cache) {
           $response = boxberry_api_request($rate_request);
