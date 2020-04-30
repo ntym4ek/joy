@@ -48,7 +48,7 @@ function courier_commerce_shipping_service_info()
 function courier_service_rate_order($shipping_service, $order)
 {
   $rate = array(
-      'amount' => 0,
+      'amount' => -1,
       'currency_code' => 'RUB',
       'data' => [],
   );
@@ -67,7 +67,7 @@ function courier_service_rate_order($shipping_service, $order)
         $rate['amount'] = 0;
         if (ext_checkout_non_free_shipping($order)) {
           // если в стоимости доставки курьером в админке стоит 1, стоимость рассчитывать от Курьерских служб
-          $amount = variable_get('courier_delivery_cost', 150) == 1 ? 150 : variable_get('courier_delivery_cost', 150);
+          $amount = variable_get('courier_delivery_cost', 250) == 1 ? 250 : variable_get('courier_delivery_cost', 250);
         } else {
           $amount = 0;
         }
@@ -119,7 +119,7 @@ function courier_service_rate_order($shipping_service, $order)
   }
 
   // если доставка всё ещё равна нулю, то это ошибка
-  return ($rate['amount'] != 0 || isset($rate['data']['errors'])) ? $rate : false;
+  return ($rate['amount'] != -1 || isset($rate['data']['errors'])) ? $rate : false;
 }
 
 
