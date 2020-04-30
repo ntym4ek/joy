@@ -102,7 +102,7 @@ function courier_service_rate_order($shipping_service, $order)
 
         // если в стоимости доставки курьером в админке стоит 1, стоимость рассчитывать от Курьерских служб
         // если фикс сумма, то при беспланой доставке выводим её, а при платной - от Курьерских служб
-        if (variable_get('courier_delivery_cost', 150) == 1) {
+        if (variable_get('courier_delivery_cost', 250) == 1) {
           if (!ext_checkout_non_free_shipping($order)) {
             $amount = $to_door_cost;
           }
@@ -110,7 +110,7 @@ function courier_service_rate_order($shipping_service, $order)
         }
         else {
           if (!ext_checkout_non_free_shipping($order)) {
-            $amount = variable_get('courier_delivery_cost', 150);
+            $amount = variable_get('courier_delivery_cost', 250);
           }
           $rate['amount'] = ceil($amount) * 100;
         }

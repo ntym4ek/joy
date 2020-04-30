@@ -404,7 +404,7 @@ function ya_commerce_api_set_receipt_if_needed($builder, $order, $order_wrapper)
     }
 
     $builder->setReceiptEmail($order->mail);
-    $builder->setReceiptPhone($order_wrapper->field_phone->value());
+    $builder->setReceiptPhone(ext_user_normalize_phone($order_wrapper->field_phone->value()));
 
     // посчитать сумму всех скидок на фиксированную сумму и сумму товаров
     $discount_total = $product_total = 0;
