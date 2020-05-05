@@ -272,11 +272,11 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
 
   // передать параметры заказа в скрипты
   // todo проверить: купон на подарок меняет массу, изменение не передаётся с ajax
-  $parameters = [
-    'products_weight' => $weight,
-    'products_total' => $products_amount/100,
-  ];
-  drupal_add_js(array('ext_checkout' => $parameters), 'setting');
+//  $parameters = [
+//    'products_weight' => $weight,
+//    'products_total' => $products_amount/100,
+//  ];
+//  drupal_add_js(array('ext_checkout' => $parameters), 'setting');
 
   // замена ajax обработчика кнопки Recalculate, чтобы возвращать не только панель с деталями, а всю форму
   $form['commerce_shipping']['recalc'] = $form['commerce_shipping']['recalculate'];

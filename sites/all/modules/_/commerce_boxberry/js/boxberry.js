@@ -12,8 +12,8 @@
             function boxberry_open() {
                 var user_region = JSON.parse($.cookie('user_region'));
                 var city = user_region.value;
-                var products_total = Drupal.settings.ext_checkout.products_total;
-                var products_weight = Drupal.settings.ext_checkout.products_weight*1000;
+                var products_total = $(".boxberry-order-amount").val();
+                var products_weight = $(".boxberry-order-weight").val();
 
                 boxberry.open(callback_function,"1$qeQK1y01FnbNoAqY8dMwu21099cJ6zlc", city, "", products_total, products_weight, 0 );
             }

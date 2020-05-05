@@ -251,6 +251,13 @@ function boxberry_service_details_form($pane_form, $pane_values, $checkout_pane,
         if ($line_item_wrapper->value()) $data = $line_item_wrapper->commerce_unit_price->data->value();
     }
 
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $weight = commerce_physical_order_weight($order, 'g')['weight'];
+    $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
+
+    $pane_form['order_amount'] = ['#type' => 'hidden', '#value' => $products_amount_base/100, '#attributes' => ['class' => ['boxberry-order-amount']]];
+    $pane_form['order_weight'] = ['#type' => 'hidden', '#value' => $weight, '#attributes' => ['class' => ['boxberry-order-weight']]];
+
     // адрес пункта выдачи
     $pane_form['select'] = [
         '#type' => 'item',
