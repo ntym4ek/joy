@@ -76,7 +76,7 @@ function cdek_service_rate_order($shipping_service, $order)
         if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
           $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 600);
         } else {
-          $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 1); // секунда в кэше
+          $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 600);
         }
 
         if (!$cache) {

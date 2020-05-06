@@ -71,7 +71,7 @@ function boxberry_service_rate_order($shipping_service, $order)
         if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
           $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 600);
         } else {
-          $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 0);
+          $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 600);
         }
 
         if (!$cache) {
