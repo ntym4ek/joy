@@ -260,12 +260,17 @@ function helper_path_breadcrumbs_view_alter(&$breadcrumbs, $path_breadcrumbs, $c
     if (empty($_GET['cat']) && isset($contexts["nid"]->argument)) {
       $product_wr = entity_metadata_wrapper('node', $contexts["nid"]->argument);
       if ($categories = $product_wr->field_pd_category->value()) {
-        $menu_tid = $categories[0]->tid;
-        $query = db_select('field_data_field_category_term', 'ct');
-        $query->condition('ct.field_category_term_tid', $menu_tid);
-        $query->condition('ct.bundle', 'menu');
-        $query->fields('ct', ['entity_id']);
-        $category_tid = $query->execute()->fetchField();
+        foreach($categories as $category) {
+          if (!empty($category->tid)) {
+            $menu_tid = $category->tid;
+            $query = db_select('field_data_field_category_term', 'ct');
+            $query->condition('ct.field_category_term_tid', $menu_tid);
+            $query->condition('ct.bundle', 'menu');
+            $query->fields('ct', ['entity_id']);
+            $category_tid = $query->execute()->fetchField();
+            break;
+          }
+        }
       }
     }
     else { $category_tid = $_GET['cat']; }
