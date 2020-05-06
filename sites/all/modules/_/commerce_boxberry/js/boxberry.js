@@ -21,7 +21,7 @@
             function callback_function(result) {
                 var data = JSON.parse($(".field-name-field-data textarea").val());
                 if (!data.boxberry) data.boxberry = {};
-                data.boxberry.point_data = result;
+                data.boxberry.point = result;
                 $(".field-name-field-data textarea").val(JSON.stringify(data));
 
                 // обновление страницы

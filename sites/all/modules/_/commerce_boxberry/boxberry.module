@@ -98,8 +98,8 @@ function boxberry_service_rate_order($shipping_service, $order)
 
             $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
             $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
-            if (!empty($field_data['boxberry']['point_data']['address'])) {
-              $rate['data']['address'] = $field_data['boxberry']['point_data']['address'];
+            if (!empty($field_data['boxberry']['point']['address'])) {
+              $rate['data']['address'] = $field_data['boxberry']['point']['address'];
             }
 
             if (!ext_checkout_non_free_shipping($order)) {
@@ -209,7 +209,7 @@ function boxberry_api_request($data)
         $handle = fopen($url, "rb");
         $contents = stream_get_contents($handle);
         fclose($handle);
-        $response['point_data'] = json_decode($contents, TRUE);
+        $response['point'] = json_decode($contents, TRUE);
     }
 
     return $response;
@@ -304,7 +304,7 @@ function boxberry_service_details_form_validate($details_form, $details_values, 
   $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
   $validate = true;
-  if (empty($field_data["boxberry"]["point_data"]) || isset($field_data["boxberry"]["point_data"]["err"])) {
+  if (empty($field_data["boxberry"]["point"]) || isset($field_data["boxberry"]["point"]["err"])) {
     form_set_error(implode('][', array_merge($form_parents, ['select'])), 'Выберите пункт доставки на карте и нажмите "Выбрать отделение"');
     $validate = false;
   }
@@ -359,14 +359,25 @@ function boxberry_shipping_service_info($item, $shipping_profile)
     $field_data = empty($shipping_profile->field_data['und'][0]['value']) ? null : json_decode($shipping_profile->field_data['und'][0]['value'], true);
     $point_id = empty($shipping_profile->field_boxberry_target['und'][0]['value']) ? null : $shipping_profile->field_boxberry_target['und'][0]['value'];
 
+    // адрес
+    $address = empty($component_data['address']) ? '' : $component_data['address'];
+
+    // на время сохранения последствий ошибки
+    if (!$address && !empty($field_data['boxberry']['point']['address'])) {
+      $address =  $field_data['boxberry']['point']['address'];
+    }
+
     if (!$point_id && !empty($field_data['boxberry'])) {
-        $point_id = $field_data['boxberry']['point_data']['id'];
+      // устар.
+      if (!empty($field_data['boxberry']['point_data']['id'])) $point_id = $field_data['boxberry']['point_data']['id'];
+      // новый
+      if (!empty($field_data['boxberry']['point']['id'])) $point_id = $field_data['boxberry']['point']['id'];
     }
 
     return [
         'title' => $item->line_item_label,
         'method' => $item->commerce_shipping_service['und'][0]['value'],
-        'address' => empty($component_data['address']) ? '' : $component_data['address'],
+        'address' => $address,
         'point_id' => $point_id,
     ];
 }
