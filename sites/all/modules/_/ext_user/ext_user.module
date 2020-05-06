@@ -515,7 +515,7 @@ function ext_user_form_user_profile_form_alter (&$form, $form_state)
   $form['field_phone']['#element_validate'][] = 'ext_user_profile_phone_validate';
 
   // для манагеров, не проверять наличие почты
-  if (user_has_role(PRODUCT_MANAGER_RID, $GLOBALS['user']->uid) || user_has_role(ADMIN_RID, $GLOBALS['user']->uid)) {
+  if (user_has_role(PRODUCT_MANAGER_RID, $GLOBALS['user']) || user_has_role(ADMIN_RID, $GLOBALS['user'])) {
     $form['account']['mail']['#required'] = false;
     if ($form["#validate"][0] == 'user_account_form_validate') {
       array_shift($form["#validate"]);
