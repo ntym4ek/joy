@@ -362,6 +362,9 @@ function boxberry_shipping_service_info($item, $shipping_profile)
     $address = empty($component_data['address']) ? '' : $component_data['address'];
 
     // на время сохранения последствий ошибки
+  if (!$address && !empty($field_data['boxberry']['point']['address'])) {
+    $address = $field_data['boxberry']['point']['address'];
+  }
     if (!$address && !empty($field_data['boxberry']['point_data']['address'])) {
       $address = $field_data['boxberry']['point_data']['address'];
     }
