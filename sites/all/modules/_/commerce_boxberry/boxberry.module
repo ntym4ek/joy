@@ -67,7 +67,7 @@ function boxberry_service_rate_order($shipping_service, $order)
       $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
       if (empty($rate_request["errors"])) {
-        $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
+        $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'] . $rate_request["target_point"];
         if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
           $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 600);
         } else {
@@ -115,7 +115,9 @@ function boxberry_service_rate_order($shipping_service, $order)
       }
       else {
         $rate['data']['errors'] = $rate_request['errors'];
-        $field_data['boxberry'] = [];
+        $field_data['boxberry'] = [
+          'errors' => $rate_request['errors'],
+        ];
       }
 
       $order_wr->{$field_name}->field_data = json_encode($field_data);
@@ -143,13 +145,13 @@ function boxberry_build_rate_request($order)
     $request['errors'] = $check['errors'];
   }
 
+  $zipcode = $weight = $amount = $target_point = '';
   if (empty($request['errors'])) {
     $order_wr = entity_metadata_wrapper('commerce_order', $order);
     $field_name = commerce_physical_order_shipping_field_name($order);
     $shipping_profile = $order_wr->{$field_name}->value();
 
     // базовые данные
-    $zipcode = $weight = $amount = $target_point = '';
     if (isset($shipping_profile->field_data['und'][0]['value'])) {
       $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
       $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];

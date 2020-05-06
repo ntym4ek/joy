@@ -72,7 +72,7 @@ function cdek_service_rate_order($shipping_service, $order)
       $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
       if (empty($rate_request["errors"])) {
-        $cache_key = $rate_request["receiver_zipcode"] . $rate_request['weight'] . $rate_request['amount'];
+        $cache_key = $rate_request["receiver_zipcode"] . $rate_request['weight'] . $rate_request['amount'] . $rate_request["target_point"];
         if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
           $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 600);
         } else {
@@ -113,7 +113,9 @@ function cdek_service_rate_order($shipping_service, $order)
       }
       else {
         $rate['data']['errors'] = $rate_request['errors'];
-        $field_data['cdek'] = [];
+        $field_data['cdek'] = [
+          'errors' => $rate_request['errors'],
+        ];
       }
 
       $order_wr->{$field_name}->field_data = json_encode($field_data);
@@ -172,6 +174,7 @@ function cdek_build_rate_request($order)
     // возможно пункт уже выбран, нужно получить данные о нём
     if (!empty($data["cdek"]["point"]["id"])) {
       $receiver_city_id = $data["cdek"]["city"];
+      $target_point = $data["cdek"]["point"]["id"];
     }
 
     // $calc->setAuth('DCCP2Y0vHfQJXdxesgu5xcfZzAXB5kMx', '2IHAf3whPpeUz85BPqrVuQGz21B9dfDV');
@@ -183,6 +186,7 @@ function cdek_build_rate_request($order)
       'receiver_city_id' => $receiver_city_id,
       'sender_zipcode' => '613040',                             // из Чепецка
       'receiver_zipcode' => $zipcode,
+      'target_point' => $target_point,                          // пункт выдачи, если выбран
       'tariff_id' =>  136,                                      // устанавливаем режим доставки: склад-склад
       'items' => $items,
       'amount' => $amount,
