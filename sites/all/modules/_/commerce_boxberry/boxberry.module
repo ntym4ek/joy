@@ -71,7 +71,7 @@ function boxberry_service_rate_order($shipping_service, $order)
         if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
           $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 600);
         } else {
-          $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 600);
+          $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1);
         }
 
         if (!$cache) {
@@ -159,7 +159,6 @@ function boxberry_build_rate_request($order)
       $amount = $order_wr->commerce_order_total->value()['amount'] / 100;
 
       // возможно пункт уже выбран, нужно получить данные о нём
-      $target_point = empty($data['region']['data']['boxberry_id']) ? NULL : $data['region']['data']['boxberry_id'];
       if (!empty($data['boxberry'])) {
         $target_point = empty($data['boxberry']['point']['id']) ? '' : $data['boxberry']['point']['id'];
       }
@@ -204,13 +203,13 @@ function boxberry_api_request($data)
     }
 
     // описание точки
-    if ($data['target_point']) {
-        $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=PointsDescription&code=' . $data['target_point'];
-        $handle = fopen($url, "rb");
-        $contents = stream_get_contents($handle);
-        fclose($handle);
-        $response['point'] = json_decode($contents, TRUE);
-    }
+//    if ($data['target_point']) {
+//        $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=PointsDescription&code=' . $data['target_point'];
+//        $handle = fopen($url, "rb");
+//        $contents = stream_get_contents($handle);
+//        fclose($handle);
+//        $response['point'] = json_decode($contents, TRUE);
+//    }
 
     return $response;
 }
