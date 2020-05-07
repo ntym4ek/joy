@@ -53,10 +53,10 @@ function cdek_service_rate_order($shipping_service, $order)
     'data' => [],
   );
 
-  // todo для проверки только манагерам
-  if (!user_has_role(PRODUCT_MANAGER_RID)) {
-    return false;
-  }
+  // для проверки только манагерам
+//  if (!user_has_role(PRODUCT_MANAGER_RID)) {
+//    return false;
+//  }
 
   // при переходе на страницу оформления запрос на расчёт выполняется дважды:
   // при первом построении формы и автонажатии кнопки Recalc
