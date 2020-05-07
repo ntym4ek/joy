@@ -150,7 +150,7 @@ div.divider {
         line-height: 1;
         position: relative;
         background-color: #fff;
-        margin-top: 68px;
+        margin-top: 76px;
     }
 
     .topbar {
@@ -280,6 +280,16 @@ div.divider {
                 font-size: 1.2em;
                 position: relative;
             }
+          .qty,
+          .total {
+            line-height: 15px;
+            span {
+              display: inline-block;
+              vertical-align: top;
+            }
+          }
+          .total { margin-top: 2px; }
+          .bubble { position: relative; top: initial; right: initial; }
         }
 
         .btn {
