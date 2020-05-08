@@ -4,48 +4,47 @@
  * Implements hook_menu().
  */
 function ext_product_menu() {
-  $items['api/product/set'] = array (
+  $items['api/product/set'] = [
     'page callback' => 'ext_product_product_update',
-    'access arguments' => array('access content'),
+    'access arguments' => ['access content'],
     'type' => MENU_CALLBACK,
-  );
-  $items['admin/config/joy/api'] = array(
+  ];
+  $items['admin/config/joy/api'] = [
     'title' => 'API сайта',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('ext_product_api_settings'),
-    'access arguments' => array('access manager settings'),
+    'page arguments' => ['ext_product_api_settings'],
+    'access arguments' => ['access manager settings'],
     'file' => 'includes/ext_product.admin.inc',
-  );
+  ];
 
-  $items['cart/add-product/%'] = array (
+  $items['cart/add-product/%'] = [
     'page callback' => 'ext_product_product_cart_update',
-    'page arguments' => array(2, 1),
-    'access arguments' => array('access content'),
+    'page arguments' => [2, 1],
+    'access arguments' => ['access content'],
     'type' => MENU_CALLBACK,
-  );
-  $items['cart/delete-product/%'] = array (
+  ];
+  $items['cart/delete-product/%'] = [
     'page callback' => 'ext_product_product_cart_update',
-    'page arguments' => array(2, 1),
-    'access arguments' => array('access content'),
+    'page arguments' => [2, 1],
+    'access arguments' => ['access content'],
     'type' => MENU_CALLBACK,
-  );
+  ];
 
 
   return $items;
 }
 
 
-
 /**
- * ------------------------------------------ Добавление Product Teaser в корзину --------------------------------------
+ * ------------------------------------------ Добавление Product Teaser в
+ * корзину --------------------------------------
  * http://www.realtidings.com/blog/12/Apr/26/drupal-commerce-custom-add-cart-link
  * callback для добавления товара в корзину по id.
  */
-function ext_product_product_cart_update($product_id, $op, $mode = null)
-{
+function ext_product_product_cart_update($product_id, $op, $mode = NULL) {
   if ($mode == 'ajax') {
     ctools_include('modal');
-    $output = array();
+    $output = [];
 
     // добавляем в корзину
     if ($op == 'add-product') {
@@ -61,7 +60,8 @@ function ext_product_product_cart_update($product_id, $op, $mode = null)
 
         // обновляем виджет корзины
         $output[] = ajax_command_invoke('#cart', 'html', [trim(commerce_helper_cart_info_block())]);
-      } else {
+      }
+      else {
         // сообщение о неудачном добавлении
         $output[] = ctools_modal_command_display('Ошибка', 'Ошибка при добавлении товара в корзину.');
       }
@@ -95,19 +95,20 @@ function ext_product_product_cart_update($product_id, $op, $mode = null)
 
     print ajax_render($output);
     drupal_exit();
-  } else {
-    drupal_goto(url('node/'. _get_product_display_by_product_id($product_id)), ['query' => ['id' => $product_id]]);
+  }
+  else {
+    drupal_goto(url('node/' . _get_product_display_by_product_id($product_id)), ['query' => ['id' => $product_id]]);
   }
 }
 
 /**
  * Добавить вариант товара в корзину
+ *
  * @param $product_id
  *
  * @return bool|null
  */
-function ext_product_product_cart_add($product_id, $gift = false)
-{
+function ext_product_product_cart_add($product_id, $gift = FALSE) {
   if ($product = commerce_product_load($product_id)) {
     $fields = ['field_option_size' => ['und' => ['value' => NULL]]];
     $line_item = commerce_product_line_item_new($product, 1, 0, [$fields]);
@@ -124,11 +125,12 @@ function ext_product_product_cart_add($product_id, $gift = false)
     $line_item = commerce_cart_product_add($GLOBALS['user']->uid, $line_item, TRUE);
     return $line_item;
   }
-  return false;
+  return FALSE;
 }
 
 /**
- * ------------------------------------------ API ------------------------------------------------------------
+ * ------------------------------------------ API
+ * ------------------------------------------------------------
  */
 
 /**
@@ -139,17 +141,140 @@ function ext_product_product_update() {
   // проверить Токен
   $message = "Bad query";
 
-  if ($_GET['api_key'] == variable_get('api_key') && isset($_GET['stock']) && in_array($_GET['stock'], [0, 1]) && isset($_GET['pid'])) {
+  if ($_GET['api_key'] == variable_get('api_key') && isset($_GET['stock']) && in_array($_GET['stock'], [
+      0,
+      1,
+    ]) && isset($_GET['pid'])) {
     // изменить статус товара
     $stock = $_GET['stock'];
     $pid = $_GET['pid'];
     $product_wr = entity_metadata_wrapper('commerce_product', $pid);
     if ($product_wr->value()) {
-        $product_wr->field_p_out_of_stock->set(!$stock);
-        $product_wr->save();
-        $message = "OK";
+      $product_wr->field_p_out_of_stock->set(!$stock);
+      $product_wr->save();
+      $message = "OK";
     }
   }
 
   drupal_json_output($message);
+}
+
+function ext_product_get_info($product)
+{
+  $product_wr = entity_metadata_wrapper('commerce_product', $product);
+  $pid = $product_wr->product_id->value();
+  $host_node_id = _get_product_display_by_product_id($pid);
+
+  // заголовок
+  $pd_title = db_select('node', 'n')
+    ->fields('n', ['title'])
+    ->condition('n.nid', $host_node_id)
+    ->execute()->fetchField();
+  $title = strip_tags($pd_title);
+
+  // упаковка
+  $tare = $product_wr->field_p_tare->name->value();
+
+  // получить краткое описание
+  $pd_summary = db_select('field_data_body', 'b')
+    ->fields('b', ['body_summary'])
+    ->condition('b.entity_type', 'node')
+    ->condition('b.entity_id', $host_node_id)
+    ->execute()->fetchField();
+  $summary = strip_tags($pd_summary);
+
+  // сформировать ссылку на страницу подробного описания
+    // параметр id для отображения соответствующего варианта товара в карточке (модуль Commerce Product URLs)
+  $url_query['id'] = $pid;
+    // включить доп параметр с категорией, откуда заходим в описание
+  if (!empty($_GET['q']) && strpos($_GET['q'], 'taxonomy/term/') === 0) {
+    $tid = str_replace('taxonomy/term/', '', $_GET['q']);
+    if (is_numeric($tid)) {
+      $url_query['cat'] = $tid;
+    }
+  }
+  $node_url = url('node/'. $host_node_id, ['query' => $url_query]);
+
+  // разрешение на покупку
+  $lets_buy = true;
+  //        if (drupal_is_front_page()) $lets_buy = false;
+
+  // проверить наличие товара в корзине для вывода значка заполненной корзины
+  $add_to_cart_link = '';
+  $stock = $product_wr->field_p_out_of_stock->value();
+  if ($lets_buy) {
+    if ($stock) {
+      // если товар имеет опции, текст Выбрать размер
+      $has_options = false;
+      foreach((array)$product_wr->value() as $field_name => $field) {
+        if (strpos($field_name, '_option_') && $field) {
+          $has_options = true;
+        }
+      }
+      if ($has_options) {
+        $add_to_cart_link = '<div id="product-' . $pid . '-button"><a href="' . $node_url . '" class="btn btn-brand btn-sm btn-empty">Выбрать размер</a></div>';
+      }
+      // если уже добавлен "В корзину | +1"
+      elseif (in_array($pid, _get_order_product_ids($GLOBALS['user']->uid))) {
+        $add_to_cart_link =
+          '<div id="product-' . $pid . '-button" class="btn-group" role="group" >' .
+          '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину">В корзину</a>' .
+          '<a href="/cart/add-product/' . $pid . '/nojs" id="product-' . $pid . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax" rel="nofollow">+1</a>' .
+          '</div>';
+      }
+      else {
+        $add_to_cart_link = '<div id="product-' . $pid . '-button"><a href="/cart/add-product/' . $pid . '/nojs" id="product-' . $pid . '" class="btn btn-brand btn-sm btn-add-to-cart use-ajax" title="Добавить в корзину" rel="nofollow">Купить</a></div>';
+      }
+    } else {
+      $add_to_cart_link = '<div id="product-' . $pid . '-button"><a href="' . $node_url . '" class="btn btn-brand btn-sm btn-empty">Товар ожидается</a></div>';
+    }
+  }
+
+  // изображение
+  if ($image = $product_wr->field_p_image[0]->value()) {
+    $image_url = image_style_url('medium', $image['uri']);
+  }
+
+  // оценка
+  $fivestar_html = '';
+  $votes = fivestar_get_votes('node', $host_node_id);
+  $fivestar_field = !empty($votes['count']['value']) ? field_view_field('node', node_load($host_node_id), 'field_pr_mark','teaser') : '';
+  if ($fivestar_field) {
+    $fivestar_html = drupal_render($fivestar_field);
+  }
+
+  // цена и скидка
+  $discount_amount = 0;
+  $commerce_price = $product_wr->commerce_price->value();
+  $price = commerce_currency_format($commerce_price['amount'], 'RUB');
+  $base_amount = commerce_price_component_total($commerce_price, 'base_price')['amount'];
+  foreach ($commerce_price['data']['components'] as $key => $component) {
+    if (strpos($component['name'], 'discount|') === 0) {
+      $discount_amount += $component['price']['amount'];
+    }
+  }
+  $discount_percent = $base_amount ? floor($discount_amount/$base_amount*100) : 0;
+
+  // перебрать атрибуты
+  $attributes = [];
+  foreach ((array)$product_wr->value() as $field_name => $field) {
+    if ((strpos($field_name, '_attribute_') || $field_name == 'field_p_tare') && $product_wr->{$field_name}->value()) {
+      $attributes[] = $product_wr->{$field_name}->info()['label'] . ': ' . $product_wr->{$field_name}->label();
+    }
+  }
+
+  return [
+    'title' => $title,
+    'tare' => $tare,
+    'summary' => $summary,
+    'price' => $price,
+    'discount_percent' => $discount_percent,
+    'node_url' => $node_url,
+    'lets_buy' => $lets_buy,
+    'add_to_cart_link' => $add_to_cart_link,
+    'image_url' => $image_url,
+    'fivestar_html' => $fivestar_html,
+    'stock' => $stock,
+    'attributes' => $attributes,
+  ];
 }

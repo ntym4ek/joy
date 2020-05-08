@@ -138,7 +138,7 @@ function ext_order_commerce_order_presave($order)
   if ($event) {
     $account = user_load($order->uid);
     $params['account'] = $account;
-    $params['order_info'] = _get_order_info($order);
+    $params['order_info'] = ext_order_get_order_info($order);
 
     // письмо Пользователю
     if (!empty($order->mail)) {
@@ -174,7 +174,7 @@ function ext_order_commerce_order_presave($order)
  *
  * @return array
  */
-function _get_order_info($order, $including_products = false)
+function ext_order_get_order_info($order, $including_line_items = false)
 {
   $order_wr = entity_metadata_wrapper('commerce_order', $order);
 
@@ -182,7 +182,7 @@ function _get_order_info($order, $including_products = false)
   $product_count = 0;
 
   // доставка
-  $products = [];
+  $line_items = [];
   $shipping = [];
   $shipping_profile_wr = $order_wr->commerce_customer_shipping;
   if ($shipping_profile_wr->value()) {
@@ -205,10 +205,10 @@ function _get_order_info($order, $including_products = false)
 
           $shipping['cost'] = commerce_currency_format($item_wr->commerce_total->amount->value() / 100, $item_wr->commerce_total->currency_code->value(), NULL, FALSE);
         }
-        elseif (in_array($item_wr->type->value(), ['product', 'product_discount'])) {
+        elseif (in_array($item_wr->type->value(), commerce_product_line_item_types())) {
           $product_count++;
-          if ($including_products) {
-            $products[] = _get_line_item_info($item_wr->value());
+          if ($including_line_items) {
+            $line_items[] = ext_order_get_line_item_info($item_wr->value());
           }
         }
       }
@@ -313,7 +313,7 @@ function _get_order_info($order, $including_products = false)
     'products' => [
       'qty' => $product_count,
       'qty_txt' => $product_count_text,
-      'items' => $products,
+      'items' => $line_items,
     ],
     'coupons' => $coupons,
     'shipping' => $shipping,
@@ -344,46 +344,31 @@ function _get_order_info($order, $including_products = false)
  *
  * @return array
  */
-function _get_line_item_info($line_item)
+function ext_order_get_line_item_info($line_item)
 {
   $result = [];
-  if (is_numeric($line_item)) $line_item = commerce_line_item_load($line_item);
-  if ($line_item) {
-    $pid = $line_item->commerce_product['und'][0]['product_id'];
-    if ($product = commerce_product_load($pid)) {
-      if ($node = _get_product_display_by_product_id($pid, FALSE)) {
-        $title = l($node->title, 'node/' . $node->nid, ['query' => ['id' => $pid]]);
-      }
-      if (empty($title)) {
-        $title = $product->title;
-      }
+  $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
 
-      $options = [];
-      // перебрать опции
-      $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
-      foreach ((array) $line_item as $field_name => $field) {
-        if (strpos($field_name, '_option_') && $line_item_wr->{$field_name}->value()) {
-          $options[] = $line_item_wr->{$field_name}->info()['label'] . ': ' . $line_item_wr->{$field_name}->label();
-        }
-      }
+  if ($line_item_wr->value()) {
+    $pid = $line_item_wr->commerce_product->product_id->value();
+    $product_info = ext_product_get_info($pid);
 
-      // перебрать атрибуты
-      $product_wr = entity_metadata_wrapper('commerce_product', $product);
-      foreach ((array) $product as $field_name => $field) {
-        if ((strpos($field_name, '_attribute_') || $field_name == 'field_p_tare') && $product_wr->{$field_name}->value()) {
-          $options[] = $product_wr->{$field_name}->info()['label'] . ': ' . $product_wr->{$field_name}->label();
-        }
+    // найти опции
+    $options = [];
+    foreach ((array) $line_item as $field_name => $field) {
+      if (strpos($field_name, '_option_') && $line_item_wr->{$field_name}->value()) {
+        $options[] = $line_item_wr->{$field_name}->info()['label'] . ': ' . $line_item_wr->{$field_name}->label();
       }
-
-      $result = [
-        'title' => $title,
-        'options' => $options,
-        'price' => $line_item_wr->commerce_unit_price->amount->value(),
-        'qty' => $line_item_wr->quantity->value(),
-        'total' => $line_item_wr->commerce_total->amount->value(),
-        'stock' => empty($product->field_p_out_of_stock['und'][0]['value']),
-      ];
     }
+    // добавить аттрибуты
+    $options = array_merge($options, $product_info['attributes']);
+
+    $result = [
+      'product_info' => $product_info,
+      'options' => $options,
+      'qty' => $line_item_wr->quantity->value(),
+      'total' => $line_item_wr->commerce_total->amount->value(),
+    ];
   }
   return $result;
 }

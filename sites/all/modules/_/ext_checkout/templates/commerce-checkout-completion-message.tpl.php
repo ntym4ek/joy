@@ -1,6 +1,6 @@
 <?php
 // подготовка переменных для вывода
-$order_info = _get_order_info($order);
+$order_info = ext_order_get_order_info($order);
 $shipping = $order_info['shipping'];
 $coupons = $order_info['coupons'];
 $payment = $order_info['payment'];

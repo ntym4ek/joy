@@ -1,6 +1,6 @@
 <?php
 
-$order_info = _get_order_info($order_id, true);
+$order_info = ext_order_get_order_info($order_id, true);
 
 $shipping = $order_info['shipping'];
 $payment = $order_info['payment'];
@@ -18,13 +18,13 @@ if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout')
 
 
 // таблица
-foreach ($order_info['products']['items'] as $line_item) {
+foreach ($order_info['products']['items'] as $line_item_info) {
     $commerce_line_items[] = array(
-        $line_item['title'],
-        drupal_strtolower(implode('; ', $line_item['options'])),
-        array('data' => commerce_currency_format($line_item['price'], 'RUB'), 'class' => 'text-right'),
-        array('data' => number_format($line_item['qty'], 0), 'class' => 'text-center'),
-        array('data' => commerce_currency_format($line_item['total'], 'RUB'), 'class' => 'text-right'),
+        $line_item_info['product_info']['title'],
+        drupal_strtolower(implode('; ', $line_item_info['options'])),
+        array('data' => commerce_currency_format($line_item_info['product_info']['price'], 'RUB'), 'class' => 'text-right'),
+        array('data' => number_format($line_item_info['qty'], 0), 'class' => 'text-center'),
+        array('data' => commerce_currency_format($line_item_info['total'], 'RUB'), 'class' => 'text-right'),
     );
 }
 

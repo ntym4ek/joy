@@ -740,8 +740,9 @@ $navbar-strada-toggle-border-color:       #ddd;
 }
 
 .view-catalog-products,
+.view-commerce-wishlist-page,
 .view-search-results {
-    .view-content{
+    .view-content {
         display: flex; flex-wrap: wrap;
         margin: 0 (-$grid-gutter-width/2);
         .view-item {
@@ -1817,6 +1818,7 @@ form[id^="user-profile-form"] {
         flex: 0 1 auto;
         display: flex;
         align-items: center;
+      min-height: 40px;
         .p-price {
             flex: 1 1 auto;
             font-size: 18px; font-weight: 700;
@@ -1874,6 +1876,11 @@ form[id^="user-profile-form"] {
     .p-buy-block {
         flex: 0 1 auto;
         margin-top: $grid-gutter-width;
+      display: flex;
+      justify-content: space-between;
+      .views-field-wishlist-remove span {
+        vertical-align: middle;
+      }
     }
 
 }

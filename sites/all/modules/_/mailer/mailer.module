@@ -122,7 +122,7 @@ function mailer_send_cart_orphan_mails($order_id)
   if (!empty($user_info['email']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_PROMO_EMAIL, $uid))) {
     $account = user_load($uid);
     $params['account'] = $account;
-    $params['order_info'] = _get_order_info($order_wr->value());
+    $params['order_info'] = ext_order_get_order_info($order_wr->value());
     drupal_mail('mailer', 'cart_orphan', $order_wr->mail->value(), user_preferred_language($account), $params);
   }
   if (!empty($user_info['phone']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_PROMO_SMS, $uid))) {
@@ -178,7 +178,7 @@ function mailer_send_order_review_mails($order_id)
   if (!empty($user_info['email']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_EMAIL, $uid))) {
     $account = user_load($uid);
     $params['account'] = $account;
-    $params['order_info'] = _get_order_info($order_wr->value());
+    $params['order_info'] = ext_order_get_order_info($order_wr->value());
     // таблица со списком препаратов
     $td = 'border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; padding: 4px 8px;';
     $table = 'Товары не найдены.';
@@ -270,7 +270,7 @@ function mailer_send_shop_review_mails($order_id)
   if (!empty($user_info['email']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_EMAIL, $uid))) {
     $account = user_load($uid);
     $params['account'] = $account;
-    $params['order_info'] = _get_order_info($order_wr->value());
+    $params['order_info'] = ext_order_get_order_info($order_wr->value());
     drupal_mail('mailer', 'leave_shop_review', $order_wr->mail->value(), user_preferred_language($account), $params);
   }
   if (!empty($user_info['phone']) && (!$uid || mailer_check_subscription(SUBSCRIPTION_NOTIFY_SMS, $uid))) {
