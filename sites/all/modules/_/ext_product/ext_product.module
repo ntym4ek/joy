@@ -201,7 +201,7 @@ function ext_product_get_info($product)
 
   // проверить наличие товара в корзине для вывода значка заполненной корзины
   $add_to_cart_link = '';
-  $stock = $product_wr->field_p_out_of_stock->value();
+  $stock = !$product_wr->field_p_out_of_stock->value();
   if ($lets_buy) {
     if ($stock) {
       // если товар имеет опции, текст Выбрать размер
