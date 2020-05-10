@@ -173,7 +173,12 @@ function ext_product_get_info($product)
   $title = strip_tags($pd_title);
 
   // упаковка
-  $tare = $product_wr->field_p_tare->name->value();
+  $arr = explode('|', $product_wr->title->value());
+  $tare = empty($arr[1]) ? '' : trim($arr[1]);
+
+//  if ($product_wr->field_p_tare->value()) {
+//    $tare = $product_wr->field_p_tare->name->value();
+//  }
 
   // получить краткое описание
   $pd_summary = db_select('field_data_body', 'b')
