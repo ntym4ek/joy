@@ -9,13 +9,22 @@ function mailer_mail($key, &$message, $params)
   $order_info = empty($params['order_info']) ? [] : $params['order_info'];
 
   switch($key) {
+    case 'user_pass':
+      $message['subject'] = 'Вы запросили смену пароля';
+
+      $message['body'][] =
+        '<h2>Здравствуйте!</h2>' .
+        '<p>Вы сделали запрос на восстановление пароля на сайте joy-magazin.ru.<br />Ваш новый пароль: ' . $params['pass'] . ' </p>';
+
+      break;
+
     case 'points_add':
       $message['subject'] = 'Вам начислены баллы';
 
-      $message['body'][] = '' .
+      $message['body'][] =
         '<h2>Здравствуйте!</h2>' .
         '<p>На сайте joy-magazin.ru Вам начислено ' . format_plural($params['userpoints']['points'],'@count point', '@count points') . '.' .
-        (empty($params['userpoints']['description']) ? '' : '<br />Комментарий: ' . $params['userpoints']['description']) .
+          (empty($params['userpoints']['description']) ? '' : '<br />Комментарий: ' . $params['userpoints']['description']) .
         '</p>' .
         '<p>Оплачивайте баллами до 30% стоимости товаров. </p>';
 
@@ -149,7 +158,6 @@ function mailer_mail($key, &$message, $params)
           ))) .
         '<br />';
 
-
       break;
 
     case 'leave_shop_review':
@@ -197,7 +205,7 @@ function mailer_mail_alter(&$message)
 {
   if (strpos($_SERVER['HTTP_HOST'], '.local') !== FALSE) {
     $message['send'] = false;
-    watchdog('mailer', 'Эмуляция отправки E-Mail.<br />Почта: ' . $message['to'] . '.<br />Тема: ' . $message['subject'] . '<br />Текст: ' . var_dump($message['body']), [], WATCHDOG_DEBUG);
+    watchdog('mailer', 'Эмуляция отправки E-Mail.<br />Почта: ' . $message['to'] . '.<br />Тема: ' . $message['subject'] . '<br />Текст: ' . var_export($message['body'], true), [], WATCHDOG_DEBUG);
   }
 }
 

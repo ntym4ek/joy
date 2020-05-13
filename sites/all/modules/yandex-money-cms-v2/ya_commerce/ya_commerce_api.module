@@ -409,7 +409,8 @@ function ya_commerce_api_set_receipt_if_needed($builder, $order, $order_wrapper)
     // посчитать сумму всех скидок на фиксированную сумму и сумму товаров
     $discount_total = $product_total = 0;
     foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-        if (in_array($line_item_wrapper->value()->type, ['commerce_discount', 'userpoints'])) {
+        if (in_array($line_item_wrapper->value()->type, ['commerce_discount'])) {
+//        if (in_array($line_item_wrapper->value()->type, ['commerce_discount', 'userpoints'])) {
             $discount_total += $line_item_wrapper->commerce_total->value()['amount'];
         }
         if (in_array($line_item_wrapper->value()->type, commerce_product_line_item_types())) {

@@ -288,7 +288,6 @@ function popup_spinner_ajax_callback()
       'gift' => $gift,
     ];
 
-    if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
       // отправить письмо менеджеру
       $params['data'] = [
         'name' => empty($_POST['data']['name']) ? '' : $_POST['data']['name'],
@@ -299,7 +298,6 @@ function popup_spinner_ajax_callback()
       $mail = variable_get('support_email', 'mega_comp@mail.ru');
       drupal_mail('popup_spinner', '', $mail, 'ru', $params);
       drupal_mail('popup_spinner', '', 'ed_smr@kccc.ru', 'ru', $params);
-    }
   }
 
   return $result;

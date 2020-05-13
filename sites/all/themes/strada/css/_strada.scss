@@ -133,6 +133,14 @@ div.divider {
 
 /** ------------------------------------- Шапка (Header) ------------------------------------------------------------ */
 .navbar {
+  // зелёный топ
+  .line-1 {
+    background-color: #22993f;
+    .topbar a,
+    .topbar i,
+    .topbar-phone { color: #fff; }
+  }
+
     border: none;
     min-height: initial;
 
@@ -1603,7 +1611,7 @@ $navbar-strada-toggle-border-color:       #ddd;
     font-size: 80%;
 }
 
-form[id^="user-pass"],
+form[id^="ext-user-user-pass-form"],
 form[id^="user-profile-form"] {
     @media #{$tablet} {
         max-width: 500px;
