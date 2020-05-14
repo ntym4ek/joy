@@ -1,14 +1,55 @@
 <?php
 
 /**
+ * Implements hook_menu().
+ */
+function ext_order_menu()
+{
+  $items['user/%/orders/%/print'] = [
+    'title' => 'Распечатать заказ',
+    'page callback' => 'ext_order_print_order_info',
+    'page arguments' => [3],
+    'access arguments' => ['edit own commerce_order entities'],
+    'type' => MENU_LOCAL_ACTION,
+  ];
+  $items['user/%/orders/%/to-cart'] = [
+    'title' => 'Положить всё в корзину',
+    'page callback' => 'ext_order_add_order_to_cart',
+    'page arguments' => [3],
+    'access arguments' => ['edit own commerce_order entities'],
+    'type' => MENU_LOCAL_ACTION,
+  ];
+  $items['user/%/orders/%commerce_order/cancel'] = [
+    'title' => 'Отменить заказ',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['ext_order_commerce_order_order_cancel_form', 3],
+    'access callback' => 'commerce_order_access',
+    'access arguments' => ['update', 3],
+    'type' => MENU_LOCAL_ACTION,
+  ];
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ext_order_theme()
+{
+  return array(
+    // шаблон для печати содержимого заказа
+    'order_print_form' => array(
+      'variables' => array('order_id' => NULL),
+      'template' => 'order-print-form',
+    ),
+  );
+}
+
+/**
  * Implements hook_cron().
  */
 function ext_order_cron()
 {
-  /**
-   * -------------------------------------- Удаление устаревших корзин анонимов --------------------------------------
-   * http://xandeadx.ru/blog/drupal/907
-   */
+  // Удаление устаревших корзин анонимов
+  // http://xandeadx.ru/blog/drupal/907
   if (module_exists('commerce_order')) {
     $order_ids = db_select('commerce_order', 'o')
       ->fields('o', array('order_id'))
@@ -184,8 +225,9 @@ function ext_order_get_order_info($order, $including_line_items = false)
   // доставка
   $line_items = [];
   $shipping = [];
-  $shipping_profile_wr = $order_wr->commerce_customer_shipping;
-  if ($shipping_profile_wr->value()) {
+  $shipping_profile = $order_wr->commerce_customer_shipping->value();
+  if (!empty($shipping_profile)) {
+    $shipping_profile_wr = $order_wr->commerce_customer_shipping;
     foreach ($order_wr->commerce_line_items as $item_wr) {
       if ($item_wr->value()) {
         if ($item_wr->type->value() == 'shipping') {
@@ -339,7 +381,86 @@ function ext_order_get_order_info($order, $including_line_items = false)
   ];
 }
 
+
+
+
 /**
+ * -------------------- Удаление заказа ----------------------------------------
+ */
+/**
+ * Form callback: confirmation form for deleting an order.
+ *
+ * @see confirm_form()
+ */
+function ext_order_commerce_order_order_cancel_form($form, &$form_state, $order)
+{
+  if ($order) {
+    $form_state['order'] = $order;
+
+    $form['reason'] = [
+      '#type' => 'select',
+      '#title' => 'Причина отмены',
+      '#options' => array_merge(['- Выберите вариант -'], _commerce_helper_order_cancel_statuses()),
+      '#weight' => 1,
+    ];
+    $form['#validate'][] = 'ext_order_commerce_order_order_cancel_form_validate';
+    $form['#submit'][] = 'ext_order_commerce_order_order_cancel_form_submit';
+
+    $form = confirm_form($form,
+      t('Are you sure you want to cancel order @number?', ['@number' => $order->order_number]),
+      '',
+      '<p>' . t('Cancelling this order cannot be undone.') . '</p>',
+      t('Cancel order'),
+      t('Back'),
+      'confirm'
+    );
+
+    return $form;
+  } else {
+    drupal_access_denied();
+  }
+}
+
+/**
+ * Submit callback for ext_order_commerce_order_order_cancel_form().
+ */
+function ext_order_commerce_order_order_cancel_form_validate($form, &$form_state)
+{
+  if (empty($form_state['values']['reason'])) {
+    form_set_error('reason', 'Выберите причину отказа');
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Submit callback for ext_order_commerce_order_order_cancel_form().
+ */
+function ext_order_commerce_order_order_cancel_form_submit($form, &$form_state)
+{
+  $order = $form_state['order'];
+
+  commerce_order_status_update($order, 'canceled', false, true, _ext_order_order_cancel_statuses($form_state['values']['reason']));
+  drupal_set_message(t('Order @number has been canceled.', array('@number' => $order->order_number)));
+}
+
+function _ext_order_order_cancel_statuses($id = null)
+{
+  $options = [
+    '0' => 'Мне больше не нужен этот заказ',
+    '1' => 'Цена стала выше',
+    '2' => 'Слишком долгая обработка',
+  ];
+
+  return $id ? $options[$id] : $options;
+}
+
+/**
+ * ------------ Вспомогательные функции ----------------------------------------
+ */
+
+/**
+ * Информация о commerce_line_item
  * @param $line_item
  *
  * @return array
@@ -371,4 +492,32 @@ function ext_order_get_line_item_info($line_item)
     ];
   }
   return $result;
+}
+
+/**
+ * html страницы с информацией о Заказе
+ */
+function ext_order_print_order_info($order_id = null)
+{
+  return theme('order_print_form', array('order_id' => $order_id));
+}
+
+/**
+ * menu callback
+ * добавить товары из Заказа в Корзину
+ */
+function ext_order_add_order_to_cart($order_id = null)
+{
+  if ($order_wr = entity_metadata_wrapper('commerce_order', $order_id)) {
+    foreach($order_wr->commerce_line_items as $item_wr) {
+      if ($item_wr->type->value() == 'product' && $product = $item_wr->commerce_product->value()) {
+        $line_item = commerce_product_line_item_new($product, $item_wr->quantity->value());
+        $line_item->commerce_display_path['und']['0']['value'] = drupal_get_path_alias('node/' . _get_product_display_by_product_id($product->product_id));
+        commerce_cart_product_add($GLOBALS['user']->uid, $line_item, TRUE);
+      }
+    }
+  }
+
+  drupal_set_message('Все товары в том же количестве добавлены в корзину.');
+  drupal_goto('cart');
 }

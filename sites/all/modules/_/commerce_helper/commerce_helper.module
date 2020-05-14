@@ -8,30 +8,8 @@ define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_w
 /**
  * Implements hook_menu().
  */
-function commerce_helper_menu() {
-    $items['user/%/orders/%/print'] = array(
-        'title' => 'Распечатать заказ',
-        'page callback' => 'commerce_helper_print_order_info',
-        'page arguments' => array(3),
-        'access arguments' => array('edit own commerce_order entities'),
-        'type' => MENU_LOCAL_ACTION,
-    );
-    $items['user/%/orders/%/to-cart'] = array(
-        'title' => 'Положить всё в корзину',
-        'page callback' => 'commerce_helper_add_order_to_cart',
-        'page arguments' => array(3),
-        'access arguments' => array('edit own commerce_order entities'),
-        'type' => MENU_LOCAL_ACTION,
-    );
-    $items['user/%/orders/%commerce_order/cancel'] = array(
-        'title' => 'Отменить заказ',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_helper_commerce_order_order_cancel_form', 3),
-        'access callback' => 'commerce_order_access',
-        'access arguments' => array('update', 3),
-        'type' => MENU_LOCAL_ACTION,
-    );
-
+function commerce_helper_menu()
+{
     $items['admin/config/joy'] = array(
         'title' => 'Настройки сайта',
         'page callback' => 'system_admin_menu_block_page',
@@ -81,19 +59,6 @@ function commerce_helper_module_implements_alter(&$implementations, $hook)
     }
 }
 
-
-/**
- * Implements hook_theme().
- */
-function commerce_helper_theme() {
-    return array(
-        // шаблон для печати содержимого заказа
-        'order_print_form' => array(
-            'variables' => array('order_id' => NULL),
-            'template' => 'order-print-form',
-        ),
-    );
-}
 
 /**
  * Preprocess function for theme_html()
@@ -674,28 +639,7 @@ function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path
     }
 }
 
-// страница с информацией о заказе
-function commerce_helper_print_order_info($order_id = null)
-{
-    return theme('order_print_form', array('order_id' => $order_id));
-}
 
-// добавить товары из Заказа в Корзину
-function commerce_helper_add_order_to_cart($order_id = null)
-{
-    if ($order_wr = entity_metadata_wrapper('commerce_order', $order_id)) {
-        foreach($order_wr->commerce_line_items as $item_wr) {
-            if ($item_wr->type->value() == 'product' && $product = $item_wr->commerce_product->value()) {
-                $line_item = commerce_product_line_item_new($product, $item_wr->quantity->value());
-                $line_item->commerce_display_path['und']['0']['value'] = drupal_get_path_alias('node/' . _get_product_display_by_product_id($product->product_id));
-                commerce_cart_product_add($GLOBALS['user']->uid, $line_item, TRUE);
-            }
-        }
-    }
-
-    drupal_set_message('Все товары в том же количестве добавлены в корзину.');
-    drupal_goto('cart');
-}
 
 /**
  * ------------------------------------------ Убрать пустые копейки из цен ---------------------------------------------
@@ -766,73 +710,7 @@ function commerce_helper_views_data_alter(&$data)
 }
 
 
-/**
- * Form callback: confirmation form for deleting an order.
- *
- * @see confirm_form()
- */
-function commerce_helper_commerce_order_order_cancel_form($form, &$form_state, $order)
-{
-    if ($order) {
-        $form_state['order'] = $order;
 
-        $form['reason'] = [
-            '#type' => 'select',
-            '#title' => 'Причина отмены',
-            '#options' => array_merge(['- Выберите вариант -'], _commerce_helper_order_cancel_statuses()),
-            '#weight' => 1,
-        ];
-        $form['#validate'][] = 'commerce_helper_commerce_order_order_cancel_form_validate';
-        $form['#submit'][] = 'commerce_helper_commerce_order_order_cancel_form_submit';
-
-        $form = confirm_form($form,
-            t('Are you sure you want to cancel order @number?', ['@number' => $order->order_number]),
-            '',
-            '<p>' . t('Cancelling this order cannot be undone.') . '</p>',
-            t('Cancel order'),
-            t('Back'),
-            'confirm'
-        );
-
-        return $form;
-    } else {
-        drupal_access_denied();
-    }
-}
-
-/**
- * Submit callback for commerce_order_order_delete_form().
- */
-function commerce_helper_commerce_order_order_cancel_form_validate($form, &$form_state)
-{
-    if (empty($form_state['values']['reason'])) {
-        form_set_error('reason', 'Выберите причину отказа');
-        return false;
-    }
-    return true;
-}
-
-/**
- * Submit callback for commerce_order_order_delete_form().
- */
-function commerce_helper_commerce_order_order_cancel_form_submit($form, &$form_state)
-{
-    $order = $form_state['order'];
-
-    commerce_order_status_update($order, 'canceled', false, true, _commerce_helper_order_cancel_statuses($form_state['values']['reason']));
-    drupal_set_message(t('Order @number has been canceled.', array('@number' => $order->order_number)));
-}
-
-function _commerce_helper_order_cancel_statuses($id = null)
-{
-    $options = [
-        '0' => 'Мне больше не нужен этот заказ',
-        '1' => 'Цена стала выше',
-        '2' => 'Слишком долгая обработка',
-    ];
-
-    return $id ? $options[$id] : $options;
-}
 
 /**
  * ------------------------------------------ Вспомогательные функции --------------------------------------------------
