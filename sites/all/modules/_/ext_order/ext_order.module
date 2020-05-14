@@ -6,6 +6,7 @@
 function ext_order_menu()
 {
   $items['user/%/orders/%/print'] = [
+//  $items['admin/commerce/orders/64808/print'] = [
     'title' => 'Распечатать заказ',
     'page callback' => 'ext_order_print_order_info',
     'page arguments' => [3],
@@ -27,6 +28,8 @@ function ext_order_menu()
     'access arguments' => ['update', 3],
     'type' => MENU_LOCAL_ACTION,
   ];
+
+  return $items;
 }
 
 /**

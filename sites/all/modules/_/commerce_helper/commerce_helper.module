@@ -24,8 +24,6 @@ function commerce_helper_menu()
         'access arguments' => array('access manager settings'),
         'file' => 'includes/commerce_helper.admin.inc',
     );
-
-
     return $items;
 }
 
