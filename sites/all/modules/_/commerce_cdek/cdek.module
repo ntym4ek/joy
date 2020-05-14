@@ -76,7 +76,7 @@ function cdek_service_rate_order($shipping_service, $order)
         if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
           $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 600);
         } else {
-          $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 600);
+          $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 0);
         }
 
         if (!$cache) {
@@ -88,7 +88,12 @@ function cdek_service_rate_order($shipping_service, $order)
 
           // если ошибка
           if (isset($response["error"])) {
-            $rate['data']['errors'][] = $response["error"][0]["text"];
+            if ($response["error"][0]["code"] == 3) {
+              $rate['data']['errors'][] = 'Нет доставки в этот населенный пункт';
+            }
+            else {
+              $rate['data']['errors'][] = $response["error"][0]["text"];
+            }
             $field_data['cdek'] = [];
           }
           else {
@@ -252,7 +257,7 @@ function cdek_commerce_shipping_service_rate_options_alter(&$options, $order)
       $cost = $line_item_wr->commerce_unit_price->amount->value();
       $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
     } else {
-      $message = '<span class="text-danger">' . 'Ошибка расчёта: ' . drupal_strtolower(implode(', ', $data['errors'])) . '</span>';
+      $message = '<span class="text-danger">' . implode(', ', $data['errors']) . '</span>';
     }
 
     $options['cdek_shipping_service'] = '<div class="carrier">Заберу в<br />СДЭК</div>' .
