@@ -166,12 +166,9 @@ function cdek_build_rate_request($order)
         $dimentions = physical_dimensions_convert($product['dimentions'], 'cm');
         $items[] = [
           'weight' => $weight['weight'],
-          'height' => $dimentions['height'],
-          'width' => $dimentions['width'],
-          'length' => $dimentions['length'],
-//          'height' => ceil($dimentions['height']),
-//          'width' => ceil($dimentions['width']),
-//          'length' => ceil($dimentions['length']),
+          'height' => ceil($dimentions['height']),
+          'width' => ceil($dimentions['width']),
+          'length' => ceil($dimentions['length']),
         ];
       }
     } else {
