@@ -80,7 +80,11 @@ function cdek_service_rate_order($shipping_service, $order)
         }
 
         if (!$cache) {
-          $response = cdek_api_request($rate_request);
+          try {
+            $response = cdek_api_request($rate_request);
+          } catch (Exception $e) {
+            $response["error"][] = ['text' => $e->getMessage()];
+          }
 
           // если ошибка
           if (isset($response["error"])) {
@@ -162,9 +166,12 @@ function cdek_build_rate_request($order)
         $dimentions = physical_dimensions_convert($product['dimentions'], 'cm');
         $items[] = [
           'weight' => $weight['weight'],
-          'height' => ceil($dimentions['height']),
-          'width' => ceil($dimentions['width']),
-          'length' => ceil($dimentions['length']),
+          'height' => $dimentions['height'],
+          'width' => $dimentions['width'],
+          'length' => $dimentions['length'],
+//          'height' => ceil($dimentions['height']),
+//          'width' => ceil($dimentions['width']),
+//          'length' => ceil($dimentions['length']),
         ];
       }
     } else {

@@ -183,7 +183,12 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
 
         if (!$cache) {
           $rates = [];
-          $response = commerce_russianpost_api_request($rate_request, t('Requesting shipping rates for package in Order @order_number', ['@order_number' => $order->order_number]));
+
+          try {
+            $response = commerce_russianpost_api_request($rate_request, t('Requesting shipping rates for package in Order @order_number', ['@order_number' => $order->order_number]));
+          } catch (Exception $e) {
+            $response['services']['message']['error'] = $e->getMessage();
+          }
 
           if ($response) {
             if (empty($response['services']['message']['error'])) {

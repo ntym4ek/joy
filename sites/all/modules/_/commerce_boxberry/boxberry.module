@@ -75,7 +75,11 @@ function boxberry_service_rate_order($shipping_service, $order)
         }
 
         if (!$cache) {
-          $response = boxberry_api_request($rate_request);
+          try {
+            $response = boxberry_api_request($rate_request);
+          } catch (Exception $e) {
+            $response['cost_data'][] = ['err' => $e->getMessage()];
+          }
 
           // если пустой ответ или ошибка
           if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
