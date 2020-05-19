@@ -56,21 +56,23 @@
 ?><!DOCTYPE html>
 <html<?php print $html_attributes;?><?php print $rdf_namespaces;?>>
 <head>
-  <link rel="profile" href="<?php print $grddl_profile; ?>" />
+  <link  rel="profile" href="<?php print $grddl_profile; ?>" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="yandex-verification" content="eaaccbc2447ae1e6" />
   <?php print $head; ?>
   <title><?php print $head_title; ?></title>
-  <?php print $styles; ?>
+
   <!-- HTML5 element support for IE6-8 -->
   <!--[if lt IE 9]>
     <script src="https://cdn.jsdelivr.net/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
   <?php print $scripts; ?>
+  <meta name="yandex-verification" content="b9b00666d6470144" />
+  <meta name="google-site-verification" content="ZCpRWP6RYwwcNlhL8cdQzBmj_nxSPgD3zVH4gUfxAkQ" />
 </head>
 <body<?php print $body_attributes; ?>>
 <!-- Yandex.Metrika counter -->
-<script type="text/javascript" >
+<script async type="text/javascript" >
     (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
         m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
     (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
@@ -82,11 +84,13 @@
         webvisor:true
     });
 </script>
+
 <noscript><div><img src="https://mc.yandex.ru/watch/47689555" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 <!-- /Yandex.Metrika counter -->
 
   <?php print $page_top; ?>
   <?php print $page; ?>
   <?php print $page_bottom; ?>
+<?php print $styles; ?>
 </body>
 </html>
