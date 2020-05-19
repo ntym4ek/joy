@@ -194,9 +194,9 @@ function popup_spinner_ajax_callback()
     $error = $gift_full_name = '';
     switch ($gift_id) {
       case '1':
-        $gift_text_1 = 'Вы выиграли купон на подарок SEDA "Biohumus" 250 мл';
+        $gift_text_1 = 'Вы выиграли купон на подарок SEDA "Biohumus" 100 мл';
         $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
-        $gift_full_name = 'SEDA "Biohumus" 250 мл';
+        $gift_full_name = 'SEDA "Biohumus" 100 мл';
         $gift_name = 'BIOHUMUS';
         break;
       case '2':

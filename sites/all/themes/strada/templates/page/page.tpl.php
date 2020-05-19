@@ -82,8 +82,8 @@
             <div class="topbar">
                 <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
-                <div class="topbar-phone"">
-                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a>
+                <div class="topbar-phone">
+                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/<? print ext_user_normalize_phone(variable_get('manager_whatsapp', '8-922-910-99-40')); ?>" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a>
                 </div>
 
                 <div class="topbar-menu hidden-sm">
