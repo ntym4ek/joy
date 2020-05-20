@@ -10,7 +10,8 @@ function ext_order_menu()
     'title' => 'Распечатать заказ',
     'page callback' => 'ext_order_print_order_info',
     'page arguments' => [3],
-    'access arguments' => ['edit own commerce_order entities'],
+    'access callback' => 'commerce_order_customer_order_view_access',
+    'access arguments' => array(3),
     'type' => MENU_LOCAL_ACTION,
   ];
   $items['user/%/orders/%/to-cart'] = [
@@ -222,14 +223,14 @@ function ext_order_get_order_info($order, $including_line_items = false)
 {
   $order_wr = entity_metadata_wrapper('commerce_order', $order);
 
+  if (!$order_wr->value()) return false;
   // товары
   $product_count = 0;
 
   // доставка
   $line_items = [];
   $shipping = [];
-  $shipping_profile = $order_wr->commerce_customer_shipping->value();
-  if (!empty($shipping_profile)) {
+  if (isset($order_wr->value()->commerce_customer_shipping)) {
     $shipping_profile_wr = $order_wr->commerce_customer_shipping;
     foreach ($order_wr->commerce_line_items as $item_wr) {
       if ($item_wr->value()) {
