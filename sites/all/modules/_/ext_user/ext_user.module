@@ -745,11 +745,11 @@ function ext_user_user_pass_validate($form, &$form_state)
   $login = trim($form_state['values']['name']);
   // Try to load by email.
   $account = ext_user_user_load_by_login($login);
-  if (isset($account->uid)) {
+  if (!empty($account->uid)) {
     form_set_value(array('#parents' => array('account')), $account, $form_state);
   }
   else {
-    form_set_error('name', t('Sorry, there is no user with login %name in our base.', array('%name' => $login)));
+    form_set_error('name', t('Sorry, there is no user with e-mail or phone %name in our base.', array('%name' => $login)));
   }
 }
 
