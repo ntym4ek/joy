@@ -324,7 +324,7 @@ div.divider {
             padding: 0 $grid-gutter-width*2;
         }
         .level-1-item {
-            flex: auto;
+            flex: 0 1 auto;
             > a {
               color: $text-color;
             }
