@@ -291,8 +291,12 @@ function mailer_email_form_test_submit($form, &$form_state)
   $params['body'] = $form_state['values']['body']['value'];
 
   // письмо Пользователю
-  drupal_mail('mailer', 'manual', variable_get('support_email', 'help@joy-magazin.ru'), 'RU', $params);
-  //    drupal_mail('mailer', 'manual', 'mega_comp@mail.ru', 'RU', $params);
+  if (strpos($_SERVER['HTTP_HOST'], '.local') === FALSE) {
+    drupal_mail('mailer', 'manual', variable_get('support_email', 'help@joy-magazin.ru'), 'RU', $params);
+  } else {
+    drupal_mail('mailer', 'manual', 'mega_comp@mail.ru', 'RU', $params);
+  }
+
 
   // оставляем значения в форме
   $form_state['rebuild'] = true;
