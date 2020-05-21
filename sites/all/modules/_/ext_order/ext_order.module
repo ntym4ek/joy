@@ -5,12 +5,12 @@
  */
 function ext_order_menu()
 {
-  $items['user/%/orders/%/print'] = [
-//  $items['admin/commerce/orders/64808/print'] = [
+  $items['user/%/orders/%commerce_order/print'] = [
     'title' => 'Распечатать заказ',
     'page callback' => 'ext_order_print_order_info',
     'page arguments' => [3],
-    'access arguments' => ['edit own commerce_order entities'],
+    'access callback' => 'commerce_order_access',
+    'access arguments' => ['view', 3],
     'type' => MENU_LOCAL_ACTION,
   ];
   $items['user/%/orders/%/to-cart'] = [
