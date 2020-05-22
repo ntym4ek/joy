@@ -326,6 +326,17 @@ function helper_views_pre_view($view, &$display_id, &$args)
         }
     }
 
+  // для Категории вывести SEO описание внизу
+  if ($view->name == 'catalog_products' && $display_id == 'page_1') {
+    $menu_tid = str_replace('taxonomy/term/', '', $_GET["q"]);
+    if (is_numeric($menu_tid)) {
+      $menu_term_wr = entity_metadata_wrapper('taxonomy_term', $menu_tid);
+      if (isset($menu_term_wr->value()->field_category_term)) {
+        $footer_text = $menu_term_wr->field_category_term->field_description_seo->value();
+        $view->add_item($display_id, 'footer', 'views', 'area', ['content' => $footer_text, 'format' => 'full_html', 'empty' => true]);
+      }
+    }
+  }
 }
 
 
@@ -575,14 +586,14 @@ function _num2str($num) {
         array('миллиард','милиарда','миллиардов',0),
     );
     //
-    list($rub,$kop) = explode('.',sprintf("%015.2f", floatval($num)));
+    [$rub,$kop] = explode('.',sprintf("%015.2f", floatval($num)));
     $out = array();
     if (intval($rub)>0) {
         foreach(str_split($rub,3) as $uk=>$v) { // by 3 symbols
             if (!intval($v)) continue;
             $uk = sizeof($unit)-$uk-1; // unit key
             $gender = $unit[$uk][3];
-            list($i1,$i2,$i3) = array_map('intval',str_split($v,1));
+            [$i1,$i2,$i3] = array_map('intval',str_split($v,1));
             // mega-logic
             $out[] = $hundred[$i1]; # 1xx-9xx
             if ($i2>1) $out[]= $tens[$i2].' '.$ten[$gender][$i3]; # 20-99
