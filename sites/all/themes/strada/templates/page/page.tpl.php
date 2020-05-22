@@ -272,7 +272,7 @@
             <h5>Оцените<br />нас</h5>
             <div class="social-links">
                 <a class="vk" href="https://vk.com/joy_garden" rel="nofollow noopener" target="_blank" title="ВКонтакте"><i class="fab fa-vk" aria-hidden="true"></i></a>
-                <a class="fb" href="http://www.facebook.com/kccc.ru" rel="nofollow noopener" target="_blank" title="Facebook"><i class="fab fa-facebook" aria-hidden="true"></i></a>
+                <a class="fb" href="https://www.facebook.com/joy.garden.43/" rel="nofollow noopener" target="_blank" title="Facebook"><i class="fab fa-facebook" aria-hidden="true"></i></a>
                 <a class="in" href="https://www.instagram.com/joy_info" rel="nofollow noopener" target="_blank" title="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
             </div>
             <div>Горячая линия Интернет-магазина</div>
