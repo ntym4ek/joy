@@ -16,6 +16,99 @@ function ext_payment_menu()
     return $items;
 }
 /**
+ * ------------------------------------------ commerce rbspayment (Шлюз Сбера) -----------------------------------------
+ */
+function ext_payment_commerce_rbspayment_receipe_alter(&$order_bundle, $order_wr)
+{
+  $items = array();
+  $itemsCnt = 1;
+
+  foreach ($order_wr->commerce_line_items as $key => $line_item_wrapper) {
+
+    $line_item_type = $line_item_wrapper->getBundle();
+
+    if (in_array($line_item_type, commerce_product_line_item_types())) {
+
+      $item = array(
+        'positionId' => $itemsCnt++,
+        'itemAmount' => $line_item_wrapper->commerce_total->amount->value(),
+        'name' => $line_item_wrapper->commerce_product->value()->title,
+        'itemPrice' => $line_item_wrapper->commerce_unit_price->amount->value(),
+        'quantity' => array(
+          'value' => (float)number_format($line_item_wrapper->quantity->value(), 1),
+          'measure' => 'шт'
+        ),
+        'tax' => array(
+          'taxType' => 0 //
+        ),
+        'itemCode' => $line_item_wrapper->commerce_product->value()->product_id
+      );
+
+      // FFD 1.05 added
+      if ($config['ffd_version'] == 'v105') {
+
+        $attributes = array();
+        $attributes[] = array(
+          "name" => "paymentMethod",
+          "value" => $config['ffd_paymentMethodType']
+        );
+        $attributes[] = array(
+          "name" => "paymentObject",
+          "value" => $config['ffd_paymentObjectType']
+        );
+
+        $item['itemAttributes']['attributes'] = $attributes;
+
+      }
+
+    } else {
+      $item = array(
+        'positionId' => $itemsCnt++,
+        'itemAmount' => $line_item_wrapper->commerce_total->amount->value(),
+        'name' => $line_item_wrapper->line_item_label->value(),
+        'itemPrice' => $line_item_wrapper->commerce_unit_price->amount->value(),
+        'quantity' => array(
+          'value' => (float)number_format($line_item_wrapper->quantity->value(), 1),
+          'measure' => 'шт'
+        ),
+        'tax' => array(
+          'taxType' => 0 //
+        ),
+        'itemCode' => $line_item_wrapper->line_item_id->value()
+      );
+
+      // FFD 1.05 added
+      if ($config['ffd_version'] == 'v105') {
+
+        $attributes = array();
+        $attributes[] = array(
+          "name" => "paymentMethod",
+          "value" => 4
+        );
+        $attributes[] = array(
+          "name" => "paymentObject",
+          "value" => 4
+        );
+
+        $item['itemAttributes']['attributes'] = $attributes;
+
+      }
+    }
+
+    $items[] = $item;
+  }
+
+  $order_bundle = array(
+    'orderCreationDate' => $order->changed,
+    'customerDetails' => array(
+      'email' => $order->mail
+    ),
+    'cartItems' => array('items' => $items)
+  );
+
+}
+
+/**
  * ------------------------------------------ Яндекс.Касса (Yandex.Kassa) ----------------------------------------------
  */
 
