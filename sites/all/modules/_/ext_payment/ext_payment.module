@@ -5,10 +5,10 @@
  */
 function ext_payment_menu()
 {
-    $items['user/%/orders/%/pay'] = array (
+    $items['user/%/orders/%/pay/%'] = array (
         'title' => 'Оплатить заказ',
         'page callback' => 'ext_payment_commerce_order_pay_again',
-        'page arguments' => array(3),
+        'page arguments' => array(3,5),
         'access arguments' => array('edit own commerce_order entities'),
         'type' => MENU_LOCAL_ACTION,
     );
@@ -23,85 +23,87 @@ function ext_payment_commerce_rbspayment_receipe_alter(&$order_bundle, $order_wr
   $items = array();
   $itemsCnt = 1;
 
-  foreach ($order_wr->commerce_line_items as $key => $line_item_wrapper) {
+  foreach ($order_wr->commerce_line_items as $key => $line_item_wr) {
+    $line_item_id = $line_item_wr->getIdentifier();
+    $line_item_type = $line_item_wr->getBundle();
+    // если есть нашем массиве (откуда исключены скидки с фикс. суммой)
+    if (isset($items_with_spread[$line_item_id])) {
+      if (in_array($line_item_type, commerce_product_line_item_types())) {
+        $item = [
+          'positionId' => $itemsCnt++,
+          'itemAmount' => $items_with_spread[$line_item_id]['amount'],
+          'name' => $line_item_wr->commerce_product->value()->title,
+          'itemPrice' => $items_with_spread[$line_item_id]['price'],
+          'quantity' => [
+            'value' => (float) number_format($line_item_wr->quantity->value(), 1),
+            'measure' => 'шт'
+          ],
+          'tax' => [
+            'taxType' => 0 //
+          ],
+          'itemCode' => $line_item_wr->commerce_product->value()->product_id
+        ];
 
-    $line_item_type = $line_item_wrapper->getBundle();
+        // FFD 1.05 added
+        if ($config['ffd_version'] == 'v105') {
 
-    if (in_array($line_item_type, commerce_product_line_item_types())) {
+          $attributes = [];
+          $attributes[] = [
+            "name" => "paymentMethod",
+            "value" => $config['ffd_paymentMethodType']
+          ];
+          $attributes[] = [
+            "name" => "paymentObject",
+            "value" => $config['ffd_paymentObjectType']
+          ];
 
-      $item = array(
-        'positionId' => $itemsCnt++,
-        'itemAmount' => $line_item_wrapper->commerce_total->amount->value(),
-        'name' => $line_item_wrapper->commerce_product->value()->title,
-        'itemPrice' => $line_item_wrapper->commerce_unit_price->amount->value(),
-        'quantity' => array(
-          'value' => (float)number_format($line_item_wrapper->quantity->value(), 1),
-          'measure' => 'шт'
-        ),
-        'tax' => array(
-          'taxType' => 0 //
-        ),
-        'itemCode' => $line_item_wrapper->commerce_product->value()->product_id
-      );
+          $item['itemAttributes']['attributes'] = $attributes;
 
-      // FFD 1.05 added
-      if ($config['ffd_version'] == 'v105') {
-
-        $attributes = array();
-        $attributes[] = array(
-          "name" => "paymentMethod",
-          "value" => $config['ffd_paymentMethodType']
-        );
-        $attributes[] = array(
-          "name" => "paymentObject",
-          "value" => $config['ffd_paymentObjectType']
-        );
-
-        $item['itemAttributes']['attributes'] = $attributes;
-
-      }
-
-    } else {
-      $item = array(
-        'positionId' => $itemsCnt++,
-        'itemAmount' => $line_item_wrapper->commerce_total->amount->value(),
-        'name' => $line_item_wrapper->line_item_label->value(),
-        'itemPrice' => $line_item_wrapper->commerce_unit_price->amount->value(),
-        'quantity' => array(
-          'value' => (float)number_format($line_item_wrapper->quantity->value(), 1),
-          'measure' => 'шт'
-        ),
-        'tax' => array(
-          'taxType' => 0 //
-        ),
-        'itemCode' => $line_item_wrapper->line_item_id->value()
-      );
-
-      // FFD 1.05 added
-      if ($config['ffd_version'] == 'v105') {
-
-        $attributes = array();
-        $attributes[] = array(
-          "name" => "paymentMethod",
-          "value" => 4
-        );
-        $attributes[] = array(
-          "name" => "paymentObject",
-          "value" => 4
-        );
-
-        $item['itemAttributes']['attributes'] = $attributes;
+        }
 
       }
+      if ($line_item_type == 'shipping') {
+        $item = [
+          'positionId' => $itemsCnt++,
+          'itemAmount' => $items_with_spread[$line_item_id]['amount'],
+          'name' => $line_item_wr->line_item_label->value(),
+          'itemPrice' => $items_with_spread[$line_item_id]['amount'],
+          'quantity' => [
+            'value' => 1,
+            'measure' => 'шт'
+          ],
+          'tax' => [
+            'taxType' => 0 //
+          ],
+          'itemCode' => $line_item_wr->line_item_id->value()
+        ];
+
+        // FFD 1.05 added
+        if ($config['ffd_version'] == 'v105') {
+
+          $attributes = [];
+          $attributes[] = [
+            "name" => "paymentMethod",
+            "value" => 4
+          ];
+          $attributes[] = [
+            "name" => "paymentObject",
+            "value" => 4
+          ];
+
+          $item['itemAttributes']['attributes'] = $attributes;
+        }
+      }
+
+      $items[] = $item;
     }
-
-    $items[] = $item;
   }
 
-  $order_bundle = array(
+  $config['order_bundle'] = array(
     'orderCreationDate' => $order->changed,
     'customerDetails' => array(
-      'email' => $order->mail
+      'email' => $order->mail,
+      'phone' => ext_user_normalize_phone($order_wr->field_phone->value())
     ),
     'cartItems' => array('items' => $items)
   );
@@ -147,6 +149,24 @@ function ext_payment_commerce_payment_method_info_alter(&$payment_methods)
     $payment_methods['commerce_rbspayment']['display_title'] = '<div class="carrier">' . t('Pay online') . '</div><div class="message">Через Сбербанк. Банковские карты, банк-онлайн и другие.</div>';
 }
 
+function ext_payment_commerce_order_pay_again($order_id, $gate)
+{
+  switch ($gate) {
+    case 'yandex':
+      ext_payment_commerce_order_pay_again_with_yandex($order_id);
+      break;
+    case 'sberbank':
+      ext_payment_commerce_order_pay_again_with_sber($order_id);
+      break;
+  }
+}
+
+function ext_payment_commerce_order_pay_again_with_sber($order_id)
+{
+  $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+  commerce_rbspayment_redirect_form([], $form_state, $order_wr->value(), '');
+}
+
 
 /**
  * функция повторной оплаты из просмотра заказа
@@ -155,9 +175,8 @@ function ext_payment_commerce_payment_method_info_alter(&$payment_methods)
 use YandexCheckout\Common\Exceptions\ApiException;
 use YandexCheckout\Model\PaymentStatus;
 use YandexCheckout\Request\Payments\CreatePaymentRequestSerializer;
-function ext_payment_commerce_order_pay_again($order_id)
+function ext_payment_commerce_order_pay_again_with_yandex($order_id)
 {
-
     $modulePath = drupal_get_path('module', 'yamoney_api');
     require_once $modulePath.DIRECTORY_SEPARATOR.'YandexMoneyLogger.php';
     require_once $modulePath.DIRECTORY_SEPARATOR.'InstallmentsApi.php';
