@@ -1,7 +1,7 @@
 <?php
 
-define('ADMIN_RID', 3);
-define('PRODUCT_MANAGER_RID', 4);
+define('ADMIN_ROLE_ID', 3);
+define('PRODUCT_MANAGER_ROLE_ID', 4);
 
 /**
  * Implements hook_menu_alter().
@@ -516,7 +516,7 @@ function ext_user_form_user_profile_form_alter (&$form, $form_state)
   $form['field_phone']['#element_validate'][] = 'ext_user_profile_phone_validate';
 
   // для манагеров, не проверять наличие почты
-  if (user_has_role(PRODUCT_MANAGER_RID, $GLOBALS['user']) || user_has_role(ADMIN_RID, $GLOBALS['user'])) {
+  if (user_has_role(PRODUCT_MANAGER_ROLE_ID, $GLOBALS['user']) || user_has_role(ADMIN_ROLE_ID, $GLOBALS['user'])) {
     $form['account']['mail']['#required'] = false;
     if ($form["#validate"][0] == 'user_account_form_validate') {
       array_shift($form["#validate"]);
@@ -745,11 +745,11 @@ function ext_user_user_pass_validate($form, &$form_state)
   $login = trim($form_state['values']['name']);
   // Try to load by email.
   $account = ext_user_user_load_by_login($login);
-  if (isset($account->uid)) {
+  if (!empty($account->uid)) {
     form_set_value(array('#parents' => array('account')), $account, $form_state);
   }
   else {
-    form_set_error('name', t('Sorry, there is no user with login %name in our base.', array('%name' => $login)));
+    form_set_error('name', t('Sorry, there is no user with e-mail or phone %name in our base.', array('%name' => $login)));
   }
 }
 
