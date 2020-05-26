@@ -19,8 +19,12 @@ function ext_payment_menu()
 /**
  * ------------------------------------------ commerce rbspayment (Шлюз Сбера) -----------------------------------------
  */
-function ext_payment_commerce_rbspayment_receipe_alter(&$order_bundle, $order_wr)
+function ext_payment_commerce_rbspayment_receipt_alter(&$config, $order)
 {
+  $items_with_spread = ext_payment_get_items_with_spread_discount($order);
+  // todo подставить ниже новую стоимость товаров и доставки
+  $order_wr = entity_metadata_wrapper('commerce_order', $order->order_id);
+
   $items = array();
   $itemsCnt = 1;
 
@@ -110,6 +114,65 @@ function ext_payment_commerce_rbspayment_receipe_alter(&$order_bundle, $order_wr
   );
 
 }
+
+function ext_payment_get_items_with_spread_discount($order)
+{
+  $items = [];
+  $order_wr = entity_metadata_wrapper('commerce_order', $order->order_id);
+
+  // посчитать сумму всех скидок на фиксированную сумму и сумму товаров
+  $discount_total = $product_total = 0;
+  foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
+//    if (in_array($line_item_wr->getBundle(), ['commerce_discount'])) {
+    if (in_array($line_item_wr->getBundle(), ['commerce_discount', 'userpoints'])) {
+      $discount_total += $line_item_wr->commerce_total->amount->value();
+    }
+    if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
+      $product_total += $line_item_wr->commerce_total->amount->value();
+    }
+  }
+  $discount_total = abs($discount_total);
+  // коэфф (процент/100) на который будем уменьшать стоимость товаров
+  $koef = 1 - $discount_total/$product_total;
+  $koef = $koef ? $koef : 1;
+
+  // добавить товары с доставкой в чек
+  // на стоимость товаров раскинуть сумму фиксированной скидки
+  $total_w_koef = $amount_sh = 0;
+  foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
+    if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
+
+      // меняем стоимость товара (итог дб. без копеек)
+      $amount_w_koef = (int)floor($line_item_wr->commerce_unit_price->amount->value()*$koef);
+
+      $quantity = $line_item_wr->quantity->value();
+      $items[$line_item_wr->getIdentifier()] = [
+        'type' => 'shipping',
+        'title' => $line_item_wr->commerce_product->label(),
+        'price' => $amount_w_koef,
+        'amount' => $amount_w_koef*$quantity,
+      ];
+
+      $total_w_koef += $amount_w_koef*$quantity;
+    }
+
+    if ($line_item_wr->getBundle() == 'shipping') {
+      $amount_sh = $line_item_wr->commerce_total->amount->value();
+    }
+  }
+
+  // образовавшуюся на дробном коэффициенте разницу (после округлений) нужно куда-то пристроить
+  $diff = $product_total - $discount_total - $total_w_koef;
+
+  // добавляем разницу на доставку
+  $items[] = [
+    'type' => 'shipping',
+    'amount' => $amount_sh + $diff,
+  ];
+
+  return $items;
+}
+
 
 /**
  * ------------------------------------------ Яндекс.Касса (Yandex.Kassa) ----------------------------------------------
