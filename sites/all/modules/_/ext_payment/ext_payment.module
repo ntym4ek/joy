@@ -5,12 +5,13 @@
  */
 function ext_payment_menu()
 {
-    $items['user/%/orders/%/pay/%'] = array (
+    $items['user/%/orders/%commerce_order/pay/%'] = array (
         'title' => 'Оплатить заказ',
         'page callback' => 'ext_payment_commerce_order_pay_again',
-        'page arguments' => array(3,5),
+        'page arguments' => array(3, 5),
         'access arguments' => array('edit own commerce_order entities'),
-        'type' => MENU_LOCAL_ACTION,
+//        'type' => MENU_LOCAL_ACTION,
+        'type' => MENU_CALLBACK,
     );
 
     return $items;
@@ -149,21 +150,21 @@ function ext_payment_commerce_payment_method_info_alter(&$payment_methods)
     $payment_methods['commerce_rbspayment']['display_title'] = '<div class="carrier">' . t('Pay online') . '</div><div class="message">Через Сбербанк. Банковские карты, банк-онлайн и другие.</div>';
 }
 
-function ext_payment_commerce_order_pay_again($order_id, $gate)
+function ext_payment_commerce_order_pay_again($order, $gate)
 {
   switch ($gate) {
     case 'yandex':
-      ext_payment_commerce_order_pay_again_with_yandex($order_id);
+      ext_payment_commerce_order_pay_again_with_yandex($order);
       break;
     case 'sberbank':
-      ext_payment_commerce_order_pay_again_with_sber($order_id);
+      ext_payment_commerce_order_pay_again_with_sber($order);
       break;
   }
 }
 
-function ext_payment_commerce_order_pay_again_with_sber($order_id)
+function ext_payment_commerce_order_pay_again_with_sber($order)
 {
-  $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+  $order_wr = entity_metadata_wrapper('commerce_order', $order->order_id);
   commerce_rbspayment_redirect_form([], $form_state, $order_wr->value(), '');
 }
 
@@ -175,8 +176,9 @@ function ext_payment_commerce_order_pay_again_with_sber($order_id)
 use YandexCheckout\Common\Exceptions\ApiException;
 use YandexCheckout\Model\PaymentStatus;
 use YandexCheckout\Request\Payments\CreatePaymentRequestSerializer;
-function ext_payment_commerce_order_pay_again_with_yandex($order_id)
+function ext_payment_commerce_order_pay_again_with_yandex($order)
 {
+  $order_id = $order->order_id;
     $modulePath = drupal_get_path('module', 'yamoney_api');
     require_once $modulePath.DIRECTORY_SEPARATOR.'YandexMoneyLogger.php';
     require_once $modulePath.DIRECTORY_SEPARATOR.'InstallmentsApi.php';

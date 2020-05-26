@@ -5,8 +5,7 @@
  */
 function ext_order_menu()
 {
-  $items['user/%/orders/%/print'] = [
-//  $items['admin/commerce/orders/64808/print'] = [
+  $items['user/%/orders/%commerce_order/print'] = [
     'title' => 'Распечатать заказ',
     'page callback' => 'ext_order_print_order_info',
     'page arguments' => [3],
@@ -27,6 +26,7 @@ function ext_order_menu()
     'page arguments' => ['ext_order_commerce_order_order_cancel_form', 3],
     'access callback' => 'commerce_order_access',
     'access arguments' => ['update', 3],
+    'weight' => 999,
     'type' => MENU_LOCAL_ACTION,
   ];
 

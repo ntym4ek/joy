@@ -57,7 +57,7 @@ function pickup_service_rate_order($shipping_service, $order)
 
   if (arg(0) != 'checkout') {
     // оставить самовывоз только для служесного пользования
-    if (user_has_role(PRODUCT_MANAGER_RID) && $GLOBALS['user']->uid != 393) {
+    if (user_has_role(PRODUCT_MANAGER_ROLE_ID) && $GLOBALS['user']->uid != 393) {
       return $rate;
     }
   }
