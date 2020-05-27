@@ -78,12 +78,21 @@ if ($payment['before_shipping']) {
                 </dd>
                 <?php endif;?>
 
+              <? if (!empty($order_info['placed'])): ?>
+                <dt>Оформлен</dt>
+                <dd>
+                  <div><?php print format_date($order_info['placed'], 'datetime'); ?></div>
+                </dd>
+              <? endif; ?>
+
+              <? if (!empty($shipping)): ?>
                 <dt>Доставка</dt>
                 <dd>
                     <p><?php print empty($shipping['title']) ? '' : $shipping['title']; ?></p>
                     <p><?php print empty($shipping['address']) ? '' : $shipping['address']; ?></p>
                     <p><?php print empty($shipping['point_id']) ? '' : ('<span class="text-muted">id пункта: ' . $shipping['point_id'] . '</span>'); ?></p>
                 </dd>
+              <? endif; ?>
 
                 <dt>Получатель</dt>
                 <dd>
