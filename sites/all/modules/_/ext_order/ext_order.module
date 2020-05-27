@@ -230,7 +230,7 @@ function ext_order_get_order_info($order, $including_line_items = false)
   // доставка
   $line_items = [];
   $shipping = [];
-  if (isset($order_wr->value()->commerce_customer_shipping)) {
+  if (!empty($order_wr->value()->commerce_customer_shipping)) {
     $shipping_profile_wr = $order_wr->commerce_customer_shipping;
     foreach ($order_wr->commerce_line_items as $item_wr) {
       if ($item_wr->value()) {
