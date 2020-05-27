@@ -180,16 +180,20 @@ function mailer_mail($key, &$message, $params)
       $body = $params['body'];
 
       // заменить инфо о картинке на <img src>
-      $match = [];
-      if (preg_match('!(.*)\[\[(.+)\]\](.*)!s', $params['body'], $match) && !empty($match[2])) {
-        $image_url = '';
-        if (preg_match('!\{"fid":"(\d+)"!', $match[2], $match2)) {
-          if ($file = file_load($match2[1])) {
-            $image_url = file_create_url($file->uri);
+      $matches = [];
+      if (preg_match_all('!.*?\[\[(.+?)\]\].*?!s', $params['body'], $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+          $image_url = '';
+          if (preg_match('!\{"fid":"(\d+)"!', $match[1], $match2)) {
+            if ($file = file_load($match2[1])) {
+              $image_url = file_create_url($file->uri);
+            }
           }
+          if ($image_url) {
+            $body = str_replace('[[' . $match[1] . ']]', '<img src="' . $image_url . '" style="max-width: 100%;">', $body);
+          }
+          else $body = $match[1] . 'Ошибка при загрузке изображения' . $match[3];
         }
-        if ($image_url) $body = $match[1] . '<img src="' . $image_url . '" style="max-width: 100%;">' . $match[3];
-        else $body = $match[1] . 'Ошибка при загрузке изображения' . $match[3];
       }
 
       $message['body'][] = '' .
@@ -203,7 +207,7 @@ function mailer_mail($key, &$message, $params)
  */
 function mailer_mail_alter(&$message)
 {
-  if (strpos($_SERVER['HTTP_HOST'], '.local') !== FALSE) {
+  if (strpos($_SERVER['HTTP_HOST'], '.local') !== FALSE && empty($message["params"]["force_local_send"])) {
     $message['send'] = false;
     watchdog('mailer', 'Эмуляция отправки E-Mail.<br />Почта: ' . $message['to'] . '.<br />Тема: ' . $message['subject'] . '<br />Текст: ' . var_export($message['body'], true), [], WATCHDOG_DEBUG);
   }
@@ -291,8 +295,12 @@ function mailer_email_form_test_submit($form, &$form_state)
   $params['body'] = $form_state['values']['body']['value'];
 
   // письмо Пользователю
-  drupal_mail('mailer', 'manual', variable_get('support_email', 'help@joy-magazin.ru'), 'RU', $params);
-  //    drupal_mail('mailer', 'manual', 'mega_comp@mail.ru', 'RU', $params);
+  if (strpos($_SERVER['HTTP_HOST'], '.local') === FALSE) {
+    drupal_mail('mailer', 'manual', variable_get('support_email', 'help@joy-magazin.ru'), 'RU', $params);
+  } else {
+    $params['force_local_send'] = true;
+    drupal_mail('mailer', 'manual', 'mega_comp@mail.ru', 'RU', $params);
+  }
 
   // оставляем значения в форме
   $form_state['rebuild'] = true;
