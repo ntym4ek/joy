@@ -316,7 +316,6 @@ var popupStatus = 0;
               });
             }
 
-
             /* ------------------------------------------ Main Menu mobile ------------------------------------------------- */
             var menu = $('.main-menu-mobile');
             menu.find("ul.level-2 > li > a").hover(function () {
