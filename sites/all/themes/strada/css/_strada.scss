@@ -2084,7 +2084,15 @@ form[id^="user-profile-form"] {
     }
     .pr-user-info {
         flex: 1 1 auto;
-        p { color: $text-muted; font-size: $font-size-small; }
+        p {
+          color: $text-muted; font-size: $font-size-small;
+          span {
+            display: inline-block;
+            background: #22993f;
+            color: #fff;
+            padding: 0 8px;
+            border-radius: 4px; }
+        }
     }
     .field { margin-bottom: $grid-gutter-width/2; }
     .help-block { display: none;}
