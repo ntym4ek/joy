@@ -54,13 +54,13 @@ function ext_checkout_preprocess_html(&$vars)
  */
 function ext_checkout_preprocess_page(&$vars)
 {
-  if (strpos($_GET['q'], 'checkout') === 0 && empty(arg(2))) {
+  if (arg(0) == 'checkout' && empty(arg(2))) {
     // убрать шапку и прочие элементы
     $vars['tsss'] = true;
 
     // добавляем скрипты
-    drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js');
-    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
+    drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js', ['scope' => 'footer']);
+    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js', ['scope' => 'footer']);
     drupal_set_title('');
   }
 }

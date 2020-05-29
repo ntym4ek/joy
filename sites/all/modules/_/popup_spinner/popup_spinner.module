@@ -115,10 +115,10 @@ function popup_spinner_show_message($popup_spinner_parameters)
     drupal_add_js(array(
         'popup_spinner' => $popup_spinner_parameters,
     ), 'setting');
-    drupal_add_js('misc/jquery.cookie.js');
-    drupal_add_js(drupal_get_path('module', 'popup_spinner') . '/js/popup_spinner.js');
+    drupal_add_library('system', 'jquery.cookie');
+    drupal_add_js(drupal_get_path('module', 'popup_spinner') . '/js/popup_spinner.js', ['scope' => 'footer', 'defer' => true]);
     drupal_add_css(drupal_get_path('module', 'popup_spinner') . '/css/popup_spinner.css');
-    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
+    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js', ['scope' => 'footer', 'defer' => true]);
 }
 
 function popup_spinner_ajax_callback()

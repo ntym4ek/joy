@@ -390,9 +390,9 @@ function cdek_shipping_service_info($item, $shipping_profile)
  */
 function cdek_preprocess_page(&$vars)
 {
+  if (arg(0) == 'checkout' && empty(arg(2))) {
     // добавляем скрипт СДЭК
-    if (strpos($_GET['q'], 'checkout') === 0) {
-        drupal_add_js(drupal_get_path('module', 'cdek') . '/widget/widjet.js');
-        drupal_add_js(drupal_get_path('module', 'cdek') . '/js/cdek.js');
-    }
+    drupal_add_js(drupal_get_path('module', 'cdek') . '/widget/widjet.js', ['scope' => 'footer']);
+    drupal_add_js(drupal_get_path('module', 'cdek') . '/js/cdek.js', ['scope' => 'footer']);
+  }
 }

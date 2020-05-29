@@ -348,10 +348,10 @@ function boxberry_service_details_form_submit($details_form, $details_values, $l
  */
 function boxberry_preprocess_page(&$vars)
 {
-    // добавляем скрипт Boxberry
-    if (strpos($_GET['q'], 'checkout') === 0) {
-        drupal_add_js('https://points.boxberry.de/js/boxberry.js');
-        drupal_add_js(drupal_get_path('module', 'boxberry') . '/js/boxberry.js');
+    if (arg(0) == 'checkout' && empty(arg(2))) {
+      // добавляем скрипт Boxberry
+      drupal_add_js('https://points.boxberry.de/js/boxberry.js', ['type' => 'external', 'scope' => 'footer']);
+      drupal_add_js(drupal_get_path('module', 'boxberry') . '/js/boxberry.js', ['scope' => 'footer']);
     }
 }
 

@@ -56,12 +56,12 @@
 ?><!DOCTYPE html>
 <html<?php print $html_attributes;?><?php print $rdf_namespaces;?>>
 <head>
-  <link  rel="profile" href="<?php print $grddl_profile; ?>" />
+  <link rel="profile" href="<?php print $grddl_profile; ?>" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="yandex-verification" content="eaaccbc2447ae1e6" />
   <?php print $head; ?>
   <title><?php print $head_title; ?></title>
-
+  <?php print $styles; ?>
   <!-- HTML5 element support for IE6-8 -->
   <!--[if lt IE 9]>
     <script src="https://cdn.jsdelivr.net/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
@@ -91,6 +91,5 @@
   <?php print $page_top; ?>
   <?php print $page; ?>
   <?php print $page_bottom; ?>
-<?php print $styles; ?>
 </body>
 </html>

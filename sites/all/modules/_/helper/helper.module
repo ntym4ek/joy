@@ -206,13 +206,16 @@ function helper_form_review_node_form_submit($form, &$form_state)
 /**
  * ----------------------------------------------- Модальное окно ------------------------------------------------
  */
-function helper_include_modal($options = array()) {
+function helper_include_modal($options = array())
+{
     static $added = FALSE;
     if ($added == FALSE) {
         $added = TRUE;
 
         // Include the CTools tools that we need.
-        ctools_include('modal'); ctools_include('ajax'); ctools_modal_add_js();
+        ctools_include('modal');
+        ctools_include('ajax');
+        ctools_modal_add_js();
 
         // Создаем массив с настройками для модального окна.
         $style = array(
@@ -427,9 +430,10 @@ function helper_menu_alter(&$items) {
  * http://xandeadx.ru/blog/drupal/598
  * Implements hook_form_FORM_ID_alter().
  */
-function helper_form_commerce_checkout_form_review_alter(&$form) {
-  drupal_add_js(drupal_get_path('module', 'helper') . '/js/payment-description.js');
-}
+//function helper_form_commerce_checkout_form_review_alter(&$form)
+//{
+//  drupal_add_js(drupal_get_path('module', 'helper') . '/js/payment-description.js');
+//}
 
 
 /**
