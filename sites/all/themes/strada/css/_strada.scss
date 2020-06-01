@@ -2606,6 +2606,23 @@ form[id^="user-profile-form"] {
     }
 }
 
+.unsubscribe-form {
+  > div {
+    .setup-link {
+      margin-top: $grid-gutter-width/2;
+      a {
+      color: $text-muted; font-size: $font-size-small;
+    }}
+    @media #{$tablet} {
+      width: 50%;
+      margin-left: 25%;
+    }
+    @media #{$normal} {
+      width: 30%;
+      margin-left: 35%;
+    }
+  }
+}
 
 /* ------------------------------------------------- 404 ------------------------------------------------------------ */
 .page404 {

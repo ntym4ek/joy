@@ -82,5 +82,5 @@ function ext_search_search_api_alter_callback_info()
  */
 function ext_search_preprocess_page(&$vars)
 {
-    drupal_add_js(drupal_get_path('module', 'ext_search') . '/ext_search.js', ['scope' => 'footer']);
+    drupal_add_js(drupal_get_path('module', 'ext_search') . '/js/ext_search.js', ['scope' => 'footer']);
 }

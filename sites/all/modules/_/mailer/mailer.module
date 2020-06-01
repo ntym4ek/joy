@@ -33,6 +33,13 @@ function mailer_menu()
         'file' => 'includes/mailer.sms.inc',
     );
 
+  $items['unsubscribe'] = array(
+    'title' => t('Unsubscribe'),
+    'page callback' => 'mailer_unsubscribe_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
     return $items;
 }
 
@@ -310,3 +317,67 @@ function mailer_check_subscription($subscription_tid, $user)
   $flag = flag_get_flag('subscriptions');
   return $user->uid && $flag && $flag->is_flagged($subscription_tid, $user->uid);
 }
+
+
+/**
+ * --------------------------------- Форма полной отписки от Уведомлений -----------------------------------------------
+ *
+ * menu callback
+ */
+function mailer_unsubscribe_callback()
+{
+  $mail = empty($_GET['mail']) ? '' : $_GET['mail'];
+  if ($mail && $user = ext_user_user_load_by_login($mail)) {
+    $form = drupal_get_form('mailer_unsubscribe_form', $user->uid);
+    return drupal_render($form);
+  } else {
+    drupal_goto('<front>');
+  }
+}
+
+/**
+ * форма подтверждения отписки
+ */
+function mailer_unsubscribe_form($form, $form_state, $uid)
+{
+  $form['#attributes'] = ['class' => ['unsubscribe-form']];
+  $form['uid'] = ['#type' => 'hidden', '#value' => $uid];
+  $form['text'] = ['#markup' => '<h3 class="text-center">' . t('You going to unsubscribe from our E-Mails') . '</h3>'];
+  $form['actions'] = [
+    '#type' => 'container',
+    '#attributes' => ['class' => ['text-center']]
+  ];
+  $form['actions']['unsubscribe'] = [
+    '#type' => 'submit',
+    '#value' => t('Unsubscribe'),
+    '#attributes' => ['class' => ['btn-primary', 'btn-wide']]
+  ];
+  $form['actions']['setup'] = ['#markup' => '<div class="setup-link">' . l(t('Set up subscribes'), "/user/$uid/subscriptions") . '</div>'];
+
+  return $form;
+}
+
+function mailer_unsubscribe_form_submit($form, &$form_state)
+{
+  mailer_unsubscribe_all($form_state['values']['uid']);
+
+  $form_state['redirect'] = '<front>';
+}
+
+/**
+ * Отписка пользователя от Email рассылок
+ * @param $uid
+ */
+function mailer_unsubscribe_all($uid)
+{
+  if ($account = user_load($uid)) {
+    if (!empty($account->mail)) {
+      if ($flag = flag_get_flag('subscriptions')) {
+        $flag->flag('unflag', SUBSCRIPTION_NOTIFY_EMAIL, $account);
+        $flag->flag('unflag', SUBSCRIPTION_PROMO_EMAIL, $account);
+      }
+    }
+  }
+}
+
+

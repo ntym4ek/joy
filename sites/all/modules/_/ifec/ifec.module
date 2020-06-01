@@ -121,7 +121,7 @@ function ifec_theme() {
   return array(
     'ifec_settings_form_ids' => array(
       'render element' => 'form',
-      'file' => 'ifec.theme.inc',
+      'file' => 'includes/ifec.theme.inc',
     ),
   );
 }

@@ -25,6 +25,7 @@
 */
 $sign = empty($message['params']['context']['sign']) ? 'Интернет-магазин joy-magazin.ru<br />Мы будем рады ответить на Ваши вопросы по электронной почте help@joy-magazin.ru ' : $message['params']['context']['sign'];
 $auto = !isset($message['params']['context']['auto']) ? 'Письмо сформировано автоматически' : '';
+$a = url('unsubscribe', ['absolute' => true, 'query' => ['mail' => $message["to"]]]);
 ?>
 
 <html>
@@ -59,7 +60,10 @@ $auto = !isset($message['params']['context']['auto']) ? 'Письмо сформ
                             <td style="padding: 20px;">
                                 <? print $sign; ?><br />
                                 <? if ($auto): ?>
-                                    <span style="color: #bbb; font-size: .8em;"><? print $auto; ?></span>
+                                    <span style="color: #bbb; font-size: .8em;">
+                                      <? print $auto; ?><br />
+                                      <a href="<? print url('unsubscribe', ['absolute' => true, 'query' => ['mail' => $message["to"]]]);  ?>">Отписаться</a> от рассылки
+                                    </span>
                                 <? endif; ?>
                             </td>
                         </tr>
