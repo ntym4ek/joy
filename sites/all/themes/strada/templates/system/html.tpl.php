@@ -67,8 +67,8 @@
     <script src="https://cdn.jsdelivr.net/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
   <?php print $scripts; ?>
-  <meta name="yandex-verification" content="b9b00666d6470144" />
-  <meta name="google-site-verification" content="ZCpRWP6RYwwcNlhL8cdQzBmj_nxSPgD3zVH4gUfxAkQ" />
+<!-- axioom  <meta name="yandex-verification" content="b9b00666d6470144" />-->
+<!-- axioom  <meta name="google-site-verification" content="ZCpRWP6RYwwcNlhL8cdQzBmj_nxSPgD3zVH4gUfxAkQ" />-->
 </head>
 <body<?php print $body_attributes; ?>>
 <!-- Yandex.Metrika counter -->

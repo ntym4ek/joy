@@ -59,22 +59,24 @@ function strada_preprocess_node(&$vars)
           $vars['user_sign'] = 'Покупатель';
 
           // проверка на бейдж Реальный покупатель
-          $product_node_wr = entity_metadata_wrapper('node', $vars["field_pr_product"]["und"][0]["target_id"]);
-          $pids = [];
-          foreach($product_node_wr->field_product->raw() as $product) {
-            $pids[] = $product;
-          }
+          if ($node_view_mode_suggestion == 'node__review__teaser' && isset($vars["field_pr_product"]["und"][0]["target_id"])) {
+            $product_node_wr = entity_metadata_wrapper('node', $vars["field_pr_product"]["und"][0]["target_id"]);
+            $pids = [];
+            foreach ($product_node_wr->field_product->raw() as $product) {
+              $pids[] = $product;
+            }
 
-          $query = db_select('commerce_line_item', 'cli');
-          $query->innerJoin('commerce_order', 'co', 'co.order_id = cli.order_id');
-          $query->condition('co.status', 'completed');
-          $query->condition('co.uid', $user_wr->getIdentifier());
-          $query->innerJoin('commerce_product', 'cp', 'cp.sku = cli.line_item_label');
-          $query->condition('cp.product_id', $pids, 'IN');
-          $query->addExpression('COUNT(*)');
-          $is_real = (bool)$query->execute()->fetchField();
-          if ($is_real) {
-            $vars['user_sign'] = '<span>Реальный покупатель</span>';
+            $query = db_select('commerce_line_item', 'cli');
+            $query->innerJoin('commerce_order', 'co', 'co.order_id = cli.order_id');
+            $query->condition('co.status', 'completed');
+            $query->condition('co.uid', $user_wr->getIdentifier());
+            $query->innerJoin('commerce_product', 'cp', 'cp.sku = cli.line_item_label');
+            $query->condition('cp.product_id', $pids, 'IN');
+            $query->addExpression('COUNT(*)');
+            $is_real = (bool)$query->execute()->fetchField();
+            if ($is_real) {
+              $vars['user_sign'] = '<span>Реальный покупатель</span>';
+            }
           }
         }
 
