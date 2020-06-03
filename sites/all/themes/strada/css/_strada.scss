@@ -840,6 +840,16 @@ $navbar-strada-toggle-border-color:       #ddd;
     .view-item { margin-bottom: 48px; }
 }
 
+.view-commerce-orders {
+  .views-field-field-comments { width: 25%; }
+  .views-field-operations a {
+    color: $text-muted;
+    &:hover, &:focus {
+      color: $text-color;
+    }
+  }
+}
+
 /**
  * ----------------------------------- Список товаров -----------------------------------------------------------------
  */

@@ -343,6 +343,30 @@ function helper_views_pre_view($view, &$display_id, &$args)
 }
 
 /**
+ * Implements hook_menu_contextual_links_alter().
+ */
+function helper_menu_contextual_links_alter(&$links, $router_item, $root_path)
+{
+  if ($_GET["q"] == 'admin/commerce/orders') {
+    $links["commerce-order-view"]["attributes"]['title'] = $links["commerce-order-view"]["title"];
+    $links["commerce-order-view"]["title"] = '<i class="far fa-eye"></i>';
+    $links["commerce-order-view"]["html"] = true;
+
+    $links["commerce-order-edit"]["attributes"]['title'] = $links["commerce-order-edit"]["title"];
+    $links["commerce-order-edit"]["title"] = '<i class="far fa-edit"></i>';
+    $links["commerce-order-edit"]["html"] = true;
+
+    $links["commerce-order-payment"]["attributes"]['title'] = $links["commerce-order-payment"]["title"];
+    $links["commerce-order-payment"]["title"] = '<i class="far fa-wallet"></i>';
+    $links["commerce-order-payment"]["html"] = true;
+
+    $links["commerce-order-delete"]["attributes"]['title'] = $links["commerce-order-delete"]["title"];
+    $links["commerce-order-delete"]["title"] = '<i class="far fa-trash-alt"></i>';
+    $links["commerce-order-delete"]["html"] = true;
+  }
+}
+
+/**
  * ------------------------------------------ Время выполнения блоков и view -------------------------------------------
  * http://xandeadx.ru/blog/drupal/850
  * Implements hook_block_list_alter().
@@ -589,14 +613,14 @@ function _num2str($num) {
         array('миллиард','милиарда','миллиардов',0),
     );
     //
-    list($rub,$kop) = explode('.',sprintf("%015.2f", floatval($num)));
+    [$rub,$kop] = explode('.',sprintf("%015.2f", floatval($num)));
     $out = array();
     if (intval($rub)>0) {
         foreach(str_split($rub,3) as $uk=>$v) { // by 3 symbols
             if (!intval($v)) continue;
             $uk = sizeof($unit)-$uk-1; // unit key
             $gender = $unit[$uk][3];
-            list($i1,$i2,$i3) = array_map('intval',str_split($v,1));
+            [$i1,$i2,$i3] = array_map('intval',str_split($v,1));
             // mega-logic
             $out[] = $hundred[$i1]; # 1xx-9xx
             if ($i2>1) $out[]= $tens[$i2].' '.$ten[$gender][$i3]; # 20-99
