@@ -342,7 +342,6 @@ function helper_views_pre_view($view, &$display_id, &$args)
   }
 }
 
-
 /**
  * ------------------------------------------ Время выполнения блоков и view -------------------------------------------
  * http://xandeadx.ru/blog/drupal/850

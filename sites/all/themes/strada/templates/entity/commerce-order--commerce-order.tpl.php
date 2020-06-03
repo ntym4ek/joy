@@ -11,7 +11,7 @@ $have_sber_payment = module_exists('commerce_rbspayment');
 $ordet_title = 'Информация о заказе';
 $ordet_num_title = 'Номер заказа';
 $payment_label = $payment['balance'] ? 'К оплате' : '<span class="brand-success">Оплачено</span>';
-if ($commerce_order->status == 'cart' || strpos($commerce_order->status, 'checkout') !== false) {
+if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout') !== false) {
     $ordet_title = 'Информация о корзине';
     $ordet_num_title = 'Номер корзины';
     $payment_label = 'Сумма';
