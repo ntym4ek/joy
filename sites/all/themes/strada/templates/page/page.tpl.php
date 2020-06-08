@@ -89,7 +89,7 @@
                 <div class="topbar-menu hidden-sm">
                     <ul class="dry-list">
 <!--                        <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>-->
-                        <li><a href="/info/delivery" style="background: #e53123;padding: 5px 10px;color: white;border-radius: 4px;">Безопасная доставка</a></li>
+                        <li><a href="/info/delivery" style="background: #e53123;padding: 5px 10px;color: white;border-radius: 4px;">Бесплатная доставка</a></li>
                         <li><a href="/info/payment">Оплата</a></li>
                         <li><a href="/info/return">Возврат</a></li>
                         <li><a href="/info/how-to-buy">Как купить</a></li>
@@ -159,7 +159,7 @@
     <div class="line-2-1 hidden-sm hidden-md hidden-lg">
         <div class="topbar-phone">
             <div><a href="tel:88005502885">8-800-550-28-85</a></div>
-            <div>WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a></div>
+            <div>WhatsApp:&nbsp;<a href="https://wa.me/<? print str_replace('-', '', variable_get('manager_whatsapp', '8-922-910-99-40')); ?>" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a></div>
         </div>
     </div>
 
