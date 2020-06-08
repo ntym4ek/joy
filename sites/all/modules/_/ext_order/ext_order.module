@@ -355,6 +355,7 @@ function ext_order_get_order_info($order, $including_line_items = false)
       'mail' => $order_wr->mail->value(),
       'name' => $user_name,
       'phone' => $user_phone,
+      'phone_formatted' => ext_user_format_phone($user_phone),
     ],
     'products' => [
       'qty' => $product_count,

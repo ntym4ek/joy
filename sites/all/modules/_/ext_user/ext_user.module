@@ -210,6 +210,20 @@ function ext_user_normalize_phone($phone)
     return $phone;
 }
 
+/**
+ * Format phone to user view
+ * @param $phone
+ *
+ * @return string
+ */
+function ext_user_format_phone($phone)
+{
+  // форматируем - +7-xxx-xxx-xx-xx
+  $phone = preg_replace('/(\d)(\d\d\d)(\d\d\d)(\d\d)(\d\d)/', '+$1 $2 $3-$4-$5', trim($phone));
+
+  return $phone;
+}
+
 function ext_user_valid_phone($phone)
 {
     // номер правильный, если имеет минимум 11 цифр

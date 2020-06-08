@@ -73,7 +73,7 @@ if ($payment['before_shipping']) {
             <dt>Получатель</dt>
             <dd>
                 <p><?php print $user['name']; ?></p>
-                <p><?php print $user['phone']; ?></p>
+                <p><?php print $user['phone_formatted']; ?></p>
                 <p><?php print $user['mail']; ?></p>
                 <p><?php print $shipping['passport']; ?></p>
             </dd>
