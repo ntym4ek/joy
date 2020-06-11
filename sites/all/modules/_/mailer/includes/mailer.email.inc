@@ -7,6 +7,7 @@
 function mailer_mail($key, &$message, $params)
 {
   $order_info = empty($params['order_info']) ? [] : $params['order_info'];
+  $module_path = drupal_get_path('module', 'mailer');
 
   switch($key) {
     case 'user_pass':
@@ -38,6 +39,13 @@ function mailer_mail($key, &$message, $params)
         if ($order_info['payment']['before_shipping']) {
           $message['body'][] = '' .
             '<h2>Здравствуйте, ' . $order_info['user']['name'] . '!</h2>' .
+            '<p>Сообщаем Вам, что заказ №' . $order_info['id'] . ' находится на этапе:</p>' .
+            '<table style="margin: 32px 0;"><tr style="text-align: center;">' .
+              '<td><img src="' . $module_path. '/images/ordering_off.png" style="width: 70%;"></td>' .
+              '<td><img src="' . $module_path. '/images/payment_on.png" style="width: 70%;"></td>' .
+              '<td><img src="' . $module_path. '/images/processing_off.png" style="width: 70%;"></td>' .
+              '<td><img src="' . $module_path. '/images/shipping_off.png" style="width: 70%;"></td>' .
+            '</tr></table>' .
             '<p>Спасибо за заказ в нашем магазине JOY.</p>' .
             '<p>Номер Вашего заказа ' . $order_info['id'] . '.<br />' .
             'Заказ будет обработан и выслан после поступления средств на счет.</p>' .
@@ -53,6 +61,13 @@ function mailer_mail($key, &$message, $params)
 
           $message['body'][] = '' .
             '<h2>Здравствуйте, ' . $order_info['user']['name'] . '!</h2>' .
+            '<p>Сообщаем Вам, что заказ №' . $order_info['id'] . ' находится на этапе:</p>' .
+            '<table style="margin: 32px 0;"><tr style="text-align: center;">' .
+              '<td><img src="' . $module_path. '/images/ordering_off.png" style="width: 70%;"></td>' .
+              '<td><img src="' . $module_path. '/images/processing_on.png" style="width: 70%;"></td>' .
+              '<td><img src="' . $module_path. '/images/payment_off.png" style="width: 70%;"></td>' .
+              '<td><img src="' . $module_path. '/images/shipping_off.png" style="width: 70%;"></td>' .
+            '</tr></table>' .
             '<p>Спасибо за заказ в нашем магазине JOY.</p>' .
             '<p>Номер Вашего заказа ' . $order_info['id'] . '.<br />' .
             ($order_info['shipping']['method'] == 'pickup_shipping_service'
@@ -79,6 +94,13 @@ function mailer_mail($key, &$message, $params)
 
         $message['body'][] = '' .
           '<h2>Здравствуйте, ' . $order_info['user']['name'] . '!</h2>' .
+          '<p>Сообщаем Вам, что заказ №' . $order_info['id'] . ' находится на этапе:</p>' .
+          '<table style="margin: 32px 0;"><tr style="text-align: center;">' .
+            '<td><img src="' . $module_path. '/images/ordering_off.png" style="width: 70%;"></td>' .
+            '<td><img src="' . $module_path. '/images/payment_off.png" style="width: 70%;"></td>' .
+            '<td><img src="' . $module_path. '/images/processing_on.png" style="width: 70%;"></td>' .
+            '<td><img src="' . $module_path. '/images/shipping_off.png" style="width: 70%;"></td>' .
+          '</tr></table>' .
           '<p>По Вашему заказу ' . $order_info['id'] . ' поступила оплата на сумму ' . $order_info['payment']['paid_formatted'] . '.</p>' .
           '<p>В ближайшее время ваш заказ будет упакован и отправлен службой "' . $order_info['shipping']['title'] . '".<br />' .
           'Ожидайте уведомления с трек номером для отслеживания.</p>' .
@@ -99,6 +121,13 @@ function mailer_mail($key, &$message, $params)
       $message['subject'] = 'Заказ отправлен';
       $message['body'][] = '' .
         '<h2>Здравствуйте, ' . $order_info['user']['name'] . '!</h2>' .
+        '<p>Сообщаем Вам, что заказ №' . $order_info['id'] . ' находится на этапе:</p>' .
+        '<table style="margin: 32px 0;"><tr style="text-align: center;">' .
+          '<td><img src="' . $module_path. '/images/ordering_off.png" style="width: 70%;"></td>' .
+          '<td><img src="' . $module_path. '/images/payment_off.png" style="width: 70%;"></td>' .
+          '<td><img src="' . $module_path. '/images/processing_off.png" style="width: 70%;"></td>' .
+          '<td><img src="' . $module_path. '/images/shipping_on.png" style="width: 70%;"></td>' .
+        '</tr></table>' .
         '<p>Еще раз спасибо за покупку в нашем интернет-магазине JOY!</p>' .
         '<p>Рады сообщить, что Ваш заказ ' . $order_info['id'] . ' от ' . date('d.m.Y', $order_info['placed']) . ' был отправлен.</p>' .
         ($order_info['shipping']['parcel_number'] ? '<p>Трек-номер для отслеживания ' . $order_info['shipping']['parcel_number'] . '.</p>' : '').
@@ -109,11 +138,14 @@ function mailer_mail($key, &$message, $params)
             'rows' => $params['table']['rows'],
             'attributes' => array('cellspacing' => 0, 'style' => 'font-size: .9em; border-top: 1px solid #ccc; border-left: 1px solid #ccc; margin: 0 auto;'),
           ))) .
-        '<h3 style="color: red;">Обратите внимание!</h3>' .
-        '<p>К данному сообщению приложена фотография полностью упакованной посылки.</p>' .
-        '<p>По получению посылки, пожалуйста, сравните ее с фотографией. При обнаружении повреждения упаковки, вскройте упаковку и  проверьте сохранность товаров. Если товар поврежден,  не принимайте посылку и не расписывайтесь в ее получении.<br />' .
-        'Подайте заявление в адрес руководства подразделения службы доставки. Сделайте фотографии посылки, так чтобы было видно повреждение, и перешлите их нам. Мы, со своей стороны, подадим заявление о нарушении сохранности упаковки посылки.</p>' .
-        '<div style="width: 100%; text-align: center;"><img width="400" style="display: inline-block;" src="' . $order_info['shipping']['parcel_photo_url'] . '"/></div>' .
+
+        (empty($order_info['shipping']['parcel_photo_url']) ? '' :
+          '<h3 style="color: red;">Обратите внимание!</h3>' .
+          '<p>К данному сообщению приложена фотография полностью упакованной посылки.</p>' .
+          '<p>По получению посылки, пожалуйста, сравните ее с фотографией. При обнаружении повреждения упаковки, вскройте упаковку и  проверьте сохранность товаров. Если товар поврежден,  не принимайте посылку и не расписывайтесь в ее получении.<br />' .
+          'Подайте заявление в адрес руководства подразделения службы доставки. Сделайте фотографии посылки, так чтобы было видно повреждение, и перешлите их нам. Мы, со своей стороны, подадим заявление о нарушении сохранности упаковки посылки.</p>' .
+          '<div style="width: 100%; text-align: center;"><img width="400" style="display: inline-block;" src="' . $order_info['shipping']['parcel_photo_url'] . '"/></div>') .
+
         '<h3 style="color: red;">Важно!</h3>' .
         '<p>Регулярно отслеживайте движение посылки и получите её сразу по прибытию в Ваш населённый пункт. Не ждите уведомления от служб доставки.<br />' .
         'Если посылка не будет получена в течение двух недель, то она будет отправлена обратно. Избегайте лишних хлопот и расходов как с Вашей, так и с нашей стороны.</p>' .
@@ -133,6 +165,13 @@ function mailer_mail($key, &$message, $params)
       $message['subject'] = 'Вы что-то забыли в корзине!';
       $message['body'][] = '' .
         '<h2>Здравствуйте!</h2>' .
+        '<p>Сообщаем Вам, что заказ №' . $order_info['id'] . ' находится на этапе:</p>' .
+        '<table style="margin: 32px 0;"><tr style="text-align: center;">' .
+          '<td><img src="' . $module_path. '/images/ordering_on.png" style="width: 70%;"></td>' .
+          '<td><img src="' . $module_path. '/images/payment_off.png" style="width: 70%;"></td>' .
+          '<td><img src="' . $module_path. '/images/processing_off.png" style="width: 70%;"></td>' .
+          '<td><img src="' . $module_path. '/images/shipping_off.png" style="width: 70%;"></td>' .
+        '</tr></table>' .
         '<p>Совсем недавно в магазине Joy Вы положили товары в корзину, но так и не оформили заказ.<br />' .
         'Мы сохранили их для Вас.</p>' .
         '<p>В любое время Вы сможете продолжить покупки или завершить оформление заказа.<br />' .
@@ -197,7 +236,8 @@ function mailer_mail($key, &$message, $params)
       }
 
       $message['body'][] = '' .
-        '<h2>Здравствуйте!</h2>' . $body;
+        '<h2>Здравствуйте!</h2>' .
+        $body;
       break;
   }
 }
