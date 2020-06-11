@@ -526,7 +526,7 @@ function commerce_helper_cart_login_check_sms_submit($form, &$form_state)
   $phone = $form_state['user_code']['phone'];
   $account = ext_user_user_load_by_phone($phone);
 
-  if (!$account) {
+  if (!$account->uid) {
     // зарегистрировать
     $pass = user_password(6);
     $arguments = array(
