@@ -1477,7 +1477,7 @@ $navbar-strada-toggle-border-color:       #ddd;
         flex: 1 1 100%;
         font-size: $font-size-small; line-height: 1.7;
         padding: 3px 30px 3px 10px;
-        margin-bottom: 8px;
+        margin-bottom: $grid-gutter-width;
         .close { top: 2px; }
     }
     .checkout-summary {
@@ -1527,6 +1527,24 @@ $navbar-strada-toggle-border-color:       #ddd;
         padding: 8px 8px 0; margin-top: 8px;
         a { color: $text-color; }
     }
+    .cs-login {
+      border-top: 1px solid $divider-color;
+      margin-top: $grid-gutter-width;
+      padding-top: $grid-gutter-width;
+      text-align: center;
+      .greet {
+        margin-bottom: $grid-gutter-width;
+      }
+    }
+  .btn-lg {
+    margin-bottom: $grid-gutter-width/2;
+  }
+  .btn-link {
+    color: $text-muted; font-size: $font-size-xs; text-transform: lowercase;
+    display: block;
+    padding: 0;
+  }
+
 }
 
 .order-complete {

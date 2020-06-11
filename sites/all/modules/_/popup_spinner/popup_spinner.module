@@ -165,15 +165,16 @@ function popup_spinner_ajax_callback()
     $arguments['field_phone'][LANGUAGE_NONE][0]['value'] = $phone;
 
     // создание пользователя
-    user_save(NULL, $arguments);
-    // аутентификация пользователя
-    $uid = ext_user_user_authenticate($phone, $arguments['pass']);
-    $user = user_load($uid);
-    user_login_finalize();
-    // нужно для rpt - Registration Password Token, в противном случае токен будет пустой
-    $user->password = $arguments['pass'];
-    // отправить СМС с паролем
-    mailer_send_sms('user_pass', ['phone' => $phone, 'pass' => $pass]);
+    if (user_save(NULL, $arguments)) {
+      // аутентификация пользователя
+      $uid = ext_user_user_authenticate($phone, $arguments['pass']);
+      $user = user_load($uid);
+      user_login_finalize();
+      // нужно для rpt - Registration Password Token, в противном случае токен будет пустой
+      $user->password = $arguments['pass'];
+      // отправить СМС с паролем
+      mailer_send_sms('user_pass', ['phone' => $phone, 'pass' => $pass]);
+    }
 
     // вычислить и начислить подарок
     // вероятности

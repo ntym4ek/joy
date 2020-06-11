@@ -54,13 +54,16 @@ function ext_checkout_preprocess_html(&$vars)
  */
 function ext_checkout_preprocess_page(&$vars)
 {
+  if (arg(0) == 'cart' || (arg(0) == 'checkout' && empty(arg(2)))) {
+    drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js', ['scope' => 'footer']);
+    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js', ['scope' => 'footer']);
+  }
+
   if (arg(0) == 'checkout' && empty(arg(2))) {
     // убрать шапку и прочие элементы
     $vars['tsss'] = true;
 
     // добавляем скрипты
-    drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js', ['scope' => 'footer']);
-    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js', ['scope' => 'footer']);
     drupal_set_title('');
   }
 }
@@ -473,10 +476,9 @@ function ext_checkout_commerce_checkout_complete($order)
   // перенести номер телефона в ЛК при необходимости
   $order_wr = entity_metadata_wrapper('commerce_order', $order);
   if ($uid = $order_wr->uid->value()) {
-    $order_phone = $order_wr->field_phone->value();
+    $order_phone = ext_user_normalize_phone($order_wr->field_phone->value());
     $user_wr = entity_metadata_wrapper('user', $uid);
-    if (!$user_wr->field_phone->value()) {
-      $order_phone = ext_user_normalize_phone($order_phone);
+    if ($order_phone && !ext_user_valid_phone($user_wr->field_phone->value())) {
       $user_wr->field_phone->set($order_phone);
       $user_wr->save();
     }
