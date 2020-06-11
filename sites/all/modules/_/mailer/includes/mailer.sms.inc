@@ -281,5 +281,6 @@ function mailer_process_send_sms($phone, $text, $tag = null)
     } else return false;
   } else {
     watchdog('mailer', 'Эмуляция отправки СМС.<br />Телефон: ' . $phone . '.<br />Текст: ' . $text, [], WATCHDOG_DEBUG);
+    return true;
   }
 }

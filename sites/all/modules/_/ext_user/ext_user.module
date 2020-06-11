@@ -378,7 +378,11 @@ function ext_user_registration_wizard_check_code($form, &$form_state)
     $code = rand(1001, 9998);
     $phone = $form_state['values']['field_phone']['und'][0]['value'];
     if (mailer_send_sms('user_code', ['phone' => $phone, 'code' => $code])) {
-        $form_state['user_code'] = ['code' => $code, 'sent_time' => time()];
+      $form_state['user_code'] = [
+        'phone' => $phone,
+        'code' => $code,
+        'sent_time' => time()
+      ];
 
         $step = &$form_state['step'];
         $form_state['step_information'][$step]['stored_values'] = $form_state['values'];
@@ -455,9 +459,9 @@ function ext_user_registration_code_form($form, &$form_state)
 function ext_user_registration_wizard_repeat_validate(&$form, &$form_state)
 {
     if (time() - $form_state['user_code']['sent_time'] < 60) {
-        form_set_error('code', 'Новое смс можно будет отправить через ' . (60 - (time() - $form_state['user_code']['sent_time'])) . ' с'); return false;
+        form_set_error('code', 'Новое смс можно будет отправить через ' . (60 - (time() - $form_state['user_code']['sent_time'])) . ' с');
+        return false;
     }
-    return true;
 }
 
 /**
@@ -466,15 +470,19 @@ function ext_user_registration_wizard_repeat_validate(&$form, &$form_state)
 function ext_user_registration_code_form_validate(&$form, &$form_state)
 {
         // проверка введенного кода
-    if (empty($form_state['values']['code'])) { form_set_error('code', 'Введите код из СМС'); return false; }
-    if ($form_state['values']['code'] != $form_state['user_code']['code']) { form_set_error('code', 'Неверный код'); return false; }
+    if (empty($form_state['values']['code'])) {
+      form_set_error('code', 'Введите код из СМС');
+    return false;
+    }
+    if ($form_state['values']['code'] != $form_state['user_code']['code']) {
+      form_set_error('code', 'Неверный код');
+      return false;
+    }
 
     // восстанавливаем значения формы регистрации
     $form_state['values'] = $form_state['step_information'][1]['stored_values'];
     // user_registration_submit требует наличия значения в $form['#user']
     $form['#user'] = $form_state['step_information'][1]['stored_form']['#user'];
-
-    return true;
 }
 
 /**
@@ -497,8 +505,9 @@ function ext_user_registration_wizard_repeat($form, &$form_state)
     $phone = $form_state['step_information'][1]['stored_values']['field_phone']['und'][0]['value'];
     if (mailer_send_sms('user_code', ['phone' => $phone, 'code' => $code])) {
         $form_state['user_code'] = [
-            'code' => $code,
-            'sent_time' => time(),
+          'phone' => $phone,
+          'code' => $code,
+          'sent_time' => time(),
         ];
         drupal_set_message('Новое СМС с кодом отправлено.');
     }
@@ -703,6 +712,12 @@ function ext_user_user_authenticate($name, $password)
     }
   }
   return $uid;
+}
+
+
+function ext_user_register_and_authenticate($name, $password)
+{
+
 }
 
 /**
