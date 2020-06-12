@@ -47,7 +47,6 @@ function mailer_mail($key, &$message, $params)
               '<td><img src="' . $module_path. '/images/shipping_off.png" style="width: 70%;"></td>' .
             '</tr></table>' .
             '<p>Спасибо за заказ в нашем магазине JOY.</p>' .
-            '<p>Номер Вашего заказа ' . $order_info['id'] . '.<br />' .
             'Заказ будет обработан и выслан после поступления средств на счет.</p>' .
             // для Зарегистрированного вставить ссылку на заказ, для Анонима - на оплату
             ($order_info['user']['uid']
@@ -69,7 +68,7 @@ function mailer_mail($key, &$message, $params)
               '<td><img src="' . $module_path. '/images/shipping_off.png" style="width: 70%;"></td>' .
             '</tr></table>' .
             '<p>Спасибо за заказ в нашем магазине JOY.</p>' .
-            '<p>Номер Вашего заказа ' . $order_info['id'] . '.<br />' .
+            '<p>' .
             ($order_info['shipping']['method'] == 'pickup_shipping_service'
               ? 'После проверки менеджером заказ будет упакован и готов к выдаче в пункте самовывоза по адресу: Кирово-Чепецк, ул. Производственная, д.6.'
               : 'После проверки менеджером заказ будет упакован и отправлен службой "' . $order_info['shipping']['title'] . '".') . '</p>' .
@@ -101,7 +100,7 @@ function mailer_mail($key, &$message, $params)
             '<td><img src="' . $module_path. '/images/processing_on.png" style="width: 70%;"></td>' .
             '<td><img src="' . $module_path. '/images/shipping_off.png" style="width: 70%;"></td>' .
           '</tr></table>' .
-          '<p>По Вашему заказу ' . $order_info['id'] . ' поступила оплата на сумму ' . $order_info['payment']['paid_formatted'] . '.</p>' .
+          '<p>По Вашему заказу поступила оплата на сумму ' . $order_info['payment']['paid_formatted'] . '.</p>' .
           '<p>В ближайшее время ваш заказ будет упакован и отправлен службой "' . $order_info['shipping']['title'] . '".<br />' .
           'Ожидайте уведомления с трек номером для отслеживания.</p>' .
           '<p>Подробную информацию Вы можете посмотреть на странице заказа, перейдя по <a href="' . $order_info['url'] . '">ссылке</a>.</p>' .
@@ -129,7 +128,7 @@ function mailer_mail($key, &$message, $params)
           '<td><img src="' . $module_path. '/images/shipping_on.png" style="width: 70%;"></td>' .
         '</tr></table>' .
         '<p>Еще раз спасибо за покупку в нашем интернет-магазине JOY!</p>' .
-        '<p>Рады сообщить, что Ваш заказ ' . $order_info['id'] . ' от ' . date('d.m.Y', $order_info['placed']) . ' был отправлен.</p>' .
+        '<p>Ваш заказ ' . $order_info['id'] . ' от ' . date('d.m.Y', $order_info['placed']) . ' был отправлен.</p>' .
         ($order_info['shipping']['parcel_number'] ? '<p>Трек-номер для отслеживания ' . $order_info['shipping']['parcel_number'] . '.</p>' : '').
         '<p>Содержимое отправления:</p>' .
         (empty($params['table']) ? 'Товары не найдены'
