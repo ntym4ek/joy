@@ -7,7 +7,7 @@
 function mailer_mail($key, &$message, $params)
 {
   $order_info = empty($params['order_info']) ? [] : $params['order_info'];
-  $module_path = drupal_get_path('module', 'mailer');
+  $module_path = url(drupal_get_path('module', 'mailer'), ['absolute' => true]);
 
   switch($key) {
     case 'user_pass':
