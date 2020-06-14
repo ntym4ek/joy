@@ -391,23 +391,23 @@ var popupStatus = 0;
             /* ----------------- Карусель с товаром (flexslider) ------------------------------------- */
             // проверка на наличие слайдера
             if (settings.flexslider !== undefined) {
-                var $window = $(window);
 
                 // начальные установки слайдера
                 settings.flexslider.optionsets.product_carousel.maxItems = getGridSize();
                 settings.flexslider.optionsets.product_carousel.minItems = getGridSize();
 
                 // отслеживать событие ресайза
-                $window.resize(function () {
+              $(window).resize(function () {
                     scaleFlexslider();
                 });
-                var timerId = setTimeout(scaleFlexslider, 400);
+                var timerId = setTimeout(scaleFlexslider, 1000);
             }
 
             // расчёт количества товаров в слайдере
-            // ex - 1 товар, sm - 4 товара, остальные - 5
+            // ex - 1 товар, sm - 3 товара, md - 4, остальные - 5
             function getGridSize() {
-                return (window.innerWidth < 768) ? 2 : (window.innerWidth < 992) ? 4 : 5;
+              console.log($(window).width());
+                return ($(window).width() < 768) ? 2 : ($(window).width() < 992 ? 3 : ($(window).width() < 1200 ? 4 : 5));
             }
             function scaleFlexslider() {
                 $('.flexslider').each(function() {
