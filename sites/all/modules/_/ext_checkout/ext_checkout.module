@@ -162,6 +162,17 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   $form['commerce_payment']['payment_details'] = [];
   if (isset($form['commerce_payment']['commerce_payment_messages'])) unset($form['commerce_payment']['commerce_payment_messages']);
 
+  // при динамическом формировании списка методов оплаты (отключение онлайн методов при сумме заказа == 0)
+  // отключенный метод может остаться в #default_value
+  if (!isset($form["commerce_payment"]["payment_method"]["#options"][$form["commerce_payment"]["payment_method"]["#default_value"]])) {
+    if (count($form["commerce_payment"]["payment_method"]["#options"])) {
+      reset($form["commerce_payment"]["payment_method"]["#options"]);
+      $form["commerce_payment"]["payment_method"]["#default_value"] = array_key_first($form["commerce_payment"]["payment_method"]["#options"]);
+    } else {
+      $form["commerce_payment"]["payment_method"]["#default_value"] = '';
+    }
+  }
+
   /** -------------------------------------------- настройка Commerce Coupons ---------------------------------------------------- */
   unset($form['commerce_coupon']['coupon_code']['#title']);
   $form['commerce_coupon']['coupon_code']['#attributes']['placeholder'] = 'Промокод на скидку';
