@@ -336,13 +336,13 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
               $form['actions']['login']['phone'] = [
                 '#type' => 'textfield',
                 '#attributes' => ['class' => ['masked-phone'], 'placeholder' => ['Введите номер телефона']],
-                '#element_validate' => ['commerce_helper_cart_phone_validate'],
                 '#default_value' => '',
               ];
               $form['actions']['login_send_sms'] = [
                 '#type' => 'submit',
                 '#name' => 'login_send_sms',
                 '#value' => 'Получить СМС',
+                '#validate' => ['commerce_helper_cart_login_send_sms_validate', 'ifec_form_validator'],
                 '#submit' => ['commerce_helper_cart_login_send_sms_submit'],
                 '#attributes' => ['class' => ['btn-info', 'btn-lg', 'btn-wide']],
               ];
@@ -478,13 +478,13 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
             $form['output']['#markup'] = theme('commerce_cart_empty_page');
         }
     }
-    // блок
+
 }
 
-function commerce_helper_cart_phone_validate($element, &$form_state, $form)
+function commerce_helper_cart_login_send_sms_validate($form, &$form_state)
 {
-  if (!ext_user_valid_phone($element['#value'])) {
-    form_error($element, 'Укажите корректный номер мобильного телефона');
+  if (!ext_user_valid_phone($form_state['values']['phone'])) {
+    form_set_error('phone', 'Укажите корректный номер мобильного телефона');
     return false;
   }
 }
