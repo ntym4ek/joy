@@ -236,7 +236,12 @@ var popupStatus = 0;
 
 
             /* ------------------------------------------ Анимация добавления в корзину ----------------------------- */
-            $('a.btn-add-to-cart').on('click', function(){
+            $('a.btn-add-to-cart').on('click', function() {
+
+              // трэк события для fb
+              if (typeof (fbq) === "function") {
+                fbq('track', 'Purchase');
+              }
 
                 var that = $(this).closest('.product').find('.p-image img');
                 var cart = $("#cart");
@@ -406,7 +411,6 @@ var popupStatus = 0;
             // расчёт количества товаров в слайдере
             // ex - 1 товар, sm - 3 товара, md - 4, остальные - 5
             function getGridSize() {
-              console.log($(window).width());
                 return ($(window).width() < 768) ? 2 : ($(window).width() < 992 ? 3 : ($(window).width() < 1200 ? 4 : 5));
             }
             function scaleFlexslider() {

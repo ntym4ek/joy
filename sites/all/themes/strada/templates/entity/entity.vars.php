@@ -72,7 +72,7 @@ function strada_preprocess_entity(&$vars)
                 elseif (in_array($product_id, _get_order_product_ids($GLOBALS['user']->uid))) {
                     $vars['cart_link'] =
                         '<div id="product-' . $product_id . '-button" class="btn-group" role="group" >' .
-                            '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину">В корзину</a>' .
+                            '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину" rel="nofollow">В корзину</a>' .
                             '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax" rel="nofollow">+1</a>' .
                         '</div>';
                 }
