@@ -1,0 +1,84 @@
+Проблемы и решения по проекту.
+
+ОШИБКИ
+?   Warning:  (строка 2110 в файле /home/joy-magazi/joy-magazin.ru/docs/sites/all/modules/commerce/modules/cart/commerce_cart.module).
+    в функции commerce_cart_add_to_cart_form() неиспользуемый атрибут
+!   добавляем проверку на наличие $field_items
+
+    // With our hard dependency on widgets provided by the Options
+    // module, we can make assumptions about where the data is stored.
+    $field_items = field_get_items('commerce_product', $product, $field_name);
+    +++ if ($field_items) {
+        $field_value = reset($field_items[0]);
+    +++ } else $field_value = NULL;
+
+
+МОДУЛЬ COMMERCE_WISHLIST
+?   Не добавляет в вишлист для всех кроме админа - 403
+!   В commerce_wishlist_user_access() идёт проверка на "manage any wish list", но такого разрешения в модуле нет.
+    Нужно заменить на "manage own wish list"
+    создан issue
+
+
+МОДУЛЬ IFE
+?   не работает вывод ошибок под элементами, так как функция ife_element_errors_set
+    требует у формы наличия родителей
+!   убрать проверку на родителя всей формы
+    создан issue
+
+
+ДОБАВЛЕНИЕ НОВЫХ ОПЦИЙ
+При добавлении новой опции нужно сделать следующее:
+1. Добавить поле в line_item с установкой опции add to cart
+2. Добавить поле в Вариант товара без установки опции
+
+
+ОПЛАТА ОНЛАЙН
+?   Время оформления заказа стандартно проставляется только на этапе complete,
+    который для онлайн оплаты наступает только после возврата на сайт.
+!   В функции commerce_helper_commerce_order_presave() проставляем время оформления для заказов,
+    чей статус меняется с Чекаута на Ожидание обработки.
+
+?   На страницы complete не передаётся информация о заказе
+!   В модуле ЯД изменена функция yamoney_api_commerce_return_page(), чтобы можно было передавать номер
+    заказа при переходе к страницам success и fail.
+
+?   В транзакциях для ЯД округляется сумма до целого
+!   В функции ya_commerce_api_submit_form_submit() из строки $transaction->amount = intval($amount) * 100;
+    убираем intval()
+
+?   При установленной в настройках модуля ЯД опции "Отправлять в Яндекс.Кассу данные для чеков (54-ФЗ)"
+    и наличии скидок на товар в чеке отправляются цены без скидки, что приводит к отмене оплаты
+    Яндекс.Кассой.
+!   В функции ya_commerce_api_set_receipt_if_needed() берём стоимость не из товара, а из line_item
+
+?   При наличии купонов, применяемых к общей сумме заказа, а не к line_items, в чеке ФЗ54 будут отправляться
+    сумма больше, чем в заказе в целом, из которой вычтется ещё купон
+!   Пока применяем тип скидки - К товарам, а К сумме заказа придётся писать фикс
+
+?   В админке в транзакциях в названии метода вместо ЯД пишет Неизвестно
+!   В функции ya_commerce_api_submit_form_submit()
+    $transaction = commerce_payment_transaction_new($payment_method['instance_id'], $order->order_id);
+    заменить на
+    $transaction = commerce_payment_transaction_new($payment_method['base'], $order->order_id);
+
+?   Если для заказа в силу разных причин создаётся 2 и более транзакций и удачной становится не первая,
+    то возврат на сайт после оплаты приводит к выводу сообщения о неудачной оплате.
+!   В функции yamoney_api_commerce_return_page() проверяется на оплату только первая транзакция, а их мб не одна.
+
+        $transactions = commerce_payment_transaction_load_multiple(array(), array('order_id' => $order->order_id));
+        $transaction  = !empty($transactions) ? array_shift($transactions) : null;
+        ...
+
+    Нужно в цикле перебрать все транзакции.
+
+        if ($transactions = commerce_payment_transaction_load_multiple(array(), array('order_id' => $order->order_id))) {
+            foreach ($transactions as $transaction) {
+                ...
+            }
+
+?   При использовании в заказе скидок на фиксированную сумму, в заказ добавляется line_item с отрицательным значением,
+    которые нельзя отправлять в чеке Яндексу и 1с. Нужно распределять эту сумму пропорциональным снижением стоимости товаров.
+    Модуль яндекса не поддерживает такое распределение и оплата заказа становится невозможной.
+!   В функции ya_commerce_api_set_receipt_if_needed добавлен функционал для такого распределения line_item типа commerce_discount
+    То же самое нужно сделать в функции для 1с

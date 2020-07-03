@@ -1,0 +1,313 @@
+<?php
+/**
+ * Including RBS class
+ */
+include('commerce_rbspayment.class');
+
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_rbspayment_permission() {
+	return array(
+		'administer commerce_rbspayment' => array(
+			'title' => t('Administer Commerce RBS Payment'),
+			'description' => t('Access the Commerce RBS Payment settings page'),
+		),
+	);
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_rbspayment_menu() {
+	$items['admin/commerce/config/rbspayment'] = array(
+		'title' => 'RBS Payment configuration',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('commerce_rbspayment_config'),
+		'access arguments' => array('administer commerce_rbspayment'),
+		'type' => MENU_NORMAL_ITEM,
+	);
+	$items['cart/rbspayment/complete'] = array(
+		'title' => 'Order payment complete',
+		'page callback' => 'commerce_rbspayment_response',
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK,
+	);
+	$items['cart/rbspayment/fail'] = array(
+		'title' => 'Unsuccessful payment',
+		'page callback' => 'commerce_rbspayment_fail',
+		'access arguments' => array('access content'),
+		'type' => MENU_CALLBACK,
+	);
+	return $items;
+}
+
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_rbspayment_commerce_payment_method_info() {
+	$payment_methods = array();
+	$payment_methods['commerce_rbspayment'] = array(
+		'title' => t('RBS Payment'),
+		'description' => t('Payment via RBS Payment system'),
+		'terminal' => FALSE,
+		'offsite' => TRUE,
+		'active' => TRUE,
+		//'offsite_autoredirect' => TRUE,
+	);
+	return $payment_methods;
+}
+
+
+/**
+ * Payment method settings form.
+ */
+function commerce_rbspayment_config() {
+	$form['commerce_rbspayment_user_name'] = array(
+		'#type' => 'textfield',
+		'#title' => "Логин мерчанта",
+		'#default_value' => variable_get('commerce_rbspayment_user_name', ''),
+		'#required' => TRUE,
+	);
+	$form['commerce_rbspayment_password'] = array(
+		'#type' => 'textfield',
+		'#title' => "Пароль мерчанта",
+		'#default_value' => variable_get('commerce_rbspayment_password', ''),
+		'#required' => TRUE,
+	);
+	$form['commerce_rbspayment_stage'] = array(
+		'#type' => 'radios',
+		'#title' => "Стадийность платежа",
+		'#options' => array(
+			0 => "Одностадийный",
+			1 => "Двухстадийный"
+		),
+		'#default_value' => variable_get('commerce_rbspayment_stage', 0),
+		'#required' => TRUE,
+	);
+	$form['commerce_rbspayment_mode'] = array(
+		'#type' => 'radios',
+		'#title' => 'Режим работы',
+		'#default_value' => variable_get('commerce_rbspayment_mode', 0),
+		'#options' => array(
+			1 => "Тестовый",
+			0 => "Боевой"
+		),
+    '#description' => "В тестовом режиме денежные средства списываться не будут.",
+    '#required' => TRUE,
+    );
+    $form['commerce_rbspayment_send_order'] = array(
+        '#type' => 'radios',
+        '#title' => 'Передача товарной корзины',
+        '#default_value' => variable_get('commerce_rbspayment_send_order', 0),
+        '#options' => array(
+            0 => "Не передавать",
+            1 => "Передавть"
+        ),
+        '#description' => "При выборе опции, будет сформирован и отправлен в налоговую и клиенту чек. Опция платная, за подключением обратитесь в сервисную службу банка. При использовании необходимо настроить НДС продаваемых товаров. НДС рассчитывается согласно законодательству РФ, возможны расхождения в размере НДС с суммой рассчитанной магазином.",
+        '#required' => FALSE,
+    );
+
+    $form['commerce_rbspayment_tax_system'] = array(
+        '#type' => 'radios',
+        '#title' => "Система налогообложения",
+        '#options' => array(
+                '0' => 'Общая',
+                '1' => 'Упрощённая, доход',
+                '2' => 'Упрощённая, доход минус расход',
+                '3' => 'Eдиный налог на вменённый доход',
+                '4' => 'Eдиный сельскохозяйственный налог',
+                '5' => 'Патентная система налогообложения',
+        ),
+        '#default_value' => variable_get('commerce_rbspayment_tax_system', 0),
+        '#required' => FALSE,
+    );
+
+
+	$form['commerce_rbspayment_logging'] = array(
+		'#type' => 'radios',
+		'#title' => 'Логирование',
+		'#default_value' => variable_get('commerce_rbspayment_logging', 0),
+		'#options' => array(
+			0 => "Нет",
+			1 => "Да"
+		),
+    '#description' => "Сообщение отправляется в системный регистратор PHP.",
+    '#required' => TRUE,
+    );
+    return system_settings_form($form);
+}
+
+
+/**
+ * Payment method callback: submit form.
+ */
+function commerce_rbspayment_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+	$form = array();
+	$text = '<div class="rbspayment">Оплата кредитной картой</div>';
+	$form['info'] = array('#markup' => $text);
+	return $form;
+}
+
+
+/*
+ * Payment method callback
+ */
+function commerce_rbspayment_redirect_form($form, &$form_state, $order, $payment_method) {
+
+    $config['user_name'] = variable_get('commerce_rbspayment_user_name','');
+    $config['password'] = variable_get('commerce_rbspayment_password','');
+    $config['two_stage'] = (variable_get('commerce_rbspayment_stage', 0) == 0) ? false : true;
+    $config['test_mode'] = (variable_get('commerce_rbspayment_mode', 0) == 0) ? false : true;
+    $config['logging'] = (variable_get('commerce_rbspayment_logging', 0) == 0) ? false : true;
+
+    $config['send_order'] = (variable_get('commerce_rbspayment_send_order', 0) == 0) ? false : true;
+    $config['logging'] = (variable_get('commerce_rbspayment_logging', 0) == 0) ? false : true;
+
+    $config['cms_name'] = "Drupal";
+    $config['cms_version'] = VERSION;
+
+//    $config['tax_system'] = variable_get('commerce_rbspayment_tax_system', '');
+
+    $order_number = $order->order_id;
+
+    // collect orderBundle
+    if ($config['send_order']) {
+
+        $wrapper = entity_metadata_wrapper('commerce_order', $order->order_id);
+        $items = array();
+        $itemsCnt = 1;
+
+        foreach ($wrapper->commerce_line_items as $key => $line_item_wrapper) {
+            $line_item_type = $line_item_wrapper->getBundle();
+
+            if (in_array($line_item_type, commerce_product_line_item_types())) {
+
+
+                $items[] = array(
+                    'positionId' => $itemsCnt++,
+                    'itemAmount' => $line_item_wrapper->commerce_total->amount->value(),
+                    'name' => $line_item_wrapper->commerce_product->value()->title,
+                    'itemPrice' => $line_item_wrapper->commerce_unit_price->amount->value(),
+                    'quantity' => array(
+                        'value' => (float)number_format($line_item_wrapper->quantity->value(), 1),
+                        'measure' => 'piece'
+                    ),
+                    'tax' => array(
+                        'taxType' => 0
+                    ),
+                    'itemCode' => $line_item_wrapper->commerce_product->value()->product_id
+                );
+
+            } else {
+                $items[] = array(
+                    'positionId' => $itemsCnt++,
+                    'itemAmount' => $line_item_wrapper->commerce_total->amount->value(),
+                    'name' => $line_item_wrapper->line_item_label->value(),
+                    'itemPrice' => $line_item_wrapper->commerce_unit_price->amount->value(),
+                    'quantity' => array(
+                        'value' => (float)number_format($line_item_wrapper->quantity->value(), 1),
+                        'measure' => 'piece'
+                    ),
+                    'tax' => array(
+                        'taxType' => 0
+                    ),
+                    'itemCode' => $line_item_wrapper->line_item_id->value()
+                );
+            }
+        }
+
+        $order_bundle = array(
+            'orderCreationDate' => $order->changed,
+            'customerDetails' => array(
+                'email' => $order->mail
+            ),
+            'cartItems' => array('items' => $items)
+        );
+        $config['order_bundle'] = $order_bundle;
+    }
+
+
+	$rbs = new RBS($config);
+
+
+	$amount = $order->commerce_order_total[LANGUAGE_NONE][0]['amount'];
+	$return_url = $GLOBALS['base_url'] . '?q=cart/rbspayment/complete/' . $order->order_id;
+	
+	$response = $rbs->register_order($order_number, $amount, $return_url);
+
+	if (!isset($response['errorCode'])){
+		header('Location: '.$response['formUrl']);
+		die();
+	} else {
+		drupal_set_message('Ошибка #'.$response['errorCode'].': '.$response['errorMessage'], 'error');
+	}
+}
+
+
+/**
+ * Callback for RBS Payment system response.
+ */
+function commerce_rbspayment_response($order_number = 0) {
+
+    $orderId = (!empty($_GET['orderId'])) ? $_GET['orderId'] : null;
+
+	if ($order_number != 0 && $orderId != null) {
+		$order = commerce_order_load($order_number);
+
+		$config['user_name'] = variable_get('commerce_rbspayment_user_name','');
+		$config['password'] = variable_get('commerce_rbspayment_password','');
+		$config['test_mode'] = (variable_get('commerce_rbspayment_mode', 0) == 0) ? false : true;
+        $config['logging'] = (variable_get('commerce_rbspayment_logging', 0) == 0) ? false : true;
+
+        $rbs = new RBS($config);
+		$response = $rbs->get_order_status_by_orderId($orderId);
+
+		$status = (($response['orderStatus'] == 1) || ($response['orderStatus'] == 2)) ? true : false;
+		commerce_rbspayment_transaction($order, $status);
+		if ($status) {
+			drupal_goto('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key']);
+		} else {
+			drupal_goto('cart/rbspayment/fail/' . $order->order_id);
+		}
+	}
+}
+
+function commerce_rbspayment_fail($order_number = 0){
+	if ($order_number != 0) {
+		$form = array();
+		$form['description'] = array(
+			'#markup' => '<div class="description">Оплата заказа ' . $order_number . ' прошла неуспешно!</div>',
+		);
+		return $form;
+	}
+}
+
+
+/*
+ * Make a transaction
+ */
+function commerce_rbspayment_transaction($order, $status) {
+	if ($status) {
+		$order_status = 'completed';
+		$transaction_status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+		$message = t('Response from RBS Payment: successful');
+	} else {
+		commerce_checkout_complete($order); 
+		$order_status = 'processing';
+		$transaction_status = COMMERCE_PAYMENT_STATUS_PENDING;
+		$message = t('Response from RBS Payment: pending');
+	}
+
+	commerce_order_status_update($order, $order_status);
+	$transaction = commerce_payment_transaction_new('commerce_rbspayment', $order->order_id);
+	$transaction->instance_id = $order->data['payment_method'];
+	$transaction->amount = $order->commerce_order_total[LANGUAGE_NONE][0]['amount'];
+	$transaction->currency_code = $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code'];
+	$transaction->status = $transaction_status;
+	$transaction->message = $message;
+	commerce_payment_transaction_save($transaction);
+}

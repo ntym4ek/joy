@@ -1,0 +1,13 @@
+name = Date Popup
+description = Enables jquery popup calendars and time entry widgets for selecting dates and times.
+package = Date/Time
+core = 7.x
+configure = admin/config/date/date_popup
+
+dependencies[] = date:date_api
+
+; Information added by Drupal.org packaging script on 2019-01-22
+version = "7.x-2.11-beta2"
+core = "7.x"
+project = "date"
+datestamp = "1548172389"

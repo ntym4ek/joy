@@ -1,0 +1,204 @@
+<?php
+
+/**
+ * @file
+ * DaData example module.
+ *
+ * @todo Make one form with vertical tabs?
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function dadata_example_menu() {
+    $items['examples/dadata'] = array(
+        'title' => 'DaData suggestions example',
+        'page callback' => 'system_admin_menu_block_page',
+        'access callback' => TRUE,
+        'file path' => drupal_get_path('module', 'system'),
+        'file' => 'system.admin.inc',
+        'expanded' => TRUE,
+    );
+    $items['examples/dadata/fullname'] = array(
+        'title' => 'Full name',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('dadata_fullname_example'),
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM,
+    );
+    $items['examples/dadata/address'] = array(
+        'title' => 'Address',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('dadata_address_example'),
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM,
+    );
+    $items['examples/dadata/party'] = array(
+        'title' => 'Party',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('dadata_party_example'),
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM,
+    );
+    $items['examples/dadata/email'] = array(
+        'title' => 'E-mail',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('dadata_email_example'),
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM,
+    );
+    return $items;
+}
+
+/**
+ * Fullname example.
+ */
+function dadata_fullname_example($form, &$form_state) {
+    $num = 1;
+
+    $form['fio' . $num] = array(
+        '#type' => 'textfield',
+        '#title' => t('Full name') . ' (' . $num . ')',
+        '#autocomplete_path' => 'dadata/autocomplete/fullname',
+        '#description' => t('Textfield with autocomplete via server side DaData Rest API.'),
+    );
+
+    $num++;
+    $form['fio' . $num] = array(
+        '#type' => 'dadata_fullname',
+        '#title' => t('Full name') . ' (' . $num . ')',
+        '#description' => t('"dadata_fullname": simple textfield element with jquery.suggestions.'),
+    );
+
+    $num++;
+    $form['fio' . $num] = array(
+        '#type' => 'dadata_fullname_comp',
+        '#title' => t('Full name') . ' (' . $num . ')',
+        '#description' => t('"dadata_fullname_comp": composite element with jquery.suggestions.'),
+        /*'#default_value' => array(
+          'value' => '...',
+          'gender' => 'MALE',
+        ),*/
+    );
+
+    return dadata_example_form($form, $form_state);
+}
+
+/**
+ * Address example.
+ */
+function dadata_address_example($form, &$form_state) {
+    $num = 1;
+
+    $form['address' . $num] = array(
+        '#type' => 'textfield',
+        '#title' => t('Address') . ' (' . $num . ')',
+        '#autocomplete_path' => 'dadata/autocomplete/address',
+        '#description' => t('"textfield" element with autocomplete via server side Rest API.'),
+    );
+
+    $num++;
+    $form['address' . $num] = array(
+        '#type' => 'dadata_address',
+        '#title' => t('Address') . ' (' . $num . ')',
+        '#description' => t('"dadata_address" element with jquery.suggestions.'),
+    );
+
+    $num++;
+    $form['address' . $num] = array(
+        '#type' => 'dadata_address',
+        '#title' => t('Address') . ' (' . $num . ')',
+        '#description' => t('"dadata_address" element with jquery.suggestions, only city/settlement.'),
+        '#dadata_params' => array(
+            'bounds' => 'city-settlement',
+        ),
+    );
+
+    $num++;
+    $form['address' . $num] = array(
+        '#type' => 'dadata_address_comp',
+        '#title' => t('Address') . ' (' . $num . ')',
+        '#description' => t('"dadata_address_comp": composite element with default jquery.suggestions.'),
+    );
+
+    $num++;
+    $form['address' . $num] = array(
+        '#type' => 'dadata_address_comp',
+        '#title' => t('Address') . ' (' . $num . ')',
+        '#description' => t('"dadata_address_comp": composite element with constraints.'),
+        '#dadata_params' => array(
+            'constraints' => array(
+                // текст метки, который будет выведен пользователю
+                'label' => 'Бердск (НСО)',
+                // параметры, которые будут переданы на сервер
+                'restrictions' => array(
+                    'region' =>  'Новосибирская',
+                    'city' => 'Бердск',
+                ),
+                // не даем пользователю возможность снять ограничение
+                'deletable' => FALSE,
+            ),
+            // в списке подсказок не показываем область и город
+            'restrict_value' => TRUE,
+        ),
+    );
+
+    return dadata_example_form($form, $form_state);
+}
+
+/**
+ * Party example.
+ */
+function dadata_party_example($form, &$form_state) {
+    $num = 1;
+
+    $form['party' . $num] = array(
+        '#type' => 'dadata_party',
+        '#title' => t('Party') . ' (' . $num . ')',
+        '#description' => t('"dadata_party" element with jquery.suggestions.'),
+        '#dadata_params' => array(
+            'constraints' => array(
+                'label' => 'Томская обл.',
+                'locations' => array('kladr_id' => '70'),
+            ),
+        ),
+    );
+
+    return dadata_example_form($form, $form_state);
+}
+
+/**
+ * Email example.
+ */
+function dadata_email_example($form, &$form_state) {
+    $num = 1;
+
+    $form['email' . $num] = array(
+        '#type' => 'dadata_email',
+        '#title' => t('E-mail') . ' (' . $num . ')',
+        '#description' => t('"dadata_email" element with jquery.suggestions.'),
+    );
+
+    return dadata_example_form($form, $form_state);
+}
+
+/**
+ * Common form builder.
+ */
+function dadata_example_form($form, &$form_state) {
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+    );
+    $form['#submit'] = array('dadata_example_submit');
+    return $form;
+}
+
+/**
+ * Common submit handler.
+ */
+function dadata_example_submit($form, &$form_state) {
+    form_state_values_clean($form_state);
+    debug($form_state['values']);
+}

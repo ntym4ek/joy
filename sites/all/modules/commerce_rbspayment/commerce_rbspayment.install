@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * Install function for the commerce_rbspayment module.
+ */
+ 
+/**
+ * Implementation of hook_requirements().
+ *
+ * Verifies that PHP CURL library is installed on the server
+ */
+function commerce_rbspayment_requirements($phase) {
+	$t = get_t();
+	$has_curl = function_exists('curl_init');
+	$requirements['commerce_rbspayment_curl'] = array(
+		'title' => $t('cURL'),
+		'value' => $has_curl ? $t('Enabled') : $t('Not found'),
+	);
+	if (!$has_curl) {
+		$requirements['commerce_rbspayment_curl']['severity'] = REQUIREMENT_ERROR;
+		$requirements['commerce_rbspayment_curl']['description'] = $t("RBS Payment зависит от <a href='!curl_url'>cURL</a> библиотеки.", array('!curl_url' => "<a href='http://php.net/manual/en/curl.setup.php'>http://php.net/manual/en/curl.setup.php</a>"));
+	}
+	return $requirements;
+}
+
+/**
+ * @file
+ * Uninstall function for the commerce_rbspayment module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_rbspayment_uninstall() {
+	variable_del('commerce_rbspayment_user_name');
+	variable_del('commerce_rbspayment_password');
+	variable_del('commerce_rbspayment_stage');
+	variable_del('commerce_rbspayment_mode');
+	variable_del('commerce_rbspayment_logging');
+	variable_del('commerce_rbspayment_sendOrderBundle');
+}

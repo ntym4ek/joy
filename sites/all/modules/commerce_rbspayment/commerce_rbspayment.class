@@ -1,0 +1,242 @@
+<?php
+/**
+ * Including configuration file
+ */
+include('commerce_rbspayment.config');
+
+/**
+ * Интеграция платежного шлюза RBS с CMS интернет-магазинов
+ * @author RBS
+ * @version 2.0
+ */
+class RBS
+{
+    /**
+     * АДРЕС ТЕСТОВОГО ШЛЮЗА
+     * @var string
+     */
+    const API_TEST_URL = API_TEST_URL;
+
+    /**
+     * АДРЕС БОЕВОГО ШЛЮЗА
+     * @var string
+     */
+    const API_PROD_URL = API_PROD_URL;
+
+    /**
+     * Название CMS
+     * @var string
+     */
+    public $cms_name;
+
+    /**
+     * Версия CMS
+     * @var string
+     */
+    public $cms_version;
+
+    /**
+     * Версия модуля
+     * @var string
+     */
+    public $module_version = 'd2.0';
+
+    /**
+     * Отправка корзины покупателя на шлюз
+     * Если значение true - плагин будет отправлять данные корзины покупателя - $order_bundle
+     * @var boolean
+     */
+    public $send_order;
+
+    /**
+     * Корзина покупателя
+     * Если массив не пустой и $send_order = true - плагин будет отправлять данные корзины покупателя
+     * @var array
+     */
+    public $order_bundle = [];
+
+    /**
+     * Локаль платежной формы
+     * @var string
+     */
+    public $language = 'ru';
+
+    /**
+     * ЛОГИРОВАНИЕ
+     * Если значение true - плагин будет логировать запросы в ПШ
+     * @var boolean
+     */
+    public $logging;
+
+    /**
+     * Путь для лог-файла
+     * @var string
+     */
+    public $log_file_path;
+
+    /**
+     * ЛОГИН МЕРЧАНТА
+     * @var string
+     */
+    public $user_name;
+
+    /**
+     * ПАРОЛЬ МЕРЧАНТА
+     * @var string
+     */
+    public $password;
+
+    /**
+     * ДВУХСТАДИЙНЫЙ ПЛАТЕЖ
+     * Если значение true - будет производиться двухстадийный платеж
+     * @var boolean
+     */
+    public $two_stage;
+
+    /**
+     * ТЕСТОВЫЙ РЕЖИМ
+     * Если значение true - плагин будет работать в тестовом режиме
+     *
+     * @var boolean
+     */
+    public $test_mode;
+
+    /**
+     * КОНСТРУКТОР КЛАССА
+     * Заполнение свойств объекта
+     * @param $params
+     * @return RBS
+     * @internal param string $user_name логин мерчанта
+     * @internal param string $password пароль мерчанта
+     * @internal param bool $logging логирование
+     * @internal param bool $two_stage двухстадийный платеж
+     * @internal param bool $test_mode тестовый режим
+     */
+
+    public function __construct($params = array()) {
+        foreach ($params as $key => $value) {
+            $this->{$key} = $value;
+        }
+    }
+
+    /**
+     * РЕГИСТРАЦИЯ ЗАКАЗА
+     * Метод register.do или registerPreAuth.do
+     * @param string $order_number номер заказа в магазине
+     * @param integer $amount сумма заказа
+     * @param string $return_url страница, на которую необходимо вернуть пользователя
+     * @return string[]
+     */
+    function register_order($order_number, $amount, $return_url)
+    {
+        $data = array(
+            'orderNumber' => $order_number . "_" . time(),
+            'amount' => $amount,
+            'returnUrl' => $return_url,
+            'language' => $this->language,
+            'jsonParams' => json_encode(
+                [
+                    'CMS:' => $this->cms_name . " " . $this->cms_version,
+                    'Module-Version: ' =>  $this->module_version
+                ]
+            ),
+        );
+
+        if ($this->two_stage) {
+            $method = 'registerPreAuth.do';
+        } else {
+            $method = 'register.do';
+        }
+
+        /* Создание и заполнение массива данных заказа для фискализации */
+        if ($this->send_order && !empty($this->order_bundle)) {
+            /* Заполнение массива данных для запроса c фискализацией */
+            $data['orderBundle'] = json_encode($this->order_bundle);
+        }
+
+        $response = $this->gateway($method, $data);
+        return $response;
+    }
+
+    /**
+     * ЗАПРОС В ПШ
+     * Формирование запроса в платежный шлюз и парсинг JSON-ответа
+     * @param string $method метод запроса в ПШ
+     * @param string[] $data данные в запросе
+     * @return string[]
+     */
+    private function gateway($method, $data)
+    {
+        $data['userName'] = $this->user_name;
+        $data['password'] = $this->password;
+        $data['language'] = $this->language;
+
+
+        if ($this->test_mode) {
+            $url = self::API_TEST_URL;
+        } else {
+            $url = self::API_PROD_URL;
+        }
+
+
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url . $method,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_POSTFIELDS => http_build_query($data, '', '&'),
+            CURLOPT_HTTPHEADER => array('CMS: ' . $this->cms_name .' '. $this->cms_version, 'Module-Version: ' . $this->module_version),
+            CURLOPT_SSLVERSION => 6
+        ));
+        $response = curl_exec($curl);
+        $response = json_decode($response, true);
+        if ($this->logging) {
+            $this->logger('REQUEST: ' . $url . $method . ': ' . json_encode($data) . ' RESPONSE: ' . json_encode($response));
+        }
+        curl_close($curl);
+        return $response;
+    }
+
+    /**
+     * ЛОГГЕР
+     * Логирование запроса и ответа от ПШ
+     * @param string $var
+     * @return integer
+     */
+    private function logger($var)
+    {
+        $date = '';
+        $result = $var;
+        if (is_array($var) || is_object($var)) {
+            $result = print_r($var, true);
+        }
+        return error_log($date . $result, 0);
+    }
+
+    /**
+     * MDORDER ИЗ FORMURL
+     * @param string $url адрес платежной страницы
+     * @return string
+     */
+    public function get_mdOrder_from_url($url)
+    {
+        $parse = parse_url($url);
+        $mdOrder = explode('=', $parse['query']);
+        return $mdOrder[1];
+    }
+
+    /**
+     * СТАТУС ЗАКАЗА ПО ORDER ID
+     * Метод getOrderStatusExtended.do
+     * @param string $orderId номер заказа в ПШ
+     * @return string[]
+     */
+    public function get_order_status_by_orderId($orderId)
+    {
+        $data = array('orderId' => $orderId);
+        $response = $this->gateway('getOrderStatusExtended.do', $data);
+        return $response;
+    }
+
+}

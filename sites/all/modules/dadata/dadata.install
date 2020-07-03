@@ -1,0 +1,160 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function dadata_install() {
+  $t = get_t();
+  $message = $t('The DaData requires that you <a href="@settings">set up</a> the service API key.', array('@settings' => url('admin/config/user-interface/dadata')));
+  drupal_set_message($message, 'warning');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function dadata_uninstall() {
+  db_delete('variable')->condition('name', 'dadata_%', 'LIKE')->execute();
+  cache_clear_all('variables', 'cache_bootstrap');
+}
+
+/**
+ * Implements hook_field_schema().
+ */
+function dadata_field_schema($field) {
+  $columns = array(
+    'value' => array(
+      'type' => 'varchar',
+      'length' => 255,
+    ),
+  );
+  switch ($field['type']) {
+    case 'dadata_address':
+      $columns += array(
+        'postal_code' => array('type' => 'varchar', 'length' => 32),
+        // Страна
+        'country' => array('type' => 'varchar', 'length' => 64),
+        // Регион
+        'region_type' => array('type' => 'varchar', 'length' => 12),
+        // 'region_type_full' => array('type' => 'varchar', 'length' => 32),
+        'region' => array('type' => 'varchar', 'length' => 64),
+        // Район
+        'area_type' => array('type' => 'varchar', 'length' => 12),
+        // 'area_type_full' => array('type' => 'varchar', 'length' => 32),
+        'area' => array('type' => 'varchar', 'length' => 64),
+        // Город
+        'city_type' => array('type' => 'varchar', 'length' => 12),
+        // 'city_type_full' => array('type' => 'varchar', 'length' => 32),
+        'city' => array('type' => 'varchar', 'length' => 64),
+        // Населенный пункт
+        'settlement_type' => array('type' => 'varchar', 'length' => 12),
+        // 'settlement_type_full' => array('type' => 'varchar', 'length' => 32),
+        'settlement' => array('type' => 'varchar', 'length' => 64),
+        // Улица
+        'street_type' => array('type' => 'varchar', 'length' => 12),
+        // 'street_type_full' => array('type' => 'varchar', 'length' => 32),
+        'street' => array('type' => 'varchar', 'length' => 64),
+        // Дом
+        'house_type' => array('type' => 'varchar', 'length' => 12),
+        // 'house_type_full' => array('type' => 'varchar', 'length' => 32),
+        'house' => array('type' => 'varchar', 'length' => 12),
+        // Корпус/строение
+        'block_type' => array('type' => 'varchar', 'length' => 12),
+        'block' => array('type' => 'varchar', 'length' => 12),
+        // Квартира
+        // 'flat_area' => array('type' => 'varchar', 'length' => 32),
+        // 'flat_type' => array('type' => 'varchar', 'length' => 12),
+        'flat' => array('type' => 'varchar', 'length' => 12),
+        // Абонентский ящик
+        'postal_box' => array('type' => 'varchar', 'length' => 32),
+        // Код КЛАДР
+        'kladr_id' => array('type' => 'varchar', 'length' => 24),
+        // Код ОКАТО
+        'okato' => array('type' => 'varchar', 'length' => 24),
+        // Код ОКТМО
+        'oktmo' => array('type' => 'varchar', 'length' => 24),
+        // Код ИФНС
+        'tax_office' => array('type' => 'varchar', 'length' => 24),
+        // Нераспознанная часть адреса
+        'unparsed_parts' => array(
+          'type' => 'varchar',
+          'length' => 255,
+          'description' => 'Unrecognized part of the address',
+        ),
+        'qc_complete' => array(
+          'type' => 'int',
+          'description' => 'Completeness code',
+        ),
+        'qc_house' => array(
+          'type' => 'int',
+          'description' => 'Home verification code',
+        ),
+        'qc' => array(
+          'type' => 'int',
+          'description' => 'Quality code',
+        ),
+        'data' => array(
+          'type' => 'text',
+          'size' => 'big',
+        ),
+      );
+      break;
+
+    case 'dadata_fullname':
+      $columns += array(
+        'surname' => array(
+          'type' => 'varchar',
+          'length' => 255,
+        ),
+        'name' => array(
+          'type' => 'varchar',
+          'length' => 255,
+        ),
+        'patronymic' => array(
+          'type' => 'varchar',
+          'length' => 255,
+        ),
+        'gender' => array(
+          'type' => 'int',
+          'size' => 'tiny',
+          'default' => 0,
+        ),
+      );
+      break;
+  }
+  return array(
+    'columns' => $columns,
+  );
+}
+
+/**
+ *
+ /
+function dadata_update_7001() {
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+  );
+  $fields = _update_7000_field_read_fields(array(
+    'module' => 'text',
+    'storage_type' => 'field_sql_storage',
+  ));
+  foreach ($fields as $field) {
+    if ($field['deleted']) {
+      $table = "field_deleted_data_{$field['id']}";
+      $revision_table = "field_deleted_revision_{$field['id']}";
+    }
+    else {
+      $table = "field_data_{$field['field_name']}";
+      $revision_table = "field_revision_{$field['field_name']}";
+    }
+    $column = $field['field_name'] . '_' . 'format';
+    db_change_field($table, $column, $column, $spec);
+    db_change_field($revision_table, $column, $column, $spec);
+  }
+}*/

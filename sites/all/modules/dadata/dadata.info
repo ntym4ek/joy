@@ -1,0 +1,6 @@
+name = DaData suggestions
+description = Provides form elements and fields with DaData.ru suggestions.
+version = 7.x-1.x-dev
+package = Fields
+core = 7.x
+configure = admin/config/user-interface/dadata
