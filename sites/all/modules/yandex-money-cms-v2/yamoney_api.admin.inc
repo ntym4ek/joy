@@ -848,7 +848,7 @@ function yamoney_api_admin_remove_duplicate_messages($type)
 function yamoney_api_admin_settings_test_connection($shopId, $password)
 {
     require_once dirname(__FILE__) .DIRECTORY_SEPARATOR.'YandexMoneyLogger.php';
-    require_once dirname(__FILE__) .DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'autoload.php';
+    require_once dirname(__FILE__) .DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'lib'.DIRECTORY_SEPARATOR.'autoload.php';
 
     $apiClient    = new \YandexCheckout\Client();
     $apiClient->setAuth($shopId, $password);

@@ -235,13 +235,34 @@ var popupStatus = 0;
             }
 
 
-            /* ------------------------------------------ Анимация добавления в корзину ----------------------------- */
-            $('a.btn-add-to-cart').on('click', function() {
-
-              // трэк события для fb
+            /* ------------------------------------------ Отслеживание действий для SMM ---------------------------- */
+            // FB корзина
+            $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').on('mousedown', function() {
+              if (typeof (fbq) === "function") {
+                fbq('track', 'AddToCart');
+              }
+            });
+            // FB избранное
+            $('a.add-to-wishlist').on('mousedown', function() {
+              if (typeof (fbq) === "function") {
+                fbq('track', 'AddToWishlist');
+              }
+            });
+            // FB начало оформления
+            $('.commerce-cart-form-checkout .checkout-continue').on('mousedown', function() {
+              if (typeof (fbq) === "function") {
+                fbq('track', 'InitiateCheckout');
+              }
+            });
+            // FB завершение оформления
+            $('.commerce-checkout-form-checkout .checkout-continue').on('mousedown', function() {
               if (typeof (fbq) === "function") {
                 fbq('track', 'Purchase');
               }
+            });
+
+            /* ------------------------------------------ Анимация добавления в корзину ----------------------------- */
+            $('a.btn-add-to-cart').on('click', function() {
 
                 var that = $(this).closest('.product').find('.p-image img');
                 var cart = $("#cart");

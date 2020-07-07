@@ -282,7 +282,7 @@ function ya_commerce_api_submit_form_submit($payment_method, $pane_form, $pane_v
     global $user;
     if (variable_get('yamoney_api_shop', 1)) {
         $modulePath = drupal_get_path('module', 'yamoney_api');
-        require_once $modulePath.DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'autoload.php';
+        require_once $modulePath.DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'lib'.DIRECTORY_SEPARATOR.'autoload.php';
         $apiClient = yamoney_api__common__get_api_client();
 
         $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
