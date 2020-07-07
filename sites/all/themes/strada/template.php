@@ -27,6 +27,9 @@ function strada_theme() {
             'template' => 'commerce-checkout-form-checkout',
             'render element' => 'form',
         ),
+        'commerce_wishlist_menu_wishlist_link' => array(
+            'variables' => [],
+          ),
     );
 }
 
@@ -84,6 +87,23 @@ function strada_commerce_wishlist_already_in_wishlist_link(&$variables) {
 /**
  * Added to cart link theme callback.
  */
-function strada_commerce_wishlist_added_to_wishlist_link(&$variables) {
-    return '<a class="in-wishlist" href="' . url('user/' . $variables['user_id'] . '/wishlist') . '"><i class="fas fa-heart"></i><span>' . t('In your wish list') . '</span></a>';
+function strada_commerce_wishlist_added_to_wishlist_link(&$variables)
+{
+  $url = '/user/login';
+  if (!empty($variables['user_id'])) {
+    $url = url('user/' . $variables['user_id'] . '/wishlist');
+  }
+  return '<a class="in-wishlist" href="' . $url . '"><i class="fas fa-heart"></i><span>' . t('In your wish list') . '</span></a>';
+}
+
+/**
+ * Added to cart link theme callback.
+ */
+function strada_commerce_wishlist_menu_wishlist_link(&$variables)
+{
+  $url = '/user/login';
+  if (!empty($GLOBALS['user']->uid)) {
+    $url = url('user/' . $GLOBALS['user']->uid . '/wishlist');
+  }
+  return '<a id="wishlist" href="' . $url . '" class="btn btn-link" title="Отложенные товары">' . commerce_helper_wishlist_info_block() . '</a>';
 }

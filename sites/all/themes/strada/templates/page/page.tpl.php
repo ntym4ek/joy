@@ -142,7 +142,7 @@
 
                 <?php if (empty($tsss)): ?>
                 <div class="navbar-wishlist" role="navigation">
-                    <?php print '<a id="wishlist" href="/user/' . $GLOBALS['user']->uid . '/wishlist' . '" class="btn btn-link" title="Отложенные товары">' . commerce_helper_wishlist_info_block() . '</a>'; ?>
+                    <?php print theme('commerce_wishlist_menu_wishlist_link', []); ?>
                 </div>
                 <?php endif; ?>
 
@@ -252,7 +252,7 @@
             <h5>Меню</h5>
             <ul class="dry-list">
                 <li><a href="/info/contacts">Контакты</a></li>
-                <li><a href="<?php print $GLOBALS['user']->uid ? '/user/' . $GLOBALS['user']->uid . '/orders' : 'user/login'; ?>">Мои заказы</a></li>
+                <li><a href="<?php print $GLOBALS['user']->uid ? '/user/' . $GLOBALS['user']->uid . '/orders' : '/user/login'; ?>">Мои заказы</a></li>
                 <li><a href="/info/about">О компании</a></li>
                 <li><a href="/info/resellers">Оптовым покупателям</a></li>
                 <li><a href="/info/suppliers">Поставщкам</a></li>

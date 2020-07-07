@@ -637,7 +637,7 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
 
     // Add missing parameter.
     foreach ($rule->actions() as $action) {
-      if ($action->getElementName() == 'commerce_discount_free_shipping_service') {
+      if (is_callable($action, 'getElementName') && $action->getElementName() == 'commerce_discount_free_shipping_service') {
         $action->settings['shipping_service'] = $shipping_service;
       }
     }

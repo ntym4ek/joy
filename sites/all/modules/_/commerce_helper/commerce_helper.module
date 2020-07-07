@@ -109,15 +109,15 @@ function commerce_helper_cart_info_block()
     if ($order = commerce_cart_order_load($GLOBALS['user']->uid)) {
         $order_wr = entity_metadata_wrapper('commerce_order', $order);
         if ($qty = commerce_line_items_quantity($order_wr->commerce_line_items, commerce_product_line_item_types())) {
-            $qty_html = '<div class="qty"><span class="bubble bubble-red">' . $qty . '</span></div>';
+            $qty_html = '<span class="bubble bubble-red">' . $qty . '</span>';
         }
         if ($order_total = $order_wr->commerce_order_total->value()) {
           $products_base_amount = commerce_price_component_total($order_total, 'base_price')['amount'];
           $total_formatted = commerce_currency_format($products_base_amount, 'RUB');
-          $total_html = '<div class="total"><span class="bubble bubble-green">' . $total_formatted . '</span></div>';
+          $total_html = '<span class="bubble bubble-green">' . $total_formatted . '</span>';
         }
     }
-    return $qty_html . '<i class="far fa-shopping-cart"></i>' . $total_html;
+    return '<div class="qty">' . $qty_html . '</div><i class="far fa-shopping-cart"></i><div class="total">' . $total_html . '</div>';
 }
 
 

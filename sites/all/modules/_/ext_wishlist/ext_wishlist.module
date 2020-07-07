@@ -66,5 +66,5 @@ function commerce_helper_wishlist_info_block()
             $qty_html = '<span class="bubble bubble-red">' . $qty . '</span>';
         }
     }
-    return '<i class="far fa-heart">' . $qty_html . '</i>';
+    return '<div class="qty">' . $qty_html . '</div><i class="far fa-heart"></i><div class="total"></div>';
 }

@@ -106,8 +106,12 @@ function strada_menu_link__user_menu(array $variables)
 
   // вставить Иконки
   if (in_array($mlid, [2, 3661])) {
+    // посчитать и вывести бонусы
+    $bonus = userpoints_get_current_points($GLOBALS['user']->uid, 0);
+    $bonus_text = $bonus ? format_plural($bonus,'@count !point', '@count !points', userpoints_translation()) : 'Бонусы';
+
     $options['attributes']['class'][] = 'btn btn-link';
-    $title =  '<i class="far fa-user"></i><span>' . $title . '</span>';
+    $title =  '<div class="qty"></div><i class="far fa-user"></i><span>' . $title . '</span>' . '<div class="total"><span class="bubble bubble-green">' . $bonus_text . '</span></div>';
   }
 
   $href = $element['#href'];

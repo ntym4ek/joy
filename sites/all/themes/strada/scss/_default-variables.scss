@@ -1,0 +1,163 @@
+/**
+ * Default Variables.
+ *
+ * Modify this file to provide default Bootstrap Framework variables. The
+ * Bootstrap Framework will not override any variables defined here because it
+ * uses the `!default` flag which will only set their default if not already
+ * defined here.
+ *
+ * You can copy existing variables directly from the following file:
+ * ./THEMENAME/bootstrap/assets/stylesheets/bootstrap/_variables.scss
+ */
+
+// Set the proper directory for the Bootstrap Glyphicon font.
+$icon-font-path: '../bootstrap/assets/fonts/bootstrap/';
+
+/** ------------------------------------- Container sizes ----------------------------------------------------------- */
+$grid-gutter-width:         16px;
+
+/** ------------------------------------- Цвета --------------------------------------------------------------------- */
+
+$gray-base:              #000;
+$gray-darker:            lighten($gray-base, 13.5%) !default; // #222
+$gray-dark:              lighten($gray-base, 20%) !default;   // #333
+$gray:                   lighten($gray-base, 33.5%) !default; // #555
+$gray-light:             #999;
+$gray-lighten:           #aaa;
+$gray-lighter:           #ececec;
+
+
+//$brand-primary:      #18a629;
+$brand-primary:      #22993f;
+$brand-success:      #22993f;
+//$brand-primary:      #009900;
+//$brand-success:      #009900;
+$brand-info:         #3aa3ff;
+$brand-warning:      #ffdc30;
+$brand-danger:       #d9534f;
+
+$brand-blue:         #428bca;
+$brand-green:        #22993f;
+//$brand-green:        #009900;
+$brand-orange:       #f0ad4e;
+$brand-yellow:       #ffdc30;
+$brand-red:          #d9534f;
+
+$divider-color:      #ececec;
+
+/** ------------------------------------- Scaffolding --------------------------------------------------------------- */
+
+//** Background color for `<body>`.
+$body-bg:               #fff;
+//** Global text color on `<body>`.
+$text-color:            $gray-dark;
+
+//** Global textual link color.
+$link-color:            $brand-primary;
+//** Link hover color set via `darken()` function.
+$link-hover-color:      darken($link-color, 15%);
+//** Link hover decoration.
+$link-hover-decoration: underline;
+
+
+/** ------------------------------------- Typography ---------------------------------------------------------------- */
+
+$font-family-sans-serif:  ubuntu, "Helvetica Neue", Helvetica, Arial, sans-serif !default;
+$font-family-serif:       Georgia, "Times New Roman", Times, serif !default;
+//** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
+$font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace !default;
+$font-family-base:        $font-family-sans-serif !default;
+
+$font-size-base:          16px;
+
+$font-size-large:         ceil(($font-size-base * 1.125)) !default; // ~18px
+$font-size-small:         ceil(($font-size-base * 0.875)) !default; // ~14px
+$font-size-xs:            ceil(($font-size-base * 0.75)) !default; // ~12px
+
+$font-size-h1:            floor(($font-size-base * 2)) !default; // ~42px
+$font-size-h2:            floor(($font-size-base * 1.75)) !default; // 28px
+$font-size-h3:            ceil(($font-size-base * 1.5)) !default; //
+$font-size-h4:            ceil(($font-size-base * 1.25)) !default; // ~20px
+$font-size-h5:            $font-size-base !default;
+$font-size-h6:            ceil(($font-size-base * 0.85)) !default; // ~14px
+
+//** Unit-less `line-height` for use in components like buttons.
+$line-height-base:        1.5; // 24/16
+//** Computed "line-height" (`font-size` * `line-height`) for use with `margin`, `padding`, etc.
+$line-height-computed:    floor(($font-size-base * $line-height-base)); // ~24px
+
+
+// Large screen / wide desktop
+//** Deprecated `$screen-lg` as of v3.0.1
+$screen-lg:                  1300px;
+
+//== Container sizes
+// Large screen / wide desktop
+$container-large-desktop:      (1240px + $grid-gutter-width);
+
+
+
+/** ------------------------------------- Navbar -------------------------------------------------------------------- */
+$border-radius-base:        4px !default;
+$border-radius-large:       4px;
+$border-radius-small:       2px;
+
+/** ------------------------------------- Navbar -------------------------------------------------------------------- */
+
+// Basics of a navbar
+$navbar-height:               95px;
+$navbar-line-1-height:        35px;
+
+$navbar-line-1-padding-vertical:  16px;
+$navbar-padding-vertical:         16px;
+
+$navbar-strada-color:             #fff;
+$navbar-strada-bg:                #fff;
+$navbar-strada-border:            darken($navbar-strada-bg, 6.5%);
+
+
+
+
+/** ------------------------------------- Buttons ------------------------------------------------------------------- */
+$btn-brand-color:               #fff;
+$btn-brand-bg:                  $brand-primary;
+$btn-brand-border:              $brand-primary;
+
+$padding-small-horizontal:         15px;
+$padding-small-vertical:           3px;
+
+
+//== Forms
+//
+//##
+
+//** `<input>` background color
+$input-bg:                       $gray-lighter;
+//** `<input disabled>` background color
+$input-bg-disabled:              $gray-lighter;
+
+//** Text color for `<input>`s
+$input-color:                    $gray;
+//** `<input>` border color
+$input-border:                   #ccc;
+
+
+//== Form states and alerts
+//
+//## Define colors for form feedback states and, by default, alerts.
+
+$state-success-text:             $brand-green;
+$state-success-bg:               #dff0d8 !default;
+$state-success-border:           darken(adjust-hue($state-success-bg, -10), 5%) !default;
+
+$state-info-text:                $brand-blue;
+$state-info-bg:                  #d9edf7 !default;
+$state-info-border:              darken(adjust-hue($state-info-bg, -10), 7%) !default;
+
+$state-warning-text:             #fba91b;
+$state-warning-bg:               #fcf8e3 !default;
+$state-warning-border:           darken(adjust-hue($state-warning-bg, -10), 5%) !default;
+
+$state-danger-text:              $brand-red;
+$state-danger-bg:                #f2dede !default;
+$state-danger-border:            darken(adjust-hue($state-danger-bg, -10), 5%) !default;
