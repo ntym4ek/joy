@@ -55,7 +55,7 @@ function cart_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
                 $image = $commerce_product_wrapper->field_p_image->value();
 
 
-                $nid = _get_product_display_by_product_id($pid);
+                $nid = ext_product_get_product_display_by_product_id($pid);
 
                 $checkout_form['c-' . $lid] = array(
                     '#type' => 'container',

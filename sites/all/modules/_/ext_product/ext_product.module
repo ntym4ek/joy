@@ -97,7 +97,7 @@ function ext_product_product_cart_update($product_id, $op, $mode = NULL) {
     drupal_exit();
   }
   else {
-    drupal_goto(url('node/' . _get_product_display_by_product_id($product_id)), ['query' => ['id' => $product_id]]);
+    drupal_goto(url('node/' . ext_product_get_product_display_by_product_id($product_id)), ['query' => ['id' => $product_id]]);
   }
 }
 
@@ -121,7 +121,7 @@ function ext_product_product_cart_add($product_id, $gift = FALSE) {
         $line_item->{$field_name} = [];
       }
     }
-    $line_item->commerce_display_path['und']['0']['value'] = drupal_get_path_alias('node/' . _get_product_display_by_product_id($product_id));
+    $line_item->commerce_display_path['und']['0']['value'] = drupal_get_path_alias('node/' . ext_product_get_product_display_by_product_id($product_id));
     $line_item = commerce_cart_product_add($GLOBALS['user']->uid, $line_item, TRUE);
     return $line_item;
   }
@@ -163,7 +163,7 @@ function ext_product_get_info($product)
 {
   $product_wr = entity_metadata_wrapper('commerce_product', $product);
   $pid = $product_wr->product_id->value();
-  $host_node_id = _get_product_display_by_product_id($pid);
+  $host_node_id = ext_product_get_product_display_by_product_id($pid);
 
   // заголовок
   $pd_title = db_select('node', 'n')
@@ -282,4 +282,47 @@ function ext_product_get_info($product)
     'stock' => $stock,
     'attributes' => $attributes,
   ];
+}
+
+
+/**
+ * Получить id ноды или ноду по id привязанного commerce product
+ */
+function ext_product_get_product_display_by_product_id($product_id, $only_id = true)
+{
+  if ($product_id) {
+    $product_display_nid = db_select('field_data_field_product', 'f')
+      ->fields('f', array('entity_id'))
+      ->condition('f.field_product_product_id', $product_id)
+      ->range(0, 1)
+      ->execute()
+      ->fetchField();
+    if ($only_id) return  $product_display_nid;
+    else return node_load($product_display_nid);
+  }
+  return false;
+}
+
+/**
+ * Implements hook_field_attach_view_alter().
+ */
+function ext_product_field_attach_view_alter(&$output, $context)
+{
+  if ($context["entity_type"] == 'node' && $context["view_mode"] == 'full') {
+    if (!empty($output["field_pd_related"]["#items"])) {
+      foreach ($output["field_pd_related"]["#items"] as $index => $item) {
+        // todo проверить статус ноды товара
+        $product_display_id = ext_product_get_product_display_by_product_id($item["product_id"]);
+        $product_display_status = db_select('node', 'n')
+          ->fields('n', ['status'])
+          ->condition('n.nid', ext_product_get_product_display_by_product_id($item["product_id"]))
+          ->execute()
+          ->fetchField();
+        if ($item['entity']->status == 0 || $product_display_status == 0) {
+          unset($output["field_pd_related"][$index]);
+          $output["field_pd_related"]["#items"][$index];
+        }
+      }
+    }
+  }
 }

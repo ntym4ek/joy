@@ -206,7 +206,7 @@ function mailer_send_order_review_mails($order_id)
         if (in_array($item_wrapper->type->value(), commerce_product_line_item_types())) {
           $pid = $item_wrapper->commerce_product->product_id->value();
           $title = $item_wrapper->commerce_product->title->value();
-          $nid = _get_product_display_by_product_id($pid);
+          $nid = ext_product_get_product_display_by_product_id($pid);
           $table['rows'][] = [
             ['data' => $title, 'style' => $td],
             [

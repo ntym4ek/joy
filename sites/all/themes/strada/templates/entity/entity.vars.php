@@ -19,7 +19,7 @@ function strada_preprocess_entity(&$vars)
   // todo перевести на использование ext_product_get_info()
   if ($vars['entity_type'] == 'commerce_product') {
         $product_id = $vars['elements']['#entity']->product_id;
-        $host_node_id = _get_product_display_by_product_id($product_id);
+        $host_node_id = ext_product_get_product_display_by_product_id($product_id);
 
         // сформировать ссылку на описание
             // параметр id для отображения соответствующего варианта товара в карточке (модуль Commerce Product URLs)

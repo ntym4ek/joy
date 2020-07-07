@@ -517,7 +517,7 @@ function ext_order_add_order_to_cart($order_id = null)
     foreach($order_wr->commerce_line_items as $item_wr) {
       if ($item_wr->type->value() == 'product' && $product = $item_wr->commerce_product->value()) {
         $line_item = commerce_product_line_item_new($product, $item_wr->quantity->value());
-        $line_item->commerce_display_path['und']['0']['value'] = drupal_get_path_alias('node/' . _get_product_display_by_product_id($product->product_id));
+        $line_item->commerce_display_path['und']['0']['value'] = drupal_get_path_alias('node/' . ext_product_get_product_display_by_product_id($product->product_id));
         commerce_cart_product_add($GLOBALS['user']->uid, $line_item, TRUE);
       }
     }

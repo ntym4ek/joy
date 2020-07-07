@@ -608,7 +608,7 @@ function commerce_helper_form_views_form_commerce_cart_form_submit($form, &$form
     $order = $form_state['order'];
     foreach ($form_state['line_items'] as $line_item) {
         $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
-        $product_node = _get_product_display_by_product_id($line_item_wr->commerce_product->product_id->value(), false);
+        $product_node = ext_product_get_product_display_by_product_id($line_item_wr->commerce_product->product_id->value(), false);
         if (!$product_node->status || $line_item_wr->commerce_product->field_p_out_of_stock->value()) {
             $order = commerce_cart_order_product_line_item_delete($order, $line_item->line_item_id, TRUE);
             $out_of_stock_found = true;
@@ -1069,23 +1069,6 @@ function _get_order_product_ids($uid)
     return $pids;
 }
 
-/**
- * Получить id ноды или ноду по id привязанного commerce product
- */
-function _get_product_display_by_product_id($product_id, $only_id = true)
-{
-    if ($product_id) {
-        $product_display_nid = db_select('field_data_field_product', 'f')
-            ->fields('f', array('entity_id'))
-            ->condition('f.field_product_product_id', $product_id)
-            ->range(0, 1)
-            ->execute()
-            ->fetchField();
-        if ($only_id) return  $product_display_nid;
-        else return node_load($product_display_nid);
-    }
-    return false;
-}
 
 
 

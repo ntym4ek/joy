@@ -36,7 +36,7 @@ class SearchApiAlterCommerceProductStatus extends SearchApiAbstractAlterCallback
    */
   public function alterItems(array &$items) {
     foreach ($items as $cpid => &$item) {
-        $host_node_id = _get_product_display_by_product_id($item->product_id);
+        $host_node_id = ext_product_get_product_display_by_product_id($item->product_id);
         $host_node_status = db_select('node', 'n')
             ->fields('n', array('status'))
             ->condition('n.nid', $host_node_id)

@@ -36,7 +36,7 @@ function ext_search_search_api_live_results_json(SearchApiLiveResultsSearch $sea
 
                 $url = 'node/' . $result['id'];
                 if ($entity_type == 'commerce_product') {
-                    $host_node_id = _get_product_display_by_product_id($result['id']);
+                    $host_node_id = ext_product_get_product_display_by_product_id($result['id']);
                     $url = url('node/'. $host_node_id);
                 }
                 $ret[] = l($title, $url, ['query' => ['id' => $result['id']]]);
