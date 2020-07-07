@@ -235,8 +235,34 @@ var popupStatus = 0;
             }
 
 
+            /* ------------------------------------------ Отслеживание действий для SMM ---------------------------- */
+            // FB корзина
+            $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').on('mousedown', function() {
+              if (typeof (fbq) === "function") {
+                fbq('track', 'AddToCart');
+              }
+            });
+            // FB избранное
+            $('a.add-to-wishlist').on('mousedown', function() {
+              if (typeof (fbq) === "function") {
+                fbq('track', 'AddToWishlist');
+              }
+            });
+            // FB начало оформления
+            $('.commerce-cart-form-checkout .checkout-continue').on('mousedown', function() {
+              if (typeof (fbq) === "function") {
+                fbq('track', 'InitiateCheckout');
+              }
+            });
+            // FB завершение оформления
+            $('.commerce-checkout-form-checkout .checkout-continue').on('mousedown', function() {
+              if (typeof (fbq) === "function") {
+                fbq('track', 'Purchase');
+              }
+            });
+
             /* ------------------------------------------ Анимация добавления в корзину ----------------------------- */
-            $('a.btn-add-to-cart').on('click', function(){
+            $('a.btn-add-to-cart').on('click', function() {
 
                 var that = $(this).closest('.product').find('.p-image img');
                 var cart = $("#cart");
@@ -316,7 +342,6 @@ var popupStatus = 0;
               });
             }
 
-
             /* ------------------------------------------ Main Menu mobile ------------------------------------------------- */
             var menu = $('.main-menu-mobile');
             menu.find("ul.level-2 > li > a").hover(function () {
@@ -392,23 +417,22 @@ var popupStatus = 0;
             /* ----------------- Карусель с товаром (flexslider) ------------------------------------- */
             // проверка на наличие слайдера
             if (settings.flexslider !== undefined) {
-                var $window = $(window);
 
                 // начальные установки слайдера
                 settings.flexslider.optionsets.product_carousel.maxItems = getGridSize();
                 settings.flexslider.optionsets.product_carousel.minItems = getGridSize();
 
                 // отслеживать событие ресайза
-                $window.resize(function () {
+              $(window).resize(function () {
                     scaleFlexslider();
                 });
-                var timerId = setTimeout(scaleFlexslider, 400);
+                var timerId = setTimeout(scaleFlexslider, 1000);
             }
 
             // расчёт количества товаров в слайдере
-            // ex - 1 товар, sm - 4 товара, остальные - 5
+            // ex - 1 товар, sm - 3 товара, md - 4, остальные - 5
             function getGridSize() {
-                return (window.innerWidth < 768) ? 2 : (window.innerWidth < 992) ? 4 : 5;
+                return ($(window).width() < 768) ? 2 : ($(window).width() < 992 ? 3 : ($(window).width() < 1200 ? 4 : 5));
             }
             function scaleFlexslider() {
                 $('.flexslider').each(function() {
@@ -480,7 +504,6 @@ var popupStatus = 0;
             // }
         }
     };
-
 
     /** -------------------- функции для работы с DaData ---------------------------------------------------------------- */
     /* --------------------- геолокация --------------------------------------------- */

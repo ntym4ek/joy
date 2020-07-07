@@ -52,7 +52,6 @@ function helper_theme() {
     );
 }
 
-
 /**
  * ------------------------------------------ Формы (Forms ) ---------------------------------------------
  */
@@ -207,13 +206,16 @@ function helper_form_review_node_form_submit($form, &$form_state)
 /**
  * ----------------------------------------------- Модальное окно ------------------------------------------------
  */
-function helper_include_modal($options = array()) {
+function helper_include_modal($options = array())
+{
     static $added = FALSE;
     if ($added == FALSE) {
         $added = TRUE;
 
         // Include the CTools tools that we need.
-        ctools_include('modal'); ctools_include('ajax'); ctools_modal_add_js();
+        ctools_include('modal');
+        ctools_include('ajax');
+        ctools_modal_add_js();
 
         // Создаем массив с настройками для модального окна.
         $style = array(
@@ -254,15 +256,34 @@ function helper_path_breadcrumbs_view_alter(&$breadcrumbs, $path_breadcrumbs, $c
 {
   // для Описания товара
   // определить текущую и родительскую категорию товара
-  if ($path_breadcrumbs->machine_name == 'catalog_item' && isset($_GET['cat'])) {
+
+  if ($path_breadcrumbs->machine_name == 'catalog_item') {
+    $category_tid = null;
+    if (empty($_GET['cat']) && isset($contexts["nid"]->argument)) {
+      $product_wr = entity_metadata_wrapper('node', $contexts["nid"]->argument);
+      if ($categories = $product_wr->field_pd_category->value()) {
+        foreach($categories as $category) {
+          if (!empty($category->tid)) {
+            $menu_tid = $category->tid;
+            $query = db_select('field_data_field_category_term', 'ct');
+            $query->condition('ct.field_category_term_tid', $menu_tid);
+            $query->condition('ct.bundle', 'menu');
+            $query->fields('ct', ['entity_id']);
+            $category_tid = $query->execute()->fetchField();
+            break;
+          }
+        }
+      }
+    }
+    else { $category_tid = $_GET['cat']; }
+
     $bread = [];
-    $tid = $_GET['cat'];
-    if ($term = taxonomy_term_load($tid)) {
-        $tid_url = drupal_get_path_alias('taxonomy/term/' . $tid);
-        if ($p_term = current(taxonomy_get_parents($tid))) {
+    if ($term = taxonomy_term_load($category_tid)) {
+        $tid_url = drupal_get_path_alias('taxonomy/term/' . $category_tid);
+        if ($p_term = current(taxonomy_get_parents($category_tid))) {
 
             // ссылки на категории
-            $ptid_url = ($p_term->tid == 1) ? 'catalog' : '';
+            $ptid_url = ($p_term->tid == 1) ? 'catalog' : url('taxonomy/term/' . $p_term->tid);
 
             // название
             $p_name = ($p_term->tid == 1) ? 'Каталог' : $p_term->name;
@@ -308,8 +329,48 @@ function helper_views_pre_view($view, &$display_id, &$args)
         }
     }
 
+  // для Категории вывести SEO описание внизу
+  if ($view->name == 'catalog_products' && $display_id == 'page_1') {
+    $menu_tid = str_replace('taxonomy/term/', '', $_GET["q"]);
+    if (is_numeric($menu_tid)) {
+      $menu_term_wr = entity_metadata_wrapper('taxonomy_term', $menu_tid);
+      if (isset($menu_term_wr->value()->field_category_term)) {
+        $footer_text = $menu_term_wr->field_category_term->field_description_seo->value();
+        $view->add_item($display_id, 'footer', 'views', 'area', ['content' => $footer_text, 'format' => 'full_html', 'empty' => true]);
+      }
+    }
+  }
 }
 
+/**
+ * Implements hook_menu_contextual_links_alter().
+ */
+function helper_menu_contextual_links_alter(&$links, $router_item, $root_path)
+{
+  // для менеджеров поменяем текст ссылок действия на иконки
+  if ($_GET["q"] == 'admin/commerce/orders' && $GLOBALS["theme"] == 'strada') {
+    if (isset($links["commerce-order-view"])) {
+      $links["commerce-order-view"]["attributes"] = ['title' => $links["commerce-order-view"]["title"]];
+      $links["commerce-order-view"]["title"] = '<i class="far fa-eye"></i>';
+      $links["commerce-order-view"]["html"] = TRUE;
+    }
+    if (isset($links["commerce-order-edit"])) {
+      $links["commerce-order-edit"]["attributes"] = ['title' => $links["commerce-order-edit"]["title"]];
+      $links["commerce-order-edit"]["title"] = '<i class="far fa-edit"></i>';
+      $links["commerce-order-edit"]["html"] = TRUE;
+    }
+    if (isset($links["commerce-order-payment"])) {
+      $links["commerce-order-payment"]["attributes"] = ['title' => $links["commerce-order-payment"]["title"]];
+      $links["commerce-order-payment"]["title"] = '<i class="far fa-wallet"></i>';
+      $links["commerce-order-payment"]["html"] = TRUE;
+    }
+    if (isset($links["commerce-order-delete"])) {
+      $links["commerce-order-delete"]["attributes"] = ['title' => $links["commerce-order-delete"]["title"]];
+      $links["commerce-order-delete"]["title"] = '<i class="far fa-trash-alt"></i>';
+      $links["commerce-order-delete"]["html"] = TRUE;
+    }
+  }
+}
 
 /**
  * ------------------------------------------ Время выполнения блоков и view -------------------------------------------
@@ -398,9 +459,10 @@ function helper_menu_alter(&$items) {
  * http://xandeadx.ru/blog/drupal/598
  * Implements hook_form_FORM_ID_alter().
  */
-function helper_form_commerce_checkout_form_review_alter(&$form) {
-  drupal_add_js(drupal_get_path('module', 'helper') . '/js/payment-description.js');
-}
+//function helper_form_commerce_checkout_form_review_alter(&$form)
+//{
+//  drupal_add_js(drupal_get_path('module', 'helper') . '/js/payment-description.js');
+//}
 
 
 /**

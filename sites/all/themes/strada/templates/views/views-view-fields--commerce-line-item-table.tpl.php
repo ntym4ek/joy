@@ -25,16 +25,16 @@
  */
 
 // дополнительная информация о line_item
-$line_item = _get_line_item_info($row->_field_data['line_item_id']['entity']);
+$line_item_info = ext_order_get_line_item_info($row->_field_data['line_item_id']['entity']);
 
 ?>
 
 <div class="ccf-item">
     <div class="ccf-info">
         <div class="ccf-product">
-            <div class="ccf-title"><?php print $line_item['title']; ?></div>
+            <div class="ccf-title"><?php print $line_item_info['product_info']['title']; ?></div>
             <div class="ccf-options">
-                <?php foreach($line_item['options'] as $option) { print '<div>' . $option . '</div>'; } ?>
+                <?php foreach($line_item_info['options'] as $option) { print '<div>' . $option . '</div>'; } ?>
             </div>
         </div>
         <div class="ccf-price">

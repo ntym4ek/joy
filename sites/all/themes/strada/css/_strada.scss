@@ -133,6 +133,14 @@ div.divider {
 
 /** ------------------------------------- Шапка (Header) ------------------------------------------------------------ */
 .navbar {
+  // зелёный топ
+  .line-1 {
+    background-color: #22993f;
+    .topbar a,
+    .topbar i,
+    .topbar-phone { color: #fff; }
+  }
+
     border: none;
     min-height: initial;
 
@@ -150,7 +158,7 @@ div.divider {
         line-height: 1;
         position: relative;
         background-color: #fff;
-        margin-top: 68px;
+        margin-top: 76px;
     }
 
     .topbar {
@@ -280,6 +288,16 @@ div.divider {
                 font-size: 1.2em;
                 position: relative;
             }
+          .qty,
+          .total {
+            line-height: 15px;
+            span {
+              display: inline-block;
+              vertical-align: top;
+            }
+          }
+          .total { margin-top: 2px; }
+          .bubble { position: relative; top: initial; right: initial; }
         }
 
         .btn {
@@ -306,7 +324,7 @@ div.divider {
             padding: 0 $grid-gutter-width*2;
         }
         .level-1-item {
-            flex: auto;
+            flex: 0 1 auto;
             > a {
               color: $text-color;
             }
@@ -320,7 +338,7 @@ div.divider {
                 border-radius: 4px;
             }
             &.open {
-                > .dropdown-menu { opacity: 1; z-index: 100; }
+                > .dropdown-menu { opacity: 1; z-index: 1000; }
                 > a {
                     color: #fff;
                     background-color: $brand-green;
@@ -730,8 +748,9 @@ $navbar-strada-toggle-border-color:       #ddd;
 }
 
 .view-catalog-products,
+.view-commerce-wishlist-page,
 .view-search-results {
-    .view-content{
+    .view-content {
         display: flex; flex-wrap: wrap;
         margin: 0 (-$grid-gutter-width/2);
         .view-item {
@@ -819,6 +838,16 @@ $navbar-strada-toggle-border-color:       #ddd;
 
     }
     .view-item { margin-bottom: 48px; }
+}
+
+.view-commerce-orders {
+  .views-field-field-comments { width: 25%; }
+  .views-field-operations a {
+    color: $text-muted;
+    &:hover, &:focus {
+      color: $text-color;
+    }
+  }
 }
 
 /**
@@ -1448,7 +1477,7 @@ $navbar-strada-toggle-border-color:       #ddd;
         flex: 1 1 100%;
         font-size: $font-size-small; line-height: 1.7;
         padding: 3px 30px 3px 10px;
-        margin-bottom: 8px;
+        margin-bottom: $grid-gutter-width;
         .close { top: 2px; }
     }
     .checkout-summary {
@@ -1498,6 +1527,24 @@ $navbar-strada-toggle-border-color:       #ddd;
         padding: 8px 8px 0; margin-top: 8px;
         a { color: $text-color; }
     }
+    .cs-login {
+      border-top: 1px solid $divider-color;
+      margin-top: $grid-gutter-width;
+      padding-top: $grid-gutter-width;
+      text-align: center;
+      .greet {
+        margin-bottom: $grid-gutter-width;
+      }
+    }
+  .btn-lg {
+    margin-bottom: $grid-gutter-width/2;
+  }
+  .btn-link {
+    color: $text-muted; font-size: $font-size-xs; text-transform: lowercase;
+    display: block;
+    padding: 0;
+  }
+
 }
 
 .order-complete {
@@ -1592,7 +1639,7 @@ $navbar-strada-toggle-border-color:       #ddd;
     font-size: 80%;
 }
 
-form[id^="user-pass"],
+form[id^="ext-user-user-pass-form"],
 form[id^="user-profile-form"] {
     @media #{$tablet} {
         max-width: 500px;
@@ -1807,6 +1854,7 @@ form[id^="user-profile-form"] {
         flex: 0 1 auto;
         display: flex;
         align-items: center;
+      min-height: 40px;
         .p-price {
             flex: 1 1 auto;
             font-size: 18px; font-weight: 700;
@@ -1864,6 +1912,11 @@ form[id^="user-profile-form"] {
     .p-buy-block {
         flex: 0 1 auto;
         margin-top: $grid-gutter-width;
+      display: flex;
+      justify-content: space-between;
+      .views-field-wishlist-remove span {
+        vertical-align: middle;
+      }
     }
 
 }
@@ -2059,7 +2112,15 @@ form[id^="user-profile-form"] {
     }
     .pr-user-info {
         flex: 1 1 auto;
-        p { color: $text-muted; font-size: $font-size-small; }
+        p {
+          color: $text-muted; font-size: $font-size-small;
+          span {
+            display: inline-block;
+            background: #22993f;
+            color: #fff;
+            padding: 0 8px;
+            border-radius: 4px; }
+        }
     }
     .field { margin-bottom: $grid-gutter-width/2; }
     .help-block { display: none;}
@@ -2573,6 +2634,23 @@ form[id^="user-profile-form"] {
     }
 }
 
+.unsubscribe-form {
+  > div {
+    .setup-link {
+      margin-top: $grid-gutter-width/2;
+      a {
+      color: $text-muted; font-size: $font-size-small;
+    }}
+    @media #{$tablet} {
+      width: 50%;
+      margin-left: 25%;
+    }
+    @media #{$normal} {
+      width: 30%;
+      margin-left: 35%;
+    }
+  }
+}
 
 /* ------------------------------------------------- 404 ------------------------------------------------------------ */
 .page404 {

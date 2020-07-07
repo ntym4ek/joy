@@ -1,6 +1,6 @@
 <?php
 
-$order_info = _get_order_info($order_id, true);
+$order_info = ext_order_get_order_info($order_id, true);
 
 $shipping = $order_info['shipping'];
 $payment = $order_info['payment'];
@@ -18,13 +18,13 @@ if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout')
 
 
 // таблица
-foreach ($order_info['products']['items'] as $line_item) {
+foreach ($order_info['products']['items'] as $line_item_info) {
     $commerce_line_items[] = array(
-        $line_item['title'],
-        drupal_strtolower(implode('; ', $line_item['options'])),
-        array('data' => commerce_currency_format($line_item['price'], 'RUB'), 'class' => 'text-right'),
-        array('data' => number_format($line_item['qty'], 0), 'class' => 'text-center'),
-        array('data' => commerce_currency_format($line_item['total'], 'RUB'), 'class' => 'text-right'),
+        $line_item_info['product_info']['title'],
+        drupal_strtolower(implode('; ', $line_item_info['options'])),
+        array('data' => $line_item_info['product_info']['price'], 'class' => 'text-right'),
+        array('data' => number_format($line_item_info['qty'], 0), 'class' => 'text-center'),
+        array('data' => commerce_currency_format($line_item_info['total'], 'RUB'), 'class' => 'text-right'),
     );
 }
 
@@ -68,36 +68,43 @@ if ($shipping_row) $commerce_line_items[] = $shipping_row;
 
             <?php if ($shipping['callme']) print '<h5 class="text-danger">Пользователь просит связаться с ним</h5>'; ?>
 
-            <dl class="dl-horizontal">
-                <dt>Доставка</dt>
-                <dd>
-                    <div><?php print empty($shipping['title']) ? '' : $shipping['title']; ?></div>
-                    <div><?php print empty($shipping['address']) ? '' : $shipping['address']; ?></div>
-                    <div><?php print empty($shipping['point_id']) ? '' : ('<span class="text-muted">id пункта: ' . $shipping['point_id'] . '</span>'); ?></div>
-                </dd>
+          <dl class="dl-horizontal">
+            <? if (!empty($order_info['placed'])): ?>
+              <dt>Оформлен</dt>
+              <dd>
+                <div><?php print format_date($order_info['placed'], 'datetime'); ?></div>
+              </dd>
+            <? endif; ?>
 
-                <dt>Получатель</dt>
-                <dd>
-                    <div><?php print $user['name']; ?></div>
-                    <div><?php print $user['phone']; ?></div>
-                    <div><?php print $user['mail']; ?></div>
-                    <div><?php print empty($shipping['passport']) ? '' : $shipping['passport']; ?></div>
-                </dd>
+            <dt>Доставка</dt>
+            <dd>
+              <div><?php print empty($shipping['title']) ? '' : $shipping['title']; ?></div>
+              <div><?php print empty($shipping['address']) ? '' : $shipping['address']; ?></div>
+              <div><?php print empty($shipping['point_id']) ? '' : ('<span class="text-muted">id пункта: ' . $shipping['point_id'] . '</span>'); ?></div>
+            </dd>
 
-                <dt>Состав заказа</dt>
-                <dd>
-                    <div><?php print $order_info['products']['qty_txt']; ?></div>
-                    <div><?php if (is_array($order_info['weight'])): ?>Вес: <?php print $order_info['weight']['weight'] . ' ' . t($order_info['weight']['unit']); endif; ?><div>
-                </dd>
+            <dt>Получатель</dt>
+            <dd>
+              <div><?php print $user['name']; ?></div>
+              <div><?php print $user['phone']; ?></div>
+              <div><?php print $user['mail']; ?></div>
+              <div><?php print empty($shipping['passport']) ? '' : $shipping['passport']; ?></div>
+            </dd>
 
-                <dt><?php print $payment_label; ?></dt>
-                <dd class="oc-total">
-                    <div><?php print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total_formatted']) . '</span>'; ?></div>
-                    <div><?php print empty($shipping['cost']) ? '' : ('С учётом ' . $shipping['cost'] . ' за доставку'); ?></div>
-                    <div><?php print $payment['title']; ?></div>
-                    <div><?php print $payment['addon']; ?></div>
-                </dd>
-            </dl>
+            <dt>Состав заказа</dt>
+            <dd>
+              <div><?php print $order_info['products']['qty_txt']; ?></div>
+              <div><?php if (is_array($order_info['weight'])): ?>Вес: <?php print $order_info['weight']['weight'] . ' ' . t($order_info['weight']['unit']); endif; ?><div>
+            </dd>
+
+            <dt><?php print $payment_label; ?></dt>
+            <dd class="oc-total">
+              <div><?php print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total_formatted']) . '</span>'; ?></div>
+              <div><?php print empty($shipping['cost']) ? '' : ('С учётом ' . $shipping['cost'] . ' за доставку'); ?></div>
+              <div><?php print $payment['title']; ?></div>
+              <div><?php print $payment['addon']; ?></div>
+            </dd>
+          </dl>
         </div>
     </div>
 </div>

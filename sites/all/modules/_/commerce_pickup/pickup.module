@@ -57,7 +57,7 @@ function pickup_service_rate_order($shipping_service, $order)
 
   if (arg(0) != 'checkout') {
     // оставить самовывоз только для служесного пользования
-    if (user_has_role(PRODUCT_MANAGER_RID) && $GLOBALS['user']->uid != 393) {
+    if (user_has_role(PRODUCT_MANAGER_ROLE_ID) && $GLOBALS['user']->uid != 393) {
       return $rate;
     }
   }
@@ -153,7 +153,7 @@ function pickup_service_details_form_submit($details_form, $details_values, $lin
     $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
 
     $order_wrapper->field_username = $details_values['username'];
-    $order_wrapper->field_phone = $details_values['phone'];
+    $order_wrapper->field_phone = ext_user_normalize_phone($details_values['phone']);
     $order_wrapper->commerce_customer_shipping->field_notes = $details_values['notes'];
     $order_wrapper->commerce_customer_shipping->field_callme = $details_values['callme'];
     $order_wrapper->commerce_customer_shipping->save();

@@ -16,7 +16,8 @@
 function strada_preprocess_entity(&$vars)
 {
     // - готовим переменные для вывода Product ---------------------------------
-    if ($vars['entity_type'] == 'commerce_product') {
+  // todo перевести на использование ext_product_get_info()
+  if ($vars['entity_type'] == 'commerce_product') {
         $product_id = $vars['elements']['#entity']->product_id;
         $host_node_id = _get_product_display_by_product_id($product_id);
 
@@ -71,7 +72,7 @@ function strada_preprocess_entity(&$vars)
                 elseif (in_array($product_id, _get_order_product_ids($GLOBALS['user']->uid))) {
                     $vars['cart_link'] =
                         '<div id="product-' . $product_id . '-button" class="btn-group" role="group" >' .
-                            '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину">В корзину</a>' .
+                            '<a href="/cart"  class="btn btn-brand btn-sm btn-empty" title="Перейти в корзину" rel="nofollow">В корзину</a>' .
                             '<a href="/cart/add-product/' . $product_id . '/nojs" id="product-' . $product_id . '" class="btn btn-brand btn-sm btn-narrow btn-add-to-cart use-ajax" rel="nofollow">+1</a>' .
                         '</div>';
                 }

@@ -53,10 +53,10 @@ function cdek_service_rate_order($shipping_service, $order)
     'data' => [],
   );
 
-  // todo для проверки только манагерам
-  if (!user_has_role(PRODUCT_MANAGER_RID)) {
-    return false;
-  }
+  // для проверки только манагерам
+//  if (!user_has_role(PRODUCT_MANAGER_RID)) {
+//    return false;
+//  }
 
   // при переходе на страницу оформления запрос на расчёт выполняется дважды:
   // при первом построении формы и автонажатии кнопки Recalc
@@ -72,19 +72,28 @@ function cdek_service_rate_order($shipping_service, $order)
       $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
       if (empty($rate_request["errors"])) {
-        $cache_key = $rate_request["receiver_zipcode"] . $rate_request['weight'] . $rate_request['amount'];
+        $cache_key = $rate_request["receiver_zipcode"] . $rate_request['weight'] . $rate_request['amount'] . $rate_request["target_point"];
         if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
           $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 600);
         } else {
-          $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 1); // секунда в кэше
+          $cache = commerce_shipping_rates_cache_get('cdek' . $cache_key, $order, 0);
         }
 
         if (!$cache) {
-          $response = cdek_api_request($rate_request);
+          try {
+            $response = cdek_api_request($rate_request);
+          } catch (Exception $e) {
+            $response["error"][] = ['text' => $e->getMessage()];
+          }
 
           // если ошибка
           if (isset($response["error"])) {
-            $rate['data']['errors'][] = $response["error"][0]["text"];
+            if ($response["error"][0]["code"] == 3) {
+              $rate['data']['errors'][] = 'Нет доставки в этот населенный пункт';
+            }
+            else {
+              $rate['data']['errors'][] = $response["error"][0]["text"];
+            }
             $field_data['cdek'] = [];
           }
           else {
@@ -113,7 +122,9 @@ function cdek_service_rate_order($shipping_service, $order)
       }
       else {
         $rate['data']['errors'] = $rate_request['errors'];
-        $field_data['cdek'] = [];
+        $field_data['cdek'] = [
+          'errors' => $rate_request['errors'],
+        ];
       }
 
       $order_wr->{$field_name}->field_data = json_encode($field_data);
@@ -160,9 +171,9 @@ function cdek_build_rate_request($order)
         $dimentions = physical_dimensions_convert($product['dimentions'], 'cm');
         $items[] = [
           'weight' => $weight['weight'],
-          'height' => $dimentions['height'],
-          'width' => $dimentions['width'],
-          'length' => $dimentions['length'],
+          'height' => ceil($dimentions['height']),
+          'width' => ceil($dimentions['width']),
+          'length' => ceil($dimentions['length']),
         ];
       }
     } else {
@@ -172,6 +183,7 @@ function cdek_build_rate_request($order)
     // возможно пункт уже выбран, нужно получить данные о нём
     if (!empty($data["cdek"]["point"]["id"])) {
       $receiver_city_id = $data["cdek"]["city"];
+      $target_point = $data["cdek"]["point"]["id"];
     }
 
     // $calc->setAuth('DCCP2Y0vHfQJXdxesgu5xcfZzAXB5kMx', '2IHAf3whPpeUz85BPqrVuQGz21B9dfDV');
@@ -183,6 +195,7 @@ function cdek_build_rate_request($order)
       'receiver_city_id' => $receiver_city_id,
       'sender_zipcode' => '613040',                             // из Чепецка
       'receiver_zipcode' => $zipcode,
+      'target_point' => $target_point,                          // пункт выдачи, если выбран
       'tariff_id' =>  136,                                      // устанавливаем режим доставки: склад-склад
       'items' => $items,
       'amount' => $amount,
@@ -244,7 +257,7 @@ function cdek_commerce_shipping_service_rate_options_alter(&$options, $order)
       $cost = $line_item_wr->commerce_unit_price->amount->value();
       $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
     } else {
-      $message = '<span class="text-danger">' . 'Ошибка расчёта: ' . drupal_strtolower(implode(', ', $data['errors'])) . '</span>';
+      $message = '<span class="text-danger">' . implode(', ', $data['errors']) . '</span>';
     }
 
     $options['cdek_shipping_service'] = '<div class="carrier">Заберу в<br />СДЭК</div>' .
@@ -266,6 +279,12 @@ function cdek_service_details_form($pane_form, $pane_values, $checkout_pane, $or
       $data = $line_item_wrapper->commerce_unit_price->data->value();
     }
   }
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $weight = commerce_physical_order_weight($order, 'kg')['weight'];
+  $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
+  $pane_form['order_amount'] = ['#type' => 'hidden', '#value' => $products_amount_base/100, '#attributes' => ['class' => ['cdek-order-amount']]];
+  $pane_form['order_weight'] = ['#type' => 'hidden', '#value' => $weight, '#attributes' => ['class' => ['cdek-order-weight']]];
 
   $pane_form['select'] = [
     '#type' => 'item',
@@ -355,10 +374,13 @@ function cdek_shipping_service_info($item, $shipping_profile)
 {
   $field_data = empty($shipping_profile->field_data['und'][0]['value']) ? null : json_decode($shipping_profile->field_data['und'][0]['value'], true);
 
+  $address = isset($field_data["cdek"]["cityName"]) ? $field_data["cdek"]["cityName"] . ', ' : '';
+  $address .= isset($field_data["cdek"]["point"]["address"]) ? $field_data["cdek"]["point"]["address"] : '';
+
   return [
     'title' => $item->line_item_label,
     'method' => $item->commerce_shipping_service['und'][0]['value'],
-    'address' => empty($field_data["cdek"]["point"]["address"]) ? '' : $field_data["cdek"]["point"]["address"],
+    'address' => $address,
     'point_id' => empty($field_data["cdek"]["point"]["id"]) ? '' : $field_data["cdek"]["point"]["id"],
   ];
 }
@@ -368,9 +390,9 @@ function cdek_shipping_service_info($item, $shipping_profile)
  */
 function cdek_preprocess_page(&$vars)
 {
+  if (arg(0) == 'checkout' && empty(arg(2))) {
     // добавляем скрипт СДЭК
-    if (strpos($_GET['q'], 'checkout') === 0) {
-        drupal_add_js(drupal_get_path('module', 'cdek') . '/widget/widjet.js');
-        drupal_add_js(drupal_get_path('module', 'cdek') . '/js/cdek.js');
-    }
+    drupal_add_js(drupal_get_path('module', 'cdek') . '/widget/widjet.js', ['scope' => 'footer']);
+    drupal_add_js(drupal_get_path('module', 'cdek') . '/js/cdek.js', ['scope' => 'footer']);
+  }
 }

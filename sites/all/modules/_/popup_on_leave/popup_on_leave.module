@@ -115,7 +115,7 @@ function popup_on_leave_show_message($popup_on_leave_parameters)
         'popup_on_leave' => $popup_on_leave_parameters,
     ), 'setting');
     drupal_add_js('misc/jquery.cookie.js');
-    drupal_add_js(drupal_get_path('module', 'popup_on_leave') . '/js/popup_on_leave.js');
+    drupal_add_js(drupal_get_path('module', 'popup_on_leave') . '/js/popup_on_leave.js', ['scope' => 'footer', 'defer' => true]);
     drupal_add_css(drupal_get_path('module', 'popup_on_leave') . '/css/popup_on_leave.css');
 }
 

@@ -130,7 +130,70 @@ function helper_stat_carts_form($form, $form_state)
       '</div>'
   ];
 
-    return $form;
+
+  // отчёт По регионам
+  // todo подготовить
+  $regions = [];
+  // список оформленных заказов
+  $query = db_select('commerce_order', 'co');
+  $query->condition('co.created', $date_to, '<');
+  $query->condition('co.created', $date_from, '>');
+  $query->condition('co.status', ['cart', 'checkout_checkout', 'wishlist'], 'NOT IN');
+  $query->fields('co', ['order_id']);
+  if ($results = $query->execute()->fetchCol()) {
+
+    // список регионов
+    $vid = taxonomy_vocabulary_machine_name_load('regions')->vid;
+    foreach(taxonomy_get_tree($vid, 0, 1, true) as $term) {
+      $regions[$term->field_kladr['und'][0]['value']] = [
+        'name' => $term->name,
+      ];
+    }
+
+    // считаем количество каждого региона в заказах
+    foreach ($results as $order_id) {
+      $order_wr = entity_metadata_wrapper('commerce_order', $order_id);
+      if (!empty($order_wr->value()->commerce_customer_shipping)) {
+        $field_data = json_decode($order_wr->commerce_customer_shipping->field_data->value(), TRUE);
+        if (!empty($field_data["region"]['data']["region_kladr_id"])) {
+          $kladr = $field_data["region"]['data']["region_kladr_id"];
+          $regions[$kladr]['counter'] = empty($regions[$kladr]['counter']) ? 1 : ++$regions[$kladr]['counter'];
+        }
+      }
+    }
+  }
+
+  // фильтр пустых и сортировка по количеству
+  foreach ($regions as $key => $region) {
+    if (empty($region['counter'])) {
+      unset($regions[$key]);
+    }
+  }
+
+  // Начиная с PHP 5.5.0 вы можете использовать array_column() вместо вышеуказанного кода
+  $counter  = array_column($regions, 'counter');
+
+  // Сортируем данные по volume по убыванию и по edition по возрастанию
+  // Добавляем $data в качестве последнего параметра, для сортировки по общему ключу
+  array_multisort($counter, SORT_DESC, $regions);
+
+  $rows = [];
+  foreach($regions as $region) {
+    $rows[] = ['data' => $region];
+  }
+
+
+  // вывести
+  $form['container3'] = [
+    '#type' => 'container',
+  ];
+  $form['container3']['regions'] = [
+    '#markup' => '<h3>Продажи по регионам</h3>' .
+                  theme('table', ['header' => ['Регион', 'Заказов'], 'rows' => $rows, 'attributes' => []])
+  ];
+
+
+  return $form;
 }
 
 function helper_stat_carts_form_submit($form, &$form_state)

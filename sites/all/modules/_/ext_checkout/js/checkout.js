@@ -132,21 +132,62 @@
                 });
             });
 
-            /** -------------------- Ввод с маской ---------------------------------------------------- */
-            $(".masked-phone").mask("9 (999) 999-9999");
+          /** -------------------- Ввод с маской ---------------------------------------------------- */
+          $(".masked-phone").mask("9 (999) 999-9999");
 
             /** -------------------- Населенный пункт ------------------------------------------------- */
             // если расчёт доставки не выполнен, подсветить поле выбора населенного пункта
-            if ($('.field-name-field-city').find('input[name*="field_city"]').val() === "") $('.field-name-field-city').addClass('has-error');
+            if ($('.field-name-field-city').find('input[name*="field_city"]').val() === "") {
+              $('.field-name-field-city').addClass('has-error');
+            }
 
             /** -------------------- Обработка нажатия Оформить заказ --------------------------------- */
-            $('.checkout-continue').once(function() {
-                $('.checkout-continue').on('click', function(){
+            $('.page-cart .checkout-continue').once(function() {
+                $(this).on('click', function(){
+                    $(this).text($(this).data('processing-label'));
+                    // активируем достижение цели в Метрике
+                    ym(47689555, 'reachGoal', 'knopkaOformit');
+                });
+            });
+
+            $('.page-checkout .checkout-continue').once(function() {
+                $(this).on('click', function(){
                     $(this).text('Отправляем заказ...');
                     // активируем достижение цели в Метрике
                     ym(47689555, 'reachGoal', 'knopkaPodtverdit');
                 });
             });
+
+          /** -------------------- Сохранение пользовательских данных в кукис ------------------------- */
+          var fields = ['username', 'phone', 'zipcode', 'addr', 'office', 'callme'];
+
+          // при открытии страницы, проверить наличие ранее сохранённых данных
+          var address = JSON.parse($.cookie('user_address'));
+          if (!address) address = {};
+
+          $('.ch-form-container').once(function() {
+            $.each(fields, function(index, value) {
+              var $field = $('[name="commerce_shipping[service_details][' + value + ']"]');
+              if ($field.length) {
+                if (!$field.val() && address[value]) {
+                  $field.val(address[value]);
+                }
+
+                // повесить обработчик, для обновления данных в куке
+                $field.blur(function () {
+                  var address = JSON.parse($.cookie('user_address'));
+                  if (!address) address = {};
+                  address[value] = $field.val();
+                  $.cookie('user_address', JSON.stringify(address), {path: "/"});
+                });
+              }
+            });
+          });
+
+          // заполнить поле ввода телефона в корзине из куки 
+          if (address['phone']) {
+            $('.ch-info-container [name=phone]').val(address['phone']);
+          }
         }
     };
 })(jQuery);

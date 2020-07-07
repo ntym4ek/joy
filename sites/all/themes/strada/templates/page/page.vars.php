@@ -86,9 +86,8 @@ function strada_preprocess_page(array &$vars)
     drupal_add_library('system', 'jquery.cookie');
 
     // библиотека DaData для определения местоположения
-    drupal_add_js('https://cdn.jsdelivr.net/npm/suggestions-jquery@latest/dist/js/jquery.suggestions.min.js', array('type' => 'external'));
-//    drupal_add_js('https://unpkg.com/suggestions-jquery@latest/dist/js/jquery.suggestions.js', array('type' => 'external'));
-    drupal_add_css('https://cdn.jsdelivr.net/npm/suggestions-jquery@latest/dist/css/suggestions.css', array('type' => 'external'));
+    drupal_add_js('https://cdn.jsdelivr.net/npm/suggestions-jquery@latest/dist/js/jquery.suggestions.min.js', ['type' => 'external', 'defer' => true]);
+    drupal_add_css('https://cdn.jsdelivr.net/npm/suggestions-jquery@latest/dist/css/suggestions.css', ['type' => 'external']);
 
 
     $vars['content_column_class'] = ['col-sm-12'];

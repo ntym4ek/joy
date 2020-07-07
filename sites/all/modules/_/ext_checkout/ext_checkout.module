@@ -54,13 +54,16 @@ function ext_checkout_preprocess_html(&$vars)
  */
 function ext_checkout_preprocess_page(&$vars)
 {
-  if (strpos($_GET['q'], 'checkout') === 0 && empty(arg(2))) {
+  if (arg(0) == 'cart' || (arg(0) == 'checkout' && empty(arg(2)))) {
+    drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js', ['scope' => 'footer']);
+    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js', ['scope' => 'footer']);
+  }
+
+  if (arg(0) == 'checkout' && empty(arg(2))) {
     // убрать шапку и прочие элементы
     $vars['tsss'] = true;
 
     // добавляем скрипты
-    drupal_add_js(drupal_get_path('module', 'ext_checkout') . '/js/checkout.js');
-    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
     drupal_set_title('');
   }
 }
@@ -158,6 +161,17 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   $form['commerce_payment']['payment_method']['#ajax']['wrapper'] = 'commerce-checkout-ajax-wrapper';
   $form['commerce_payment']['payment_details'] = [];
   if (isset($form['commerce_payment']['commerce_payment_messages'])) unset($form['commerce_payment']['commerce_payment_messages']);
+
+  // при динамическом формировании списка методов оплаты (отключение онлайн методов при сумме заказа == 0)
+  // отключенный метод может остаться в #default_value
+  if (!isset($form["commerce_payment"]["payment_method"]["#options"][$form["commerce_payment"]["payment_method"]["#default_value"]])) {
+    if (count($form["commerce_payment"]["payment_method"]["#options"])) {
+      reset($form["commerce_payment"]["payment_method"]["#options"]);
+      $form["commerce_payment"]["payment_method"]["#default_value"] = array_key_first($form["commerce_payment"]["payment_method"]["#options"]);
+    } else {
+      $form["commerce_payment"]["payment_method"]["#default_value"] = '';
+    }
+  }
 
   /** -------------------------------------------- настройка Commerce Coupons ---------------------------------------------------- */
   unset($form['commerce_coupon']['coupon_code']['#title']);
@@ -272,11 +286,11 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
 
   // передать параметры заказа в скрипты
   // todo проверить: купон на подарок меняет массу, изменение не передаётся с ajax
-  $parameters = [
-    'products_weight' => $weight,
-    'products_total' => $products_amount/100,
-  ];
-  drupal_add_js(array('ext_checkout' => $parameters), 'setting');
+//  $parameters = [
+//    'products_weight' => $weight,
+//    'products_total' => $products_amount/100,
+//  ];
+//  drupal_add_js(array('ext_checkout' => $parameters), 'setting');
 
   // замена ajax обработчика кнопки Recalculate, чтобы возвращать не только панель с деталями, а всю форму
   $form['commerce_shipping']['recalc'] = $form['commerce_shipping']['recalculate'];
@@ -470,15 +484,33 @@ function ext_checkout_free_shipping_validate($form, $form_state)
  */
 function ext_checkout_commerce_checkout_complete($order)
 {
-  // перенести номер телефона в ЛК при необходимости
+  // перенести номер телефона и имя в ЛК при необходимости
   $order_wr = entity_metadata_wrapper('commerce_order', $order);
   if ($uid = $order_wr->uid->value()) {
-    $order_phone = $order_wr->field_phone->value();
     $user_wr = entity_metadata_wrapper('user', $uid);
-    if (!$user_wr->field_phone->value()) {
-      $order_phone = ext_user_normalize_phone($order_phone);
-      $user_wr->field_phone->set($order_phone);
-      $user_wr->save();
+    if ($user_wr->uid->value()) {
+      // обновим телефон, если в ЛК нет или невалидный
+      $order_phone = ext_user_normalize_phone($order_wr->field_phone->value());
+      if ($order_phone && !ext_user_valid_phone($user_wr->field_phone->value())) {
+        $user_wr->field_phone->set($order_phone);
+        $user_wr->save();
+      }
+      // обновим ФИО, если отсутствует
+      $order_username = $order_wr->field_username->value();
+      $name_array = explode(' ', $order_username);
+      if ((empty($user_wr->field_name_first->value()) || empty($user_wr->field_surname->value())) && count($name_array) > 1) {
+        if (!empty($name_array[0])) {
+          $user_wr->field_surname->set($name_array[0]);
+        }
+        if (!empty($name_array[1])) {
+          $user_wr->field_name_first->set($name_array[1]);
+        }
+        if (!empty($name_array[2])) {
+          $user_wr->field_name_second->set($name_array[2]);
+        }
+        $user_wr->save();
+      }
+
     }
   }
 }

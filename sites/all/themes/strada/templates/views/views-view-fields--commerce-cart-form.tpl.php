@@ -25,21 +25,20 @@
  */
 
 // дополнительная информация о line_item
-$line_item = _get_line_item_info($row->_field_data['commerce_line_item_field_data_commerce_line_items_line_item_']['entity']);
-
+$line_item_info = ext_order_get_line_item_info($row->_field_data['commerce_line_item_field_data_commerce_line_items_line_item_']['entity']);
 ?>
 
-<div class="ccf-item<?php print ($line_item['stock'] ? '' : ' out-of-stock'); ?>">
+<div class="ccf-item<?php print ($line_item_info['product_info']['stock'] ? '' : ' out-of-stock'); ?>">
     <div class="ccf-image">
         <?php print $fields['field_p_image']->wrapper_prefix . $fields['field_p_image']->label_html . $fields['field_p_image']->content . $fields['field_p_image']->wrapper_suffix; ?>
     </div>
     <div class="ccf-info">
         <div class="ccf-product">
-            <div class="ccf-title"><?php print $line_item['title']; ?></div>
+            <div class="ccf-title"><?php print $line_item_info['product_info']['title']; ?></div>
             <div class="ccf-options">
-                <?php foreach($line_item['options'] as $option) { print '<div>' . $option . '</div>'; } ?>
+                <?php foreach($line_item_info['options'] as $option) { print '<div>' . $option . '</div>'; } ?>
             </div>
-            <div class="ccf-stock"><?php print ($line_item['stock'] ? '<span class="text-success">В наличии на складе</span>' : '<span class="text-warning">Нет в наличии</span>'); ?></div>
+            <div class="ccf-stock"><?php print ($line_item_info['product_info']['stock'] ? '<span class="text-success">В наличии на складе</span>' : '<span class="text-warning">Нет в наличии</span>'); ?></div>
         </div>
         <div class="ccf-qty">
             <?php print $fields['edit_quantity']->wrapper_prefix . $fields['edit_quantity']->label_html . $fields['edit_quantity']->content . $fields['edit_quantity']->wrapper_suffix; ?>

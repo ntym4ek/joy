@@ -5,16 +5,178 @@
  */
 function ext_payment_menu()
 {
-    $items['user/%/orders/%/pay'] = array (
+    $items['user/%/orders/%commerce_order/pay/%'] = array (
         'title' => 'Оплатить заказ',
         'page callback' => 'ext_payment_commerce_order_pay_again',
-        'page arguments' => array(3),
+        'page arguments' => array(3, 5),
         'access arguments' => array('edit own commerce_order entities'),
-        'type' => MENU_LOCAL_ACTION,
+//        'type' => MENU_LOCAL_ACTION,
+        'type' => MENU_CALLBACK,
     );
 
     return $items;
 }
+/**
+ * ------------------------------------------ commerce rbspayment (Шлюз Сбера) -----------------------------------------
+ */
+function ext_payment_commerce_rbspayment_receipt_alter(&$config, $order)
+{
+  $items_with_spread = ext_payment_get_items_with_spread_discount($order);
+  // todo подставить ниже новую стоимость товаров и доставки
+  $order_wr = entity_metadata_wrapper('commerce_order', $order->order_id);
+
+  $items = array();
+  $itemsCnt = 1;
+
+  foreach ($order_wr->commerce_line_items as $key => $line_item_wr) {
+    $line_item_id = $line_item_wr->getIdentifier();
+    $line_item_type = $line_item_wr->getBundle();
+    // если есть нашем массиве (откуда исключены скидки с фикс. суммой)
+    if (isset($items_with_spread[$line_item_id])) {
+      if (in_array($line_item_type, commerce_product_line_item_types())) {
+        $item = [
+          'positionId' => $itemsCnt++,
+          'itemAmount' => $items_with_spread[$line_item_id]['amount'],
+          'name' => $line_item_wr->commerce_product->value()->title,
+          'itemPrice' => $items_with_spread[$line_item_id]['price'],
+          'quantity' => [
+            'value' => (float) number_format($line_item_wr->quantity->value(), 1),
+            'measure' => 'шт'
+          ],
+          'tax' => [
+            'taxType' => 0 //
+          ],
+          'itemCode' => $line_item_wr->commerce_product->value()->product_id
+        ];
+
+        // FFD 1.05 added
+        if ($config['ffd_version'] == 'v105') {
+
+          $attributes = [];
+          $attributes[] = [
+            "name" => "paymentMethod",
+            "value" => $config['ffd_paymentMethodType']
+          ];
+          $attributes[] = [
+            "name" => "paymentObject",
+            "value" => $config['ffd_paymentObjectType']
+          ];
+
+          $item['itemAttributes']['attributes'] = $attributes;
+
+        }
+
+      }
+      if ($line_item_type == 'shipping') {
+        $item = [
+          'positionId' => $itemsCnt++,
+          'itemAmount' => $items_with_spread[$line_item_id]['amount'],
+          'name' => $line_item_wr->line_item_label->value(),
+          'itemPrice' => $items_with_spread[$line_item_id]['amount'],
+          'quantity' => [
+            'value' => 1,
+            'measure' => 'шт'
+          ],
+          'tax' => [
+            'taxType' => 0 //
+          ],
+          'itemCode' => $line_item_wr->line_item_id->value()
+        ];
+
+        // FFD 1.05 added
+        if ($config['ffd_version'] == 'v105') {
+
+          $attributes = [];
+          $attributes[] = [
+            "name" => "paymentMethod",
+            "value" => 4
+          ];
+          $attributes[] = [
+            "name" => "paymentObject",
+            "value" => 4
+          ];
+
+          $item['itemAttributes']['attributes'] = $attributes;
+        }
+      }
+
+      $items[] = $item;
+    }
+  }
+
+  $config['order_bundle'] = array(
+    'orderCreationDate' => $order->changed,
+    'customerDetails' => array(
+      'email' => $order->mail,
+      'phone' => ext_user_normalize_phone($order_wr->field_phone->value())
+    ),
+    'cartItems' => array('items' => $items)
+  );
+
+}
+
+function ext_payment_get_items_with_spread_discount($order)
+{
+  $items = [];
+  $order_wr = entity_metadata_wrapper('commerce_order', $order->order_id);
+
+  // посчитать сумму всех скидок на фиксированную сумму и сумму товаров
+  $discount_total = $product_total = 0;
+  foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
+//    if (in_array($line_item_wr->getBundle(), ['commerce_discount'])) {
+    if (in_array($line_item_wr->getBundle(), ['commerce_discount', 'userpoints'])) {
+      $discount_total += $line_item_wr->commerce_total->amount->value();
+    }
+    if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
+      $product_total += $line_item_wr->commerce_total->amount->value();
+    }
+  }
+  $discount_total = abs($discount_total);
+  // коэфф (процент/100) на который будем уменьшать стоимость товаров
+  $koef = 1 - $discount_total/$product_total;
+  $koef = $koef ? $koef : 1;
+
+  // добавить товары с доставкой в чек
+  // на стоимость товаров раскинуть сумму фиксированной скидки
+  $total_w_koef = $amount_sh = $line_item_id_sh = 0;
+  foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
+    if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
+
+      // меняем стоимость товара (итог дб. без копеек)
+      $amount_w_koef = (int)floor($line_item_wr->commerce_unit_price->amount->value()*$koef);
+
+      $quantity = $line_item_wr->quantity->value();
+      $items[$line_item_wr->getIdentifier()] = [
+        'type' => 'shipping',
+        'title' => $line_item_wr->commerce_product->label(),
+        'price' => $amount_w_koef,
+        'amount' => $amount_w_koef*$quantity,
+      ];
+
+      $total_w_koef += $amount_w_koef*$quantity;
+    }
+
+    if ($line_item_wr->getBundle() == 'shipping') {
+      $amount_sh = $line_item_wr->commerce_total->amount->value();
+      $line_item_id_sh = $line_item_wr->getIdentifier();
+    }
+  }
+
+  // образовавшуюся на дробном коэффициенте разницу (после округлений) нужно куда-то пристроить
+  $diff = $product_total - $discount_total - $total_w_koef;
+
+  // добавляем разницу на доставку
+  if ($line_item_id_sh) {
+    $items[$line_item_wr->getIdentifier()] = [
+      'type' => 'shipping',
+      'amount' => $amount_sh + $diff,
+    ];
+  }
+
+  return $items;
+}
+
+
 /**
  * ------------------------------------------ Яндекс.Касса (Yandex.Kassa) ----------------------------------------------
  */
@@ -54,6 +216,24 @@ function ext_payment_commerce_payment_method_info_alter(&$payment_methods)
     $payment_methods['commerce_rbspayment']['display_title'] = '<div class="carrier">' . t('Pay online') . '</div><div class="message">Через Сбербанк. Банковские карты, банк-онлайн и другие.</div>';
 }
 
+function ext_payment_commerce_order_pay_again($order, $gate)
+{
+  switch ($gate) {
+    case 'yandex':
+      ext_payment_commerce_order_pay_again_with_yandex($order);
+      break;
+    case 'sberbank':
+      ext_payment_commerce_order_pay_again_with_sber($order);
+      break;
+  }
+}
+
+function ext_payment_commerce_order_pay_again_with_sber($order)
+{
+  $order_wr = entity_metadata_wrapper('commerce_order', $order->order_id);
+  commerce_rbspayment_redirect_form([], $form_state, $order_wr->value(), '');
+}
+
 
 /**
  * функция повторной оплаты из просмотра заказа
@@ -62,9 +242,9 @@ function ext_payment_commerce_payment_method_info_alter(&$payment_methods)
 use YandexCheckout\Common\Exceptions\ApiException;
 use YandexCheckout\Model\PaymentStatus;
 use YandexCheckout\Request\Payments\CreatePaymentRequestSerializer;
-function ext_payment_commerce_order_pay_again($order_id)
+function ext_payment_commerce_order_pay_again_with_yandex($order)
 {
-
+  $order_id = $order->order_id;
     $modulePath = drupal_get_path('module', 'yamoney_api');
     require_once $modulePath.DIRECTORY_SEPARATOR.'YandexMoneyLogger.php';
     require_once $modulePath.DIRECTORY_SEPARATOR.'InstallmentsApi.php';

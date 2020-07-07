@@ -6,6 +6,6 @@ configure = admin/config/user-interface/ifec
 
 dependencies[] = ctools
 
-files[] = ifec.settings.inc
-files[] = ifec.theme.inc
-files[] = ifec.variable.inc
+files[] = includes/ifec.settings.inc
+files[] = includes/ifec.theme.inc
+files[] = includes/ifec.variable.inc

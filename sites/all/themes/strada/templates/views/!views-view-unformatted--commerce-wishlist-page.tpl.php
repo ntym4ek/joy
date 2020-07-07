@@ -10,7 +10,7 @@
 <?php if (!empty($title)): ?>
     <h3><?php print $title; ?></h3>
 <?php endif; ?>
-<div class="view-items products-list">
+<div class="view-items">
     <?php foreach ($rows as $id => $row): ?>
         <div<?php if ($classes_array[$id]): ?> class="<?php print $classes_array[$id]; ?>"<?php endif; ?>>
             <?php print $row; ?>

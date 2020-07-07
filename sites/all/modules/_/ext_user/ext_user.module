@@ -1,7 +1,7 @@
 <?php
 
-define('ADMIN_RID', 3);
-define('PRODUCT_MANAGER_RID', 4);
+define('ADMIN_ROLE_ID', 3);
+define('PRODUCT_MANAGER_ROLE_ID', 4);
 
 /**
  * Implements hook_menu_alter().
@@ -9,7 +9,7 @@ define('PRODUCT_MANAGER_RID', 4);
 function ext_user_menu_alter(&$items)
 {
     $items['user/register']['page arguments'] = array('ext_user_registration_wizard');
-    return $items;
+    $items['user/password']['page arguments'] = array('ext_user_user_pass_form');
 }
 
 /**
@@ -210,6 +210,20 @@ function ext_user_normalize_phone($phone)
     return $phone;
 }
 
+/**
+ * Format phone to user view
+ * @param $phone
+ *
+ * @return string
+ */
+function ext_user_format_phone($phone)
+{
+  // форматируем - +7-xxx-xxx-xx-xx
+  $phone = preg_replace('/(\d)(\d\d\d)(\d\d\d)(\d\d)(\d\d)/', '+$1 $2 $3-$4-$5', trim($phone));
+
+  return $phone;
+}
+
 function ext_user_valid_phone($phone)
 {
     // номер правильный, если имеет минимум 11 цифр
@@ -364,7 +378,11 @@ function ext_user_registration_wizard_check_code($form, &$form_state)
     $code = rand(1001, 9998);
     $phone = $form_state['values']['field_phone']['und'][0]['value'];
     if (mailer_send_sms('user_code', ['phone' => $phone, 'code' => $code])) {
-        $form_state['user_code'] = ['code' => $code, 'sent_time' => time()];
+      $form_state['user_code'] = [
+        'phone' => $phone,
+        'code' => $code,
+        'sent_time' => time()
+      ];
 
         $step = &$form_state['step'];
         $form_state['step_information'][$step]['stored_values'] = $form_state['values'];
@@ -441,9 +459,9 @@ function ext_user_registration_code_form($form, &$form_state)
 function ext_user_registration_wizard_repeat_validate(&$form, &$form_state)
 {
     if (time() - $form_state['user_code']['sent_time'] < 60) {
-        form_set_error('code', 'Новое смс можно будет отправить через ' . (60 - (time() - $form_state['user_code']['sent_time'])) . ' с'); return false;
+        form_set_error('code', 'Новое смс можно будет отправить через ' . (60 - (time() - $form_state['user_code']['sent_time'])) . ' с');
+        return false;
     }
-    return true;
 }
 
 /**
@@ -452,15 +470,19 @@ function ext_user_registration_wizard_repeat_validate(&$form, &$form_state)
 function ext_user_registration_code_form_validate(&$form, &$form_state)
 {
         // проверка введенного кода
-    if (empty($form_state['values']['code'])) { form_set_error('code', 'Введите код из СМС'); return false; }
-    if ($form_state['values']['code'] != $form_state['user_code']['code']) { form_set_error('code', 'Неверный код'); return false; }
+    if (empty($form_state['values']['code'])) {
+      form_set_error('code', 'Введите код из СМС');
+    return false;
+    }
+    if ($form_state['values']['code'] != $form_state['user_code']['code']) {
+      form_set_error('code', 'Неверный код');
+      return false;
+    }
 
     // восстанавливаем значения формы регистрации
     $form_state['values'] = $form_state['step_information'][1]['stored_values'];
     // user_registration_submit требует наличия значения в $form['#user']
     $form['#user'] = $form_state['step_information'][1]['stored_form']['#user'];
-
-    return true;
 }
 
 /**
@@ -483,8 +505,9 @@ function ext_user_registration_wizard_repeat($form, &$form_state)
     $phone = $form_state['step_information'][1]['stored_values']['field_phone']['und'][0]['value'];
     if (mailer_send_sms('user_code', ['phone' => $phone, 'code' => $code])) {
         $form_state['user_code'] = [
-            'code' => $code,
-            'sent_time' => time(),
+          'phone' => $phone,
+          'code' => $code,
+          'sent_time' => time(),
         ];
         drupal_set_message('Новое СМС с кодом отправлено.');
     }
@@ -500,6 +523,7 @@ function ext_user_registration_wizard_repeat($form, &$form_state)
 function ext_user_form_user_profile_form_alter (&$form, $form_state)
 {
   if ($GLOBALS['user']->uid != 1) {
+    $form["account"]["name"]["#access"] = false;
       $form['timezone']['#access'] = false;
       $form['locale']['#access'] = false;
       $form['mimemail']['#access'] = false;
@@ -507,13 +531,20 @@ function ext_user_form_user_profile_form_alter (&$form, $form_state)
       $form['field_user_surname']['#prefix'] = '<h4>' . t('Personal info') . '</h4>';
       $form['flag']['#title'] = 'Подписки';
       // не даём менять телефон пользователю
-      if (!_user_has_role('product manager') && $form["field_phone"]["und"][0]["value"]["#default_value"]) {
+      if (!_user_has_role('product manager') && ext_user_valid_phone($form["field_phone"]["und"][0]["value"]["#default_value"])) {
         $form["field_phone"]["und"][0]["#disabled"] = true;
       }
   }
 
   $form['field_phone']['#element_validate'][] = 'ext_user_profile_phone_validate';
-  $form['account']['mail']['#required'] = false;
+
+  // для манагеров, не проверять наличие почты
+  if (user_has_role(PRODUCT_MANAGER_ROLE_ID, $GLOBALS['user']) || user_has_role(ADMIN_ROLE_ID, $GLOBALS['user'])) {
+    $form['account']['mail']['#required'] = false;
+    if ($form["#validate"][0] == 'user_account_form_validate') {
+      array_shift($form["#validate"]);
+    }
+  }
 }
 
 function ext_user_profile_phone_validate($element, &$form_state)
@@ -525,7 +556,8 @@ function ext_user_profile_phone_validate($element, &$form_state)
         form_set_error('field_phone][und][0][value', t('Type valid phone number.')); return false;
       }
       // проверка на наличие тлф в БД
-      if (($account = ext_user_user_load_by_phone($phone)) && $account->uid != $form_state["user"]->uid) {
+      $account = ext_user_user_load_by_phone($phone);
+      if ($account->uid && $account->uid != $form_state["user"]->uid) {
           form_set_error('field_phone][und][0][value', t('This phone number is already registered.'));
       }
     }
@@ -681,6 +713,181 @@ function ext_user_user_authenticate($name, $password)
   }
   return $uid;
 }
+
+
+function ext_user_register_and_authenticate($name, $password)
+{
+
+}
+
+/**
+ * ---------------------------- Password recovery ------------------------------
+ */
+
+/**
+ * hook_form_alter
+ */
+function ext_user_user_pass_form($form, &$form_state)
+{
+  global $user;
+
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('E-Mail or phone number'),
+    '#size' => 60,
+    '#maxlength' => max(USERNAME_MAX_LENGTH, EMAIL_MAX_LENGTH),
+    '#required' => TRUE,
+    '#default_value' => isset($_GET['name']) ? $_GET['name'] : '',
+  );
+
+  // Allow logged in users to request this also.
+  if ($user->uid > 0) {
+    $user_wr = entity_metadata_wrapper('user', $user);
+    $login = $user->mail;
+    if (!empty($user_wr->field_phone->value())) {
+      $login = $user_wr->field_phone->value();
+    }
+
+    if ($login) {
+      $form['name']['#type'] = 'value';
+      $form['name']['#value'] = $login;
+      $form['mail'] = [
+        '#prefix' => '<p>',
+        '#markup' => t('New password will be sent to %login. You must log in with new password.', ['%login' => $login]),
+        '#suffix' => '</p>',
+      ];
+    }
+  }
+  $form["#validate"][] = 'ext_user_user_pass_validate';
+  $form["#submit"][] = 'ext_user_user_pass_submit';
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array('#type' => 'submit', '#value' => t('E-mail new password'));
+
+  return $form;
+}
+
+/**
+ * Form validation handler for user_pass().
+ */
+function ext_user_user_pass_validate($form, &$form_state)
+{
+  $login = trim($form_state['values']['name']);
+  // Try to load by email.
+  $account = ext_user_user_load_by_login($login);
+  if (!empty($account->uid)) {
+    form_set_value(array('#parents' => array('account')), $account, $form_state);
+  }
+  else {
+    form_set_error('name', t('Sorry, there is no user with e-mail or phone %name in our base.', array('%name' => $login)));
+  }
+}
+
+/**
+ * Form submission handler for user_pass().
+ */
+function ext_user_user_pass_submit($form, &$form_state)
+{
+  $account = $form_state['values']['account'];
+
+  // определить как зарегистрирован
+  $method = '';
+  if (ext_user_valid_phone($form_state['values']['name'])) {
+    $method = 'phone';
+  }
+  elseif ((valid_email_address($form_state['values']['name']))) {
+    $method = 'email';
+  }
+
+  if ($method) {
+    $pass = user_password(6);
+    if (user_save($account, ['pass' => $pass])) {
+      if ($method == 'phone') {
+        mailer_send_sms('user_pass', ['phone' => $form_state['values']['name'], 'pass' => $pass]);
+      }
+      if ($method == 'email') {
+        drupal_mail('mailer', 'user_pass', $form_state['values']['name'], user_preferred_language($account), ['pass' => $pass]);
+      }
+    }
+  }
+  else {
+    watchdog('user', 'Неудачная попытка восстановления пароля по логину %name.', array('%name' => $form_state['values']['name']), WATCHDOG_ERROR);
+  }
+
+  drupal_set_message(t('New password sent.'));
+
+  $form_state['redirect'] = 'user';
+  return;
+}
+
+/**
+ * ---------------------------- Токен города пользователя ------------------------
+ */
+
+/**
+ * Provide information about our custom placeholder/token.
+ *
+ * @see http://api.drupal.org/api/drupal/modules--system--system.api.php/function/hook_token_info/7
+ * @see http://api.lullabot.com/token_example_token_info/7
+ * @return array
+ *   An associative array of available tokens and token types.
+ */
+function ext_user_token_info()
+{
+  $info['tokens']['user']['city'] = array(
+    'name' => t('City'),
+    'description' => t('User city from cookies'),
+  );
+  return $info;
+}
+
+/**
+ * Provide replacement values for placeholder tokens.
+ *
+ * @see http://api.drupal.org/api/drupal/modules--system--system.api.php/function/hook_tokens/7
+ * @see http://api.lullabot.com/token_example_tokens/7
+ * @param string $type
+ *   The machine-readable name of the type (group) of token being replaced, such
+ *   as 'node', 'user', or another type defined by a hook_token_info()
+ *   implementation.
+ * @param array $tokens
+ *   An array of tokens to be replaced. The keys are the machine-readable token
+ *   names, and the values are the raw [type:token] strings that appeared in the
+ *   original text.
+ * @param array $data (optional)
+ *   An associative array of data objects to be used when generating replacement
+ *   values, as supplied in the $data parameter to token_replace().
+ * @param array $options (optional)
+ *   An associative array of options for token replacement; see token_replace()
+ *   for possible values.
+ * @return array
+ *   An associative array of replacement values, keyed by the raw [type:token]
+ *   strings from the original text.
+ */
+function ext_user_tokens($type, $tokens, array $data = array(), array $options = array())
+{
+  $replacements = array();
+
+  if ($type == 'user' && !empty($data['user'])) {
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'city':
+          if (!empty($_COOKIE["user_region"])) {
+            $user_region = json_decode($_COOKIE["user_region"], true);
+            $replacements[$original] = filter_xss($user_region["data"]["city"]);
+          }
+          break;
+      }
+    }
+  }
+
+  return $replacements;
+}
+
+
+/**
+ * ---------------------------- Вспомогательные функции ------------------------
+ */
 
 /**
  * Информация о пользователе, опционально включая адрес из последнего заказа

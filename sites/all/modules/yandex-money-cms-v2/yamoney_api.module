@@ -9,7 +9,7 @@ use YandexCheckout\Request\Payments\Payment\CreateCaptureRequest;
 
 $modulePath = drupal_get_path('module', 'yamoney_api');
 require_once $modulePath.DIRECTORY_SEPARATOR.'YandexMoneyLogger.php';
-require_once $modulePath.DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'autoload.php';
+require_once $modulePath.DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'lib'.DIRECTORY_SEPARATOR.'autoload.php';
 
 define('YAMONEY_API_CHECK_RESULT_CODE_SUCCESS', 0);
 define('YAMONEY_API_CHECK_RESULT_CODE_ERROR_MD5', 1);

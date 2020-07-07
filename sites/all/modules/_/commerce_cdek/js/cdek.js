@@ -40,8 +40,8 @@
                         city = location.data.city;
                     }
 
-                  var products_total = Drupal.settings.ext_checkout.products_total;
-                  var products_weight = Drupal.settings.ext_checkout.products_weight;
+                    var products_total = $(".cdek-order-amount").val();
+                    var products_weight = $(".cdek-order-weight").val();
                     var widjet = new ISDEKWidjet({
                         showWarns: true,
                         showErrors: true,

@@ -115,10 +115,10 @@ function popup_spinner_show_message($popup_spinner_parameters)
     drupal_add_js(array(
         'popup_spinner' => $popup_spinner_parameters,
     ), 'setting');
-    drupal_add_js('misc/jquery.cookie.js');
-    drupal_add_js(drupal_get_path('module', 'popup_spinner') . '/js/popup_spinner.js');
+    drupal_add_library('system', 'jquery.cookie');
+    drupal_add_js(drupal_get_path('module', 'popup_spinner') . '/js/popup_spinner.js', ['scope' => 'footer', 'defer' => true]);
     drupal_add_css(drupal_get_path('module', 'popup_spinner') . '/css/popup_spinner.css');
-    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js');
+    drupal_add_js(drupal_get_path('theme', 'strada') . '/js/jquery.maskedinput.min.js', ['scope' => 'footer', 'defer' => true]);
 }
 
 function popup_spinner_ajax_callback()
@@ -165,15 +165,16 @@ function popup_spinner_ajax_callback()
     $arguments['field_phone'][LANGUAGE_NONE][0]['value'] = $phone;
 
     // создание пользователя
-    user_save(NULL, $arguments);
-    // аутентификация пользователя
-    $uid = ext_user_user_authenticate($phone, $arguments['pass']);
-    $user = user_load($uid);
-    user_login_finalize();
-    // нужно для rpt - Registration Password Token, в противном случае токен будет пустой
-    $user->password = $arguments['pass'];
-    // отправить СМС с паролем
-    mailer_send_sms('user_pass', ['phone' => $phone, 'pass' => $pass]);
+    if (user_save(NULL, $arguments)) {
+      // аутентификация пользователя
+      $uid = ext_user_user_authenticate($phone, $arguments['pass']);
+      $user = user_load($uid);
+      user_login_finalize();
+      // нужно для rpt - Registration Password Token, в противном случае токен будет пустой
+      $user->password = $arguments['pass'];
+      // отправить СМС с паролем
+      mailer_send_sms('user_pass', ['phone' => $phone, 'pass' => $pass]);
+    }
 
     // вычислить и начислить подарок
     // вероятности
@@ -194,9 +195,9 @@ function popup_spinner_ajax_callback()
     $error = $gift_full_name = '';
     switch ($gift_id) {
       case '1':
-        $gift_text_1 = 'Вы выиграли купон на подарок SEDA "Biohumus" 250 мл';
+        $gift_text_1 = 'Вы выиграли купон на подарок SEDA "Biohumus" 100 мл';
         $gift_text_2 = 'Запишите код и примените при оформлении заказа.';
-        $gift_full_name = 'SEDA "Biohumus" 250 мл';
+        $gift_full_name = 'SEDA "Biohumus" 100 мл';
         $gift_name = 'BIOHUMUS';
         break;
       case '2':
@@ -288,7 +289,6 @@ function popup_spinner_ajax_callback()
       'gift' => $gift,
     ];
 
-    if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
       // отправить письмо менеджеру
       $params['data'] = [
         'name' => empty($_POST['data']['name']) ? '' : $_POST['data']['name'],
@@ -299,7 +299,6 @@ function popup_spinner_ajax_callback()
       $mail = variable_get('support_email', 'mega_comp@mail.ru');
       drupal_mail('popup_spinner', '', $mail, 'ru', $params);
       drupal_mail('popup_spinner', '', 'ed_smr@kccc.ru', 'ru', $params);
-    }
   }
 
   return $result;

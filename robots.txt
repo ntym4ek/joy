@@ -77,6 +77,8 @@ Disallow: /UPGRADE.txt
 Disallow: /xmlrpc.php
 
 # Paths (clean URLs)
+Disallow: /content
+Disallow: /taxonomy
 Disallow: /admin/
 Disallow: /comment/reply/
 Disallow: /filter/tips/
@@ -92,6 +94,8 @@ Disallow: /404-page-not-found
 Disallow: /node/196
 
 # Paths (no clean URLs)
+Disallow: /?q=content
+Disallow: /?q=taxonomy
 Disallow: /?q=admin/
 Disallow: /?q=comment/reply/
 Disallow: /?q=filter/tips/

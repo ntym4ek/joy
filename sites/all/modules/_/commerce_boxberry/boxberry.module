@@ -67,15 +67,19 @@ function boxberry_service_rate_order($shipping_service, $order)
       $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
       if (empty($rate_request["errors"])) {
-        $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'];
+        $cache_key = $rate_request['zipcode'] . $rate_request['weight'] . $rate_request['amount'] . $rate_request["target_point"];
         if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
           $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 600);
         } else {
-          $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 0);
+          $cache = commerce_shipping_rates_cache_get('boxberry' . $cache_key, $order, 1);
         }
 
         if (!$cache) {
-          $response = boxberry_api_request($rate_request);
+          try {
+            $response = boxberry_api_request($rate_request);
+          } catch (Exception $e) {
+            $response['cost_data'][] = ['err' => $e->getMessage()];
+          }
 
           // если пустой ответ или ошибка
           if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
@@ -98,8 +102,8 @@ function boxberry_service_rate_order($shipping_service, $order)
 
             $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
             $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
-            if (!empty($field_data['boxberry']['point_data']['address'])) {
-              $rate['data']['address'] = $field_data['boxberry']['point_data']['address'];
+            if (!empty($field_data['boxberry']['point']['address'])) {
+              $rate['data']['address'] = $field_data['boxberry']['point']['address'];
             }
 
             if (!ext_checkout_non_free_shipping($order)) {
@@ -115,7 +119,9 @@ function boxberry_service_rate_order($shipping_service, $order)
       }
       else {
         $rate['data']['errors'] = $rate_request['errors'];
-        $field_data['boxberry'] = [];
+        $field_data['boxberry'] = [
+          'errors' => $rate_request['errors'],
+        ];
       }
 
       $order_wr->{$field_name}->field_data = json_encode($field_data);
@@ -143,13 +149,13 @@ function boxberry_build_rate_request($order)
     $request['errors'] = $check['errors'];
   }
 
+  $zipcode = $weight = $amount = $target_point = '';
   if (empty($request['errors'])) {
     $order_wr = entity_metadata_wrapper('commerce_order', $order);
     $field_name = commerce_physical_order_shipping_field_name($order);
     $shipping_profile = $order_wr->{$field_name}->value();
 
     // базовые данные
-    $zipcode = $weight = $amount = $target_point = '';
     if (isset($shipping_profile->field_data['und'][0]['value'])) {
       $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
       $zipcode = empty($data['region']['data']['postal_code']) ? '' : $data['region']['data']['postal_code'];
@@ -157,7 +163,6 @@ function boxberry_build_rate_request($order)
       $amount = $order_wr->commerce_order_total->value()['amount'] / 100;
 
       // возможно пункт уже выбран, нужно получить данные о нём
-      $target_point = empty($data['region']['data']['boxberry_id']) ? NULL : $data['region']['data']['boxberry_id'];
       if (!empty($data['boxberry'])) {
         $target_point = empty($data['boxberry']['point']['id']) ? '' : $data['boxberry']['point']['id'];
       }
@@ -202,13 +207,13 @@ function boxberry_api_request($data)
     }
 
     // описание точки
-    if ($data['target_point']) {
-        $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=PointsDescription&code=' . $data['target_point'];
-        $handle = fopen($url, "rb");
-        $contents = stream_get_contents($handle);
-        fclose($handle);
-        $response['point_data'] = json_decode($contents, TRUE);
-    }
+//    if ($data['target_point']) {
+//        $url = 'http://api.boxberry.ru/json.php?token=bfac706581729d6129d54c6a8089635c&method=PointsDescription&code=' . $data['target_point'];
+//        $handle = fopen($url, "rb");
+//        $contents = stream_get_contents($handle);
+//        fclose($handle);
+//        $response['point'] = json_decode($contents, TRUE);
+//    }
 
     return $response;
 }
@@ -250,6 +255,13 @@ function boxberry_service_details_form($pane_form, $pane_values, $checkout_pane,
         $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates['boxberry_shipping_service']);
         if ($line_item_wrapper->value()) $data = $line_item_wrapper->commerce_unit_price->data->value();
     }
+
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $weight = commerce_physical_order_weight($order, 'g')['weight'];
+    $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
+
+    $pane_form['order_amount'] = ['#type' => 'hidden', '#value' => $products_amount_base/100, '#attributes' => ['class' => ['boxberry-order-amount']]];
+    $pane_form['order_weight'] = ['#type' => 'hidden', '#value' => $weight, '#attributes' => ['class' => ['boxberry-order-weight']]];
 
     // адрес пункта выдачи
     $pane_form['select'] = [
@@ -295,7 +307,7 @@ function boxberry_service_details_form_validate($details_form, $details_values, 
   $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
 
   $validate = true;
-  if (empty($field_data["boxberry"]["point_data"]) || isset($field_data["boxberry"]["point_data"]["err"])) {
+  if (empty($field_data["boxberry"]["point"]) || isset($field_data["boxberry"]["point"]["err"])) {
     form_set_error(implode('][', array_merge($form_parents, ['select'])), 'Выберите пункт доставки на карте и нажмите "Выбрать отделение"');
     $validate = false;
   }
@@ -336,10 +348,10 @@ function boxberry_service_details_form_submit($details_form, $details_values, $l
  */
 function boxberry_preprocess_page(&$vars)
 {
-    // добавляем скрипт Boxberry
-    if (strpos($_GET['q'], 'checkout') === 0) {
-        drupal_add_js('https://points.boxberry.de/js/boxberry.js');
-        drupal_add_js(drupal_get_path('module', 'boxberry') . '/js/boxberry.js');
+    if (arg(0) == 'checkout' && empty(arg(2))) {
+      // добавляем скрипт Boxberry
+      drupal_add_js('https://points.boxberry.de/js/boxberry.js', ['type' => 'external', 'scope' => 'footer']);
+      drupal_add_js(drupal_get_path('module', 'boxberry') . '/js/boxberry.js', ['scope' => 'footer']);
     }
 }
 
@@ -350,14 +362,28 @@ function boxberry_shipping_service_info($item, $shipping_profile)
     $field_data = empty($shipping_profile->field_data['und'][0]['value']) ? null : json_decode($shipping_profile->field_data['und'][0]['value'], true);
     $point_id = empty($shipping_profile->field_boxberry_target['und'][0]['value']) ? null : $shipping_profile->field_boxberry_target['und'][0]['value'];
 
+    // адрес
+    $address = empty($component_data['address']) ? '' : $component_data['address'];
+
+    // на время сохранения последствий ошибки
+  if (!$address && !empty($field_data['boxberry']['point']['address'])) {
+    $address = $field_data['boxberry']['point']['address'];
+  }
+    if (!$address && !empty($field_data['boxberry']['point_data']['address'])) {
+      $address = $field_data['boxberry']['point_data']['address'];
+    }
+
     if (!$point_id && !empty($field_data['boxberry'])) {
-        $point_id = $field_data['boxberry']['point_data']['id'];
+      // устар.
+      if (!empty($field_data['boxberry']['point_data']['id'])) $point_id = $field_data['boxberry']['point_data']['id'];
+      // новый
+      if (!empty($field_data['boxberry']['point']['id'])) $point_id = $field_data['boxberry']['point']['id'];
     }
 
     return [
         'title' => $item->line_item_label,
         'method' => $item->commerce_shipping_service['und'][0]['value'],
-        'address' => empty($component_data['address']) ? '' : $component_data['address'],
+        'address' => $address,
         'point_id' => $point_id,
     ];
 }

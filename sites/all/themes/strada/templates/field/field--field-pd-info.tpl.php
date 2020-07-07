@@ -48,10 +48,16 @@
 // разделить текст на две части
 // todo разделение на две части по метке в тексте, т.к из-за списков разделение пополам может сильно отличаться по высоте
 $text = $items[0]['#markup'];
-$len = (int)ceil(drupal_strlen($text)/2);
-while (drupal_substr($text, $len, 1) != ' ' && $len >= 0) { $len++; };
-$left  = drupal_substr($text, 0, $len);
-$right = trim(str_replace($left, '', $text));
+$left = $text;
+$right = '';
+if (drupal_strlen($text) > 150) {
+  $len = (int) ceil(drupal_strlen($text) / 2);
+  while (drupal_substr($text, $len, 1) != ' ' && $len >= 0 && ($len < drupal_strlen($text))) {
+    $len++;
+  }
+  $left = drupal_substr($text, 0, $len);
+  $right = trim(str_replace($left, '', $text));
+}
 ?>
 
 <div class="<?php print $classes; ?>"<?php print $attributes; ?>>

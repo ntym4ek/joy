@@ -82,14 +82,14 @@
             <div class="topbar">
                 <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
-                <div class="topbar-phone" style="color:red;">
-                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank" style="color:#e53123;"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a>
+                <div class="topbar-phone">
+                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/<? print ext_user_normalize_phone(variable_get('manager_whatsapp', '8-922-910-99-40')); ?>" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a>
                 </div>
 
                 <div class="topbar-menu hidden-sm">
                     <ul class="dry-list">
 <!--                        <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>-->
-                        <li><a href="/info/delivery" style="background: #e53123;padding: 5px 10px;color: white;border-radius: 4px;">Безопасная доставка</a></li>
+                        <li><a href="/info/delivery" style="background: #e53123;padding: 5px 10px;color: white;border-radius: 4px;">Бесплатная доставка</a></li>
                         <li><a href="/info/payment">Оплата</a></li>
                         <li><a href="/info/return">Возврат</a></li>
                         <li><a href="/info/how-to-buy">Как купить</a></li>
@@ -159,7 +159,7 @@
     <div class="line-2-1 hidden-sm hidden-md hidden-lg">
         <div class="topbar-phone">
             <div><a href="tel:88005502885">8-800-550-28-85</a></div>
-            <div>WhatsApp:&nbsp;<a href="https://wa.me/79127017074" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a></div>
+            <div>WhatsApp:&nbsp;<a href="https://wa.me/<? print str_replace('-', '', variable_get('manager_whatsapp', '8-922-910-99-40')); ?>" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a></div>
         </div>
     </div>
 
@@ -272,7 +272,7 @@
             <h5>Оцените<br />нас</h5>
             <div class="social-links">
                 <a class="vk" href="https://vk.com/joy_garden" rel="nofollow noopener" target="_blank" title="ВКонтакте"><i class="fab fa-vk" aria-hidden="true"></i></a>
-                <a class="fb" href="http://www.facebook.com/kccc.ru" rel="nofollow noopener" target="_blank" title="Facebook"><i class="fab fa-facebook" aria-hidden="true"></i></a>
+                <a class="fb" href="https://www.facebook.com/joy.garden.43/" rel="nofollow noopener" target="_blank" title="Facebook"><i class="fab fa-facebook" aria-hidden="true"></i></a>
                 <a class="in" href="https://www.instagram.com/joy_info" rel="nofollow noopener" target="_blank" title="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
             </div>
             <div>Горячая линия Интернет-магазина</div>

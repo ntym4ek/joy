@@ -8,30 +8,8 @@ define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_w
 /**
  * Implements hook_menu().
  */
-function commerce_helper_menu() {
-    $items['user/%/orders/%/print'] = array(
-        'title' => 'Распечатать заказ',
-        'page callback' => 'commerce_helper_print_order_info',
-        'page arguments' => array(3),
-        'access arguments' => array('edit own commerce_order entities'),
-        'type' => MENU_LOCAL_ACTION,
-    );
-    $items['user/%/orders/%/to-cart'] = array(
-        'title' => 'Положить всё в корзину',
-        'page callback' => 'commerce_helper_add_order_to_cart',
-        'page arguments' => array(3),
-        'access arguments' => array('edit own commerce_order entities'),
-        'type' => MENU_LOCAL_ACTION,
-    );
-    $items['user/%/orders/%commerce_order/cancel'] = array(
-        'title' => 'Отменить заказ',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_helper_commerce_order_order_cancel_form', 3),
-        'access callback' => 'commerce_order_access',
-        'access arguments' => array('update', 3),
-        'type' => MENU_LOCAL_ACTION,
-    );
-
+function commerce_helper_menu()
+{
     $items['admin/config/joy'] = array(
         'title' => 'Настройки сайта',
         'page callback' => 'system_admin_menu_block_page',
@@ -46,8 +24,6 @@ function commerce_helper_menu() {
         'access arguments' => array('access manager settings'),
         'file' => 'includes/commerce_helper.admin.inc',
     );
-
-
     return $items;
 }
 
@@ -81,19 +57,6 @@ function commerce_helper_module_implements_alter(&$implementations, $hook)
     }
 }
 
-
-/**
- * Implements hook_theme().
- */
-function commerce_helper_theme() {
-    return array(
-        // шаблон для печати содержимого заказа
-        'order_print_form' => array(
-            'variables' => array('order_id' => NULL),
-            'template' => 'order-print-form',
-        ),
-    );
-}
 
 /**
  * Preprocess function for theme_html()
@@ -142,14 +105,19 @@ function commerce_helper_process_page(&$vars)
  */
 function commerce_helper_cart_info_block()
 {
-    $qty_html = '';
+  $qty_html = $total_html = '';
     if ($order = commerce_cart_order_load($GLOBALS['user']->uid)) {
-        $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-        if ($qty = commerce_line_items_quantity($order_wrapper->commerce_line_items, commerce_product_line_item_types())) {
-            $qty_html = '<span class="bubble bubble-red">' . $qty . '</span>';
+        $order_wr = entity_metadata_wrapper('commerce_order', $order);
+        if ($qty = commerce_line_items_quantity($order_wr->commerce_line_items, commerce_product_line_item_types())) {
+            $qty_html = '<div class="qty"><span class="bubble bubble-red">' . $qty . '</span></div>';
+        }
+        if ($order_total = $order_wr->commerce_order_total->value()) {
+          $products_base_amount = commerce_price_component_total($order_total, 'base_price')['amount'];
+          $total_formatted = commerce_currency_format($products_base_amount, 'RUB');
+          $total_html = '<div class="total"><span class="bubble bubble-green">' . $total_formatted . '</span></div>';
         }
     }
-    return '<i class="far fa-shopping-cart">' . $qty_html . '</i>';
+    return $qty_html . '<i class="far fa-shopping-cart"></i>' . $total_html;
 }
 
 
@@ -351,11 +319,105 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
             // добавить проверку на наличие в корзине отсутствующих товаров
             $form['actions']['checkout']['#submit'][] = 'commerce_helper_form_views_form_commerce_cart_form_submit';
 
-            // order summary
-            $form['actions']['#prefix'] = '<div class="ch-info-container">';
+
+          // авторизация или регистрация пользователя
+          if (!$GLOBALS["user"]->uid) {
+            $form['actions']['login'] = [
+              '#type' => 'container',
+              '#attributes' => ['class' => ['cs-login']],
+            ];
+            // сначала выводим форму ввода телефона
+            if (empty($form_state['user_code'])) {
+              $form['actions']['checkout']['#access'] = false;
+
+              $form['actions']['login']['greet'] = [
+                '#markup' => '<div class="greet">Не получилось Вас узнать, давайте авторизуемся для продолжения!</div>',
+              ];
+              $form['actions']['login']['phone'] = [
+                '#type' => 'textfield',
+                '#attributes' => ['class' => ['masked-phone'], 'placeholder' => ['Введите номер телефона']],
+                '#default_value' => '',
+              ];
+              $form['actions']['login_send_sms'] = [
+                '#type' => 'submit',
+                '#name' => 'login_send_sms',
+                '#value' => 'Получить СМС',
+                '#validate' => ['commerce_helper_cart_login_send_sms_validate', 'ifec_form_validator'],
+                '#submit' => ['commerce_helper_cart_login_send_sms_submit'],
+                '#attributes' => ['class' => ['btn-info', 'btn-lg', 'btn-wide']],
+              ];
+            }
+            // если телефон уже был введён, то форму ввода СМС сообщения
+            else {
+              $form['actions']['login']['greet'] = [
+                '#markup' => '<div class="greet">Введите код из СМС и перейдём к оформлению!</div>',
+              ];
+              $form['actions']['login']['messages'] = array(
+                '#type' => 'markup',
+                '#markup' => theme('status_messages'),
+              );
+              $form['actions']['login']['code'] = [
+                '#type' => 'textfield',
+                '#attributes' => ['placeholder' => ['Четырёхзначный код']],
+                '#default_value' => '',
+              ];
+//              $form['actions']['login']['login_check_sms'] = [
+//                '#type' => 'submit',
+//                '#name' => 'login_check_sms',
+//                '#value' => 'К оформлению',
+//                '#submit' => ['commerce_helper_cart_login_check_sms_submit'],
+//                '#attributes' => ['class' => ['btn-brand', 'btn-lg', 'btn-wide']],
+//              ];
+              $form['actions']['login_repeat_sms'] = [
+                '#type' => 'submit',
+                '#name' => 'login_repeat_sms',
+                '#value' => 'Повторно отправить СМС',
+                '#validate' => ['commerce_helper_cart_login_repeat_sms_validate', 'ifec_form_validator'],
+                '#limit_validation_errors' => [['code']],
+                '#submit' => ['commerce_helper_cart_login_repeat_sms_submit'],
+                '#attributes' => ['class' => ['btn-link', 'btn-wide']],
+                '#weight' => 10,
+              ];
+              $form['actions']['login_change_phone'] = [
+                '#type' => 'submit',
+                '#name' => 'login_change_phone',
+                '#value' => 'Изменить телефон',
+                '#limit_validation_errors' => [],
+                '#submit' => ['commerce_helper_cart_login_change_phone_submit'],
+                '#attributes' => ['class' => ['btn-link', 'btn-wide']],
+                '#weight' => 11,
+              ];
+
+              // проверка кода при нажатии на Перейти к оформлению
+              $form['actions']['checkout']['#weight'] = 9;
+              if (empty($form['actions']['checkout']['#validate'])) {
+                $form['actions']['checkout']['#validate'] = [];
+              }
+              array_unshift($form['actions']['checkout']['#validate'], 'commerce_helper_cart_sms_validate');
+              $form['actions']['checkout']['#validate'][] = 'ifec_form_validator';
+              array_unshift($form['actions']['checkout']['#submit'], 'commerce_helper_cart_login_check_sms_submit');
+              // текст при нажатии на кнопку
+              $form['actions']['checkout']['#attributes']['data-processing-label'] = 'Проверяем код...';
+            }
+
+            // ссылка на вход по email
+            $form['actions']['login_email'] = [
+              '#type' => 'submit',
+              '#name' => 'login_email',
+              '#value' => 'Войти по e-mail',
+              '#limit_validation_errors' => [],
+              '#submit' => ['commerce_helper_cart_login_email_submit'],
+              '#attributes' => ['class' => ['btn-link', 'btn-wide']],
+              '#weight' => 12,
+            ];
+          } else {
+            $form['actions']['checkout']['#attributes']['data-processing-label'] = 'Подождите...';
+          }
+
+          // order summary
+          $form['actions']['#prefix'] = '<div class="ch-info-container">';
             $form['actions']['checkout']['#attributes']['class'][] = 'btn-primary btn-lg checkout-continue';
             $form['actions']['checkout']['#value'] = 'Перейти к оформлению';
-            $form['actions']['checkout']['#attributes']['onclick'][] = "ym(47689555, 'reachGoal', 'knopkaOformit'); return true; ";
             $form['actions']['#suffix'] = '</div>';
 
             $order_wrapper = entity_metadata_wrapper('commerce_order', $form_state['order']);
@@ -416,7 +478,128 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
             $form['output']['#markup'] = theme('commerce_cart_empty_page');
         }
     }
-    // блок
+
+}
+
+function commerce_helper_cart_login_send_sms_validate($form, &$form_state)
+{
+  if (!ext_user_valid_phone($form_state['values']['phone'])) {
+    form_set_error('phone', 'Укажите корректный номер мобильного телефона');
+    return false;
+  }
+}
+
+function commerce_helper_cart_login_send_sms_submit($form, &$form_state)
+{
+  // послать СМС с кодом
+  $code = rand(1001, 9998);
+  $phone = $form_state['values']['phone'];
+  if (mailer_send_sms('user_code', ['phone' => $phone, 'code' => $code])) {
+    $form_state['user_code'] = [
+      'phone' => $phone,
+      'code' => $code,
+      'sent_time' => time()
+    ];
+    $form_state['rebuild'] = TRUE;
+  }
+  else {
+    form_set_error('', 'Сервис отправки SMS пока недоступен. Попробуйте позже или зарегистрируйтесь с помощью E-Mail.');
+  }
+}
+
+function commerce_helper_cart_sms_validate($form, $form_state)
+{
+  // проверить совпадение СМС
+  if (empty($form_state['values']['code']) || $form_state['values']['code'] != $form_state['user_code']['code']) {
+    form_set_error('code', 'Неверный код');
+    return false;
+  }
+}
+
+/**
+ * cart login submit callback
+ */
+function commerce_helper_cart_login_check_sms_submit($form, &$form_state)
+{
+  global $user;
+
+  $phone = $form_state['user_code']['phone'];
+  $account = ext_user_user_load_by_phone($phone);
+
+  if (!$account->uid) {
+    // зарегистрировать
+    $pass = user_password(6);
+    $arguments = array(
+      'name' => $phone,
+      'pass' => $pass,
+      'mail' => 'not@required.more',
+      'init' => $phone,
+      'status' => 1,
+      'roles' => array(DRUPAL_AUTHENTICATED_RID => TRUE),
+    );
+    $arguments['field_phone'][LANGUAGE_NONE][0]['value'] = $phone;
+
+    // создание пользователя
+    if ($account = user_save(NULL, $arguments)) {
+      // аутентификация пользователя
+      // отправить СМС с паролем
+      mailer_send_sms('user_pass', ['phone' => $phone, 'pass' => $pass]);
+    }
+  }
+
+  // авторизовать
+  $user = user_load($account->uid);
+  user_login_finalize();
+}
+
+/**
+ * validate callback формы ввода кода
+ */
+function commerce_helper_cart_login_repeat_sms_validate(&$form, &$form_state)
+{
+  if (time() - $form_state['user_code']['sent_time'] < 60) {
+    form_set_error('code', 'Новое смс можно будет отправить через ' . (60 - (time() - $form_state['user_code']['sent_time'])) . ' с');
+    unset($form["actions"]["login"]["messages"]);
+    return false;
+  }
+}
+
+/**
+ * cart repeat sms submit callback
+ */
+function commerce_helper_cart_login_repeat_sms_submit($form, &$form_state)
+{
+  // новый код
+  $code = rand(1001, 9998);
+  $phone = $form_state['user_code']['phone'];
+  if (mailer_send_sms('user_code', ['phone' => $phone, 'code' => $code])) {
+    $form_state['user_code'] = [
+      'phone' => $phone,
+      'code' => $code,
+      'sent_time' => time(),
+    ];
+    drupal_set_message('Новое СМС с кодом отправлено.');
+  }
+
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * cart login submit callback
+ */
+function commerce_helper_cart_login_change_phone_submit($form, &$form_state)
+{
+  // сбросить сохранённый отправленный код и перезагрузить форму
+  unset($form_state['user_code']);
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * cart login submit callback
+ */
+function commerce_helper_cart_login_email_submit($form, &$form_state)
+{
+  drupal_goto('user/login');
 }
 
 function commerce_helper_form_views_form_commerce_cart_form_submit($form, &$form_state)
@@ -630,18 +813,19 @@ function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path
                     ];
                 }
                 break;
-            case 'user/%/orders/%':
-                $order_id = $router_item['original_map'][3];
-                if (is_numeric($order_id) && !ext_payment_ya_commerce_api_check_order_paid($order_id)) {
-                    $item = menu_get_item('checkout/%/pay');
-                    if ($item['access']) {
-                        $data['actions']['output'][] = [
-                            '#theme' => 'menu_local_action',
-                            '#link' => $item
-                        ];
-                    }
-                }
-                break;
+              // убираем. пока 2 способа онлайн оплаты, придётся делать доп страницу с выбором метода
+//            case 'user/%/orders/%':
+//                $order_id = $router_item['original_map'][3];
+//                if (is_numeric($order_id) && !ext_payment_ya_commerce_api_check_order_paid($order_id)) {
+//                    $item = menu_get_item('checkout/%/pay');
+//                    if ($item['access']) {
+//                        $data['actions']['output'][] = [
+//                            '#theme' => 'menu_local_action',
+//                            '#link' => $item
+//                        ];
+//                    }
+//                }
+//                break;
             case 'user/%':
 //                $item = menu_get_item('user/' . $GLOBALS['user']->uid . '/edit');
 //                if ($item['access']) {
@@ -669,28 +853,7 @@ function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path
     }
 }
 
-// страница с информацией о заказе
-function commerce_helper_print_order_info($order_id = null)
-{
-    return theme('order_print_form', array('order_id' => $order_id));
-}
 
-// добавить товары из Заказа в Корзину
-function commerce_helper_add_order_to_cart($order_id = null)
-{
-    if ($order_wr = entity_metadata_wrapper('commerce_order', $order_id)) {
-        foreach($order_wr->commerce_line_items as $item_wr) {
-            if ($item_wr->type->value() == 'product' && $product = $item_wr->commerce_product->value()) {
-                $line_item = commerce_product_line_item_new($product, $item_wr->quantity->value());
-                $line_item->commerce_display_path['und']['0']['value'] = drupal_get_path_alias('node/' . _get_product_display_by_product_id($product->product_id));
-                commerce_cart_product_add($GLOBALS['user']->uid, $line_item, TRUE);
-            }
-        }
-    }
-
-    drupal_set_message('Все товары в том же количестве добавлены в корзину.');
-    drupal_goto('cart');
-}
 
 /**
  * ------------------------------------------ Убрать пустые копейки из цен ---------------------------------------------
@@ -761,73 +924,7 @@ function commerce_helper_views_data_alter(&$data)
 }
 
 
-/**
- * Form callback: confirmation form for deleting an order.
- *
- * @see confirm_form()
- */
-function commerce_helper_commerce_order_order_cancel_form($form, &$form_state, $order)
-{
-    if ($order) {
-        $form_state['order'] = $order;
 
-        $form['reason'] = [
-            '#type' => 'select',
-            '#title' => 'Причина отмены',
-            '#options' => array_merge(['- Выберите вариант -'], _commerce_helper_order_cancel_statuses()),
-            '#weight' => 1,
-        ];
-        $form['#validate'][] = 'commerce_helper_commerce_order_order_cancel_form_validate';
-        $form['#submit'][] = 'commerce_helper_commerce_order_order_cancel_form_submit';
-
-        $form = confirm_form($form,
-            t('Are you sure you want to cancel order @number?', ['@number' => $order->order_number]),
-            '',
-            '<p>' . t('Cancelling this order cannot be undone.') . '</p>',
-            t('Cancel order'),
-            t('Back'),
-            'confirm'
-        );
-
-        return $form;
-    } else {
-        drupal_access_denied();
-    }
-}
-
-/**
- * Submit callback for commerce_order_order_delete_form().
- */
-function commerce_helper_commerce_order_order_cancel_form_validate($form, &$form_state)
-{
-    if (empty($form_state['values']['reason'])) {
-        form_set_error('reason', 'Выберите причину отказа');
-        return false;
-    }
-    return true;
-}
-
-/**
- * Submit callback for commerce_order_order_delete_form().
- */
-function commerce_helper_commerce_order_order_cancel_form_submit($form, &$form_state)
-{
-    $order = $form_state['order'];
-
-    commerce_order_status_update($order, 'canceled', false, true, _commerce_helper_order_cancel_statuses($form_state['values']['reason']));
-    drupal_set_message(t('Order @number has been canceled.', array('@number' => $order->order_number)));
-}
-
-function _commerce_helper_order_cancel_statuses($id = null)
-{
-    $options = [
-        '0' => 'Мне больше не нужен этот заказ',
-        '1' => 'Цена стала выше',
-        '2' => 'Слишком долгая обработка',
-    ];
-
-    return $id ? $options[$id] : $options;
-}
 
 /**
  * ------------------------------------------ Вспомогательные функции --------------------------------------------------
