@@ -124,6 +124,12 @@ function helper_settings($form, &$form_state)
         '#title' => 'Включить',
         '#default_value' => variable_get('side_banner_status', 0),
     );
+    $form['side_banner']['side_banner_title'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Заголовок баннера',
+        '#default_value' => variable_get('side_banner_title', ''),
+        '#required' => true
+    );
     $form['side_banner']['side_banner_image'] = array(
         '#type' => 'managed_file',
         '#title' => 'Боковой баннер',
@@ -168,6 +174,19 @@ function helper_settings($form, &$form_state)
         '#title' => 'Включить',
         '#default_value' => variable_get('line2x_1_banner_status', 0),
     );
+  $form['line2x_1_banner']['line2x_1_left_banner_title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Заголовок баннера',
+    '#default_value' => variable_get('line2x_1_left_banner_title', ''),
+    '#required' => true,
+    '#states' => array(
+      'visible' => array(
+        'input[name="line2x_1_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
     $form['line2x_1_banner']['line2x_1_left_banner_image'] = array(
         '#type' => 'managed_file',
         '#title' => 'Левый баннер',
@@ -201,6 +220,19 @@ function helper_settings($form, &$form_state)
             ),
         ),
     );
+  $form['line2x_1_banner']['line2x_1_right_banner_title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Заголовок баннера',
+    '#default_value' => variable_get('line2x_1_right_banner_title', ''),
+    '#required' => true,
+    '#states' => array(
+      'visible' => array(
+        'input[name="line2x_1_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
     $form['line2x_1_banner']['line2x_1_right_banner_image'] = array(
         '#type' => 'managed_file',
         '#title' => 'Правый баннер',
@@ -245,6 +277,19 @@ function helper_settings($form, &$form_state)
         '#title' => 'Включить',
         '#default_value' => variable_get('line2x_2_banner_status', 0),
     );
+  $form['line2x_2_banner']['line2x_2_left_banner_title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Заголовок баннера',
+    '#default_value' => variable_get('line2x_2_left_banner_title', ''),
+    '#required' => true,
+    '#states' => array(
+      'visible' => array(
+        'input[name="line2x_2_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
     $form['line2x_2_banner']['line2x_2_left_banner_image'] = array(
         '#type' => 'managed_file',
         '#title' => 'Левый баннер',
@@ -278,6 +323,19 @@ function helper_settings($form, &$form_state)
             ),
         ),
     );
+  $form['line2x_2_banner']['line2x_2_right_banner_title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Заголовок баннера',
+    '#default_value' => variable_get('line2x_2_right_banner_title', ''),
+    '#required' => true,
+    '#states' => array(
+      'visible' => array(
+        'input[name="line2x_2_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
     $form['line2x_2_banner']['line2x_2_right_banner_image'] = array(
         '#type' => 'managed_file',
         '#title' => 'Правый баннер',
@@ -322,6 +380,19 @@ function helper_settings($form, &$form_state)
         '#title' => 'Включить',
         '#default_value' => variable_get('line2x_3_banner_status', 0),
     );
+  $form['line2x_3_banner']['line2x_3_left_banner_title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Заголовок баннера',
+    '#default_value' => variable_get('line2x_3_left_banner_title', ''),
+    '#required' => true,
+    '#states' => array(
+      'visible' => array(
+        'input[name="line2x_3_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
     $form['line2x_3_banner']['line2x_3_left_banner_image'] = array(
         '#type' => 'managed_file',
         '#title' => 'Левый баннер',
@@ -355,6 +426,19 @@ function helper_settings($form, &$form_state)
             ),
         ),
     );
+  $form['line2x_3_banner']['line2x_3_right_banner_title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Заголовок баннера',
+    '#default_value' => variable_get('line2x_3_right_banner_title', ''),
+    '#required' => true,
+    '#states' => array(
+      'visible' => array(
+        'input[name="line2x_3_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
     $form['line2x_3_banner']['line2x_3_right_banner_image'] = array(
         '#type' => 'managed_file',
         '#title' => 'Правый баннер',
