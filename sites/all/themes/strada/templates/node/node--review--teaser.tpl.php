@@ -80,13 +80,13 @@
  * @ingroup templates
  */
 ?>
-<article id="node-<?php print $node->nid; ?>" class="review teaser <?php print $classes; ?> clearfix"<?php print $attributes; ?>>
+<article id="node-<?php print $node->nid; ?>" class="review teaser <?php print $classes; ?> clearfix"<?php print $attributes; ?> itemprop="review" itemscope itemtype="http://schema.org/Review">
     <header>
         <div class="pr-user-image">
             <img src="<?php print $user_image; ?>" />
         </div>
         <div class="pr-user-info">
-            <?php print $user_name; ?>
+          <span itemprop="author"><?php print $user_name; ?></span>
             <p><?php print $user_sign; ?></p>
         </div>
     </header>

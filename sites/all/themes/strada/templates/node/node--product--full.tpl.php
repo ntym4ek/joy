@@ -79,7 +79,7 @@
  * @ingroup templates
  */
 ?>
-<article id="node-<?php print $node->nid; ?>" class="product full <?php print $classes; ?>"<?php print $attributes; ?>>
+<article id="node-<?php print $node->nid; ?>" class="product full <?php print $classes; ?>"<?php print $attributes; ?> itemscope itemtype="http://schema.org/Product">
     <div class="row">
 
         <div class="col-sm-7 product-image">
@@ -90,13 +90,13 @@
 
         <div class="col-sm-5 product-intro">
             <div class="product-title">
-                <h2<?php print $title_attributes; ?>><?php print $title; ?></h2>
-                <div class="product-summary">
+                <h2<?php print $title_attributes; ?> itemprop="name"><?php print $title; ?></h2>
+                <div class="product-summary" itemprop="description">
                     <?php print str_replace('.', '', $body[0]['safe_summary']); ?>
                 </div>
             </div>
 
-            <div class="product-price">
+            <div class="product-price" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
                 <?php print render($content['product:commerce_price']);?>
                 <?php print render($content['product:field_p_out_of_stock']);?>
             </div>

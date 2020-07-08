@@ -46,5 +46,5 @@
 ?>
 
 <div class="field product-stock">
-    <?php print $element['#items'][0]['value'] ? '<span class="text-warning">Нет в наличии</span>' : '<span class="text-success">В наличии на складе</span>'; ?>
+    <?php print $element['#items'][0]['value'] ? '<span class="text-warning" itemprop="availability">Нет в наличии</span>' : '<span class="text-success" itemprop="availability">В наличии на складе</span>'; ?>
 </div>
