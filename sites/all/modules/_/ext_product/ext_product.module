@@ -311,8 +311,6 @@ function ext_product_field_attach_view_alter(&$output, $context)
   if ($context["entity_type"] == 'node' && $context["view_mode"] == 'full') {
     if (!empty($output["field_pd_related"]["#items"])) {
       foreach ($output["field_pd_related"]["#items"] as $index => $item) {
-        // todo проверить статус ноды товара
-        $product_display_id = ext_product_get_product_display_by_product_id($item["product_id"]);
         $product_display_status = db_select('node', 'n')
           ->fields('n', ['status'])
           ->condition('n.nid', ext_product_get_product_display_by_product_id($item["product_id"]))
