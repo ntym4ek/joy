@@ -1691,6 +1691,10 @@ form[id^="user-profile-form"] {
             margin: $grid-gutter-width 0;
         }
         .f-terms {}
+      .f-slogan {
+        font-size: 16px;
+        font-weight: 400;
+      }
     }
     .f-menu {
         flex: auto;
@@ -1984,9 +1988,9 @@ form[id^="user-profile-form"] {
             padding-bottom: $grid-gutter-width;
         }
         .product-summary {
-            color: $text-muted; font-size: $font-size-h4; line-height: 1.2;
+            color: $text-muted; font-size: $font-size-h4; line-height: 1.2; font-weight: 400;
         }
-        h2 { margin-top: 0; }
+        h1, h2 { margin-top: 0; }
     }
     .product-price {
         padding-top: $grid-gutter-width*1.5;

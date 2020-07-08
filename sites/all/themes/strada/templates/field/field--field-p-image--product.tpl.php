@@ -49,7 +49,7 @@
     <div class="carousel-inner">
         <?php
             foreach ($element['#items'] as $key => $image) {
-                print '<div data-target="#carousel" data-slide-to="' . $key . '" class="thumb"><img src="' . file_create_url($image['uri']) . '"></div>';
+                print '<div data-target="#carousel" data-slide-to="' . $key . '" class="thumb"><img src="' . file_create_url($image['uri']) . '" alt="Превью - ' . $element["#object"]->title . ' - ' . t('Image') . ' ' . ($key+1) . '"></div>';
             }
         ?>
     </div>
@@ -71,8 +71,8 @@
     <div class="carousel-inner">
         <?php foreach ($element['#items'] as $key => $image):?>
             <div class="item<?php print ($key ? '': ' active'); ?>">
-                <a class="fancybox" rel="group" href="<?php print file_create_url($image['uri']); ?>">
-                    <img itemprop="image" src="<?php print image_style_url('product_full', $image['uri']); ?>" alt="<?php print $element["#object"]->title . ' - ' . t('Image') . ' ' . ($key+1); ?>">
+                <a class="fancybox" rel="group" href="<?php print image_style_url('product_full', $image['uri']); ?>">
+                    <img itemprop="image" src="<?php print image_style_url('product_description', $image['uri']); ?>" alt="<?php print $element["#object"]->title . ' - ' . t('Image') . ' ' . ($key+1); ?>">
                 </a>
             </div>
         <? endforeach; ?>

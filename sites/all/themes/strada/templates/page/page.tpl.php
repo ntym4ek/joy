@@ -246,6 +246,9 @@
             <div class="f-info">
                 <div class="f-company"><? print date("Y"); ?> © joy-magazin.ru — интернет-магазин товаров для сада и дома. Все права защищены. Доставка по всей России!</div>
                 <div class="f-terms"><a href="/info/rules">Пользовательское соглашение</a></div>
+              <?php if ($is_front): ?>
+                <h1 class="f-slogan"><?php print $site_slogan; ?></h1>
+              <?php endif; ?>
             </div>
         </div>
         <div class="f-menu">

@@ -12,6 +12,14 @@ function strada_html_head_alter(&$head_elements)
         '#tag' => 'link',
         '#attributes' => array('rel' => 'apple-touch-icon',  'href' => '/' . drupal_get_path('theme', 'strada') . '/images/icon.png'),
     );
+
+  // убрать shortlink
+  // http://xandeadx.ru/blog/drupal/411
+  foreach ($head_elements as $key => $element) {
+    if (isset($element["#name"]) && $element["#name"] == 'shortlink') {
+      unset($head_elements[$key]);
+    }
+  }
 }
 
 /**

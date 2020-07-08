@@ -90,10 +90,10 @@
 
         <div class="col-sm-5 product-intro">
             <div class="product-title">
-                <h2<?php print $title_attributes; ?> itemprop="name"><?php print $title; ?></h2>
-                <div class="product-summary" itemprop="description">
+                <h1<?php print $title_attributes; ?> itemprop="name"><?php print $title; ?></h1>
+                <h2 class="product-summary" itemprop="description">
                     <?php print str_replace('.', '', $body[0]['safe_summary']); ?>
-                </div>
+                </h2>
             </div>
 
             <div class="product-price" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
@@ -108,7 +108,7 @@
                 <h4>Этот товар любят!</h4>
                 <div class="pb-wrapper">
                     <div class="pb-image">
-                        <img src="/sites/all/themes/strada/images/bags.png" />
+                        <img src="/sites/all/themes/strada/images/bags.png" alt="Популярный товар - JOY-MAGAZIN" />
                     </div>
                     <div class="pb-count">
                         <?php print $bought; ?> его приобрели и уже получили
