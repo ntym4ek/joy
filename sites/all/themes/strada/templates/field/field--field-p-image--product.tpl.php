@@ -72,7 +72,7 @@
         <?php foreach ($element['#items'] as $key => $image):?>
             <div class="item<?php print ($key ? '': ' active'); ?>">
                 <a class="fancybox" rel="group" href="<?php print file_create_url($image['uri']); ?>">
-                    <img src="<?php print file_create_url($image['uri']); ?>">
+                    <img src="<?php print image_style_url('product_full', $image['uri']); ?>">
                 </a>
             </div>
         <? endforeach; ?>
