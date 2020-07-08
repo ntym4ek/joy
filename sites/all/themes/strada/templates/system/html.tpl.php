@@ -80,7 +80,7 @@
       fbq('init', '2267509073307955');
       fbq('track', 'PageView');
   </script>
-  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2267509073307955&ev=PageView&noscript=1"/></noscript>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2267509073307955&ev=PageView&noscript=1" alt="facebook pixel" /></noscript>
   <!-- End Facebook Pixel Code -->
 </head>
 <body<?php print $body_attributes; ?>>
@@ -98,7 +98,7 @@
     });
 </script>
 
-<noscript><div><img src="https://mc.yandex.ru/watch/47689555" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<noscript><div><img src="https://mc.yandex.ru/watch/47689555" style="position:absolute; left:-9999px;" alt="yandex watch" /></div></noscript>
 <!-- /Yandex.Metrika counter -->
 
   <?php print $page_top; ?>
