@@ -689,7 +689,10 @@ $navbar-strada-toggle-border-color:       #ddd;
       .page-header { flex-wrap: wrap; }
       .with-sidebar-first { padding-left: $grid-gutter-width*2; }
     }
-    .content-title h2 { margin-top: 0; }
+    .content-title h1 {
+      font-size: $font-size-h2;
+      margin-top: 0;
+    }
     .page-checkout-checkout & { margin-top: $grid-gutter-width*6; }
 }
 

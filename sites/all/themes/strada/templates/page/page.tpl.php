@@ -220,7 +220,7 @@
         <?php endif; ?>
 
         <section class="<?php print implode(' ', $content_column_class); ?>">
-            <?php if (!empty($content_title)) print '<div class="content-title"><h2>' . $content_title . '</h2></div>'; ?>
+            <?php if (!empty($content_title)) print '<div class="content-title"><h1>' . $content_title . '</h1></div>'; ?>
             <?php print render($page['content']); ?>
         </section>
 
