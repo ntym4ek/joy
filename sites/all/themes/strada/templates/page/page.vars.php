@@ -62,7 +62,7 @@ function strada_preprocess_page(array &$vars)
     if (isset($vars['page']['content']['system_main']['term_heading']['term'])
         &&($vars['page']['content']['system_main']['term_heading']['term']['#bundle'] == 'help_categoties')) {
         $vars['content_title'] = drupal_get_title();
-        drupal_set_title('Помощь');
+        drupal_set_title('Помощь. ' . $vars['content_title']);
         // если есть статьи в разделе
         if (!empty($vars['page']['content']['system_main']['nodes'])) {
             $vars['page']['content']['system_main']['term_heading']['#suffix'] .= '<div class="taxonomy-read-next">См. разделы:</div>';
@@ -77,7 +77,7 @@ function strada_preprocess_page(array &$vars)
 
         if (explode('/', url($_GET['q']))[1] == 'info') {
             $vars['content_title'] = drupal_get_title();
-            drupal_set_title('Помощь');
+            drupal_set_title('Помощь. ' . $vars['content_title']);
         }
     }
 
