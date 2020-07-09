@@ -168,7 +168,7 @@ function cdek_build_rate_request($order)
     elseif (empty($check['errors'])) {
       foreach ($check['products'] as $product) {
         $weight = physical_weight_convert($product['weight'], 'kg');
-        $dimentions = physical_dimensions_convert($product['dimentions'], 'cm');
+        $dimentions = physical_dimensions_convert($product['dimentions'], 'm');
         $items[] = [
           'weight' => $weight['weight'],
           'height' => ceil($dimentions['height']),
@@ -231,7 +231,7 @@ function cdek_api_request($data)
   $client->setTariffId($data['tariff_id']);
   // добавляем места в отправление
   foreach ($data['items'] as $item) {
-    $client->addGoodsItemBySize($item['weight'], $item['length'], $item['width'], $item['height']);
+    $client->addGoodsItemByVolume($item['weight'], $item['length']*$item['width']*$item['height']);
   }
 
   if ($client->calculate() === true) {
