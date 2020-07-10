@@ -170,7 +170,7 @@ function ext_payment_get_items_with_spread_discount($order)
     $items[$line_item_wr->getIdentifier()] = [
       'type' => 'shipping',
       'amount' => $amount_sh + $diff,
-      'price' => $amount_w_koef,
+      'price' => $amount_sh + $diff,
     ];
   }
 

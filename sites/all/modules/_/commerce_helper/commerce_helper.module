@@ -112,8 +112,7 @@ function commerce_helper_cart_info_block()
             $qty_html = '<span class="bubble bubble-red">' . $qty . '</span>';
         }
         if ($order_total = $order_wr->commerce_order_total->value()) {
-          $products_base_amount = commerce_price_component_total($order_total, 'base_price')['amount'];
-          $total_formatted = commerce_currency_format($products_base_amount, 'RUB');
+          $total_formatted = commerce_currency_format($order_total["amount"], 'RUB');
           $total_html = '<span class="bubble bubble-green">' . $total_formatted . '</span>';
         }
     }
