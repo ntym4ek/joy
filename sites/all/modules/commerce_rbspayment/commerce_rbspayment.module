@@ -3,7 +3,7 @@
  * Including RBS class
  */
 include('commerce_rbspayment.class');
-
+define('RBS_MODULE_VERSION' , '2.2');
 
 /**
  * Implements hook_permission().
@@ -11,8 +11,8 @@ include('commerce_rbspayment.class');
 function commerce_rbspayment_permission() {
 	return array(
 		'administer commerce_rbspayment' => array(
-			'title' => t('Administer Commerce RBS Payment'),
-			'description' => t('Access the Commerce RBS Payment settings page'),
+			'title' => t('Administer Commerce RBSPayment'),
+			'description' => t('Access the Commerce RBSPayment settings page'),
 		),
 	);
 }
@@ -23,7 +23,7 @@ function commerce_rbspayment_permission() {
  */
 function commerce_rbspayment_menu() {
 	$items['admin/commerce/config/rbspayment'] = array(
-		'title' => 'RBS Payment configuration',
+		'title' => 'RBSPayment configuration',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('commerce_rbspayment_config'),
 		'access arguments' => array('administer commerce_rbspayment'),
@@ -51,8 +51,8 @@ function commerce_rbspayment_menu() {
 function commerce_rbspayment_commerce_payment_method_info() {
 	$payment_methods = array();
 	$payment_methods['commerce_rbspayment'] = array(
-		'title' => t('RBS Payment'),
-		'description' => t('Payment via RBS Payment system'),
+		'title' => "Оплата картой банка",
+		'description' => t('Payment via RBSPayment system'),
 		'terminal' => FALSE,
 		'offsite' => TRUE,
 		'active' => TRUE,
@@ -70,13 +70,13 @@ function commerce_rbspayment_config() {
 		'#type' => 'textfield',
 		'#title' => "Логин мерчанта",
 		'#default_value' => variable_get('commerce_rbspayment_user_name', ''),
-		'#required' => TRUE,
+		'#required' => true,
 	);
 	$form['commerce_rbspayment_password'] = array(
 		'#type' => 'textfield',
 		'#title' => "Пароль мерчанта",
 		'#default_value' => variable_get('commerce_rbspayment_password', ''),
-		'#required' => TRUE,
+		'#required' => true,
 	);
 	$form['commerce_rbspayment_stage'] = array(
 		'#type' => 'radios',
@@ -86,18 +86,18 @@ function commerce_rbspayment_config() {
 			1 => "Двухстадийный"
 		),
 		'#default_value' => variable_get('commerce_rbspayment_stage', 0),
-		'#required' => TRUE,
+		'#required' => true,
 	);
 	$form['commerce_rbspayment_mode'] = array(
 		'#type' => 'radios',
 		'#title' => 'Режим работы',
-		'#default_value' => variable_get('commerce_rbspayment_mode', 0),
+		'#default_value' => variable_get('commerce_rbspayment_mode', 1),
 		'#options' => array(
 			1 => "Тестовый",
 			0 => "Боевой"
 		),
     '#description' => "В тестовом режиме денежные средства списываться не будут.",
-    '#required' => TRUE,
+    '#required' => true,
     );
     $form['commerce_rbspayment_send_order'] = array(
         '#type' => 'radios',
@@ -108,35 +108,86 @@ function commerce_rbspayment_config() {
             1 => "Передавть"
         ),
         '#description' => "При выборе опции, будет сформирован и отправлен в налоговую и клиенту чек. Опция платная, за подключением обратитесь в сервисную службу банка. При использовании необходимо настроить НДС продаваемых товаров. НДС рассчитывается согласно законодательству РФ, возможны расхождения в размере НДС с суммой рассчитанной магазином.",
-        '#required' => FALSE,
+        '#required' => false,
     );
 
     $form['commerce_rbspayment_tax_system'] = array(
         '#type' => 'radios',
         '#title' => "Система налогообложения",
         '#options' => array(
-                '0' => 'Общая',
-                '1' => 'Упрощённая, доход',
-                '2' => 'Упрощённая, доход минус расход',
-                '3' => 'Eдиный налог на вменённый доход',
-                '4' => 'Eдиный сельскохозяйственный налог',
-                '5' => 'Патентная система налогообложения',
+                0 => 'Общая',
+                1 => 'Упрощённая, доход',
+                2 => 'Упрощённая, доход минус расход',
+                3 => 'Eдиный налог на вменённый доход',
+                4 => 'Eдиный сельскохозяйственный налог',
+                5 => 'Патентная система налогообложения',
         ),
         '#default_value' => variable_get('commerce_rbspayment_tax_system', 0),
-        '#required' => FALSE,
+        '#required' => false,
     );
 
+    $form['commerce_rbspayment_ffd_version'] = array(
+        '#type' => 'radios',
+        '#title' => "Формат фискальных документов",
+        '#options' => array(
+            'v10' => 'ФФД 1.0',
+            'v105' => 'ФФД 1.05',
+//            'v11' => 'ФФД 1.1',
+        ),
+        '#default_value' => variable_get('commerce_rbspayment_ffd_version', 'v105'),
+        '#description' => "<em style='color:#f00;'>Формат версии требуется указать в личном кабинете банка и в кабинете сервиса фискализации.</em>",
+        '#required' => false,
+    );
 
-	$form['commerce_rbspayment_logging'] = array(
+    $form['commerce_rbspayment_ffd_paymentMethodType'] = array(
+        '#type' => 'radios',
+        '#title' => "Тип оплаты",
+        '#options' => array(
+            1 => 'Полная предварительная оплата до момента передачи предмета расчёта',
+            2 => 'Частичная предварительная оплата до момента передачи предмета расчёта',
+            3 => 'Аванс',
+            4 => 'Полная оплата в момент передачи предмета расчёта',
+            5 => 'Частичная оплата предмета расчёта в момент его передачи с последующей оплатой в кредит',
+            6 => 'Передача предмета расчёта без его оплаты в момент его передачи с последующей оплатой в кредит',
+            7 => 'Оплата предмета расчёта после его передачи с оплатой в кредит',
+        ),
+        '#default_value' => variable_get('commerce_rbspayment_ffd_paymentMethodType', 1),
+        '#description' => "<em style='color:#f00;'>Используется в версих ФФД, начиная с 1.05</em>",
+        '#required' => false,
+    );
+
+    $form['commerce_rbspayment_ffd_paymentObjectType'] = array(
+        '#type' => 'radios',
+        '#title' => "Тип оплачиваемой позиции",
+        '#options' => array(
+            1 => 'Товар',
+            2 => 'Подакцизный товар',
+            3 => 'Работа',
+            4 => 'Услуга',
+            5 => 'Ставка азартной игры',
+//                        6 => 'Выигрыш азартной игры',
+            7 => 'Лотерейный билет',
+//                        8 => 'Выигрыш лотереи',
+            9 => 'Предоставление РИД',
+            10 => 'Платёж',
+            11 => 'Агентское вознаграждение',
+            12 => 'Составной предмет расчёта',
+            13 => 'Иной предмет расчёта',
+        ),
+        '#default_value' => variable_get('commerce_rbspayment_ffd_paymentObjectType', 1),
+        '#description' => "<em style='color:#f00;'>Используется в версих ФФД, начиная с 1.05</em>",
+        '#required' => false,
+    );
+
+    $form['commerce_rbspayment_logging'] = array(
 		'#type' => 'radios',
-		'#title' => 'Логирование',
-		'#default_value' => variable_get('commerce_rbspayment_logging', 0),
+		'#title' => 'Логирование запросов к платежному шлюзу',
+		'#default_value' => variable_get('commerce_rbspayment_logging', 1),
 		'#options' => array(
 			0 => "Нет",
 			1 => "Да"
 		),
-    '#description' => "Сообщение отправляется в системный регистратор PHP.",
-    '#required' => TRUE,
+    '#required' => false,
     );
     return system_settings_form($form);
 }
@@ -158,17 +209,23 @@ function commerce_rbspayment_submit_form($payment_method, $pane_values, $checkou
  */
 function commerce_rbspayment_redirect_form($form, &$form_state, $order, $payment_method) {
 
-    $config['user_name'] = variable_get('commerce_rbspayment_user_name','');
-    $config['password'] = variable_get('commerce_rbspayment_password','');
+    $config['user_name'] = variable_get('commerce_rbspayment_user_name', '');
+    $config['password'] = variable_get('commerce_rbspayment_password', '');
     $config['two_stage'] = (variable_get('commerce_rbspayment_stage', 0) == 0) ? false : true;
     $config['test_mode'] = (variable_get('commerce_rbspayment_mode', 0) == 0) ? false : true;
     $config['logging'] = (variable_get('commerce_rbspayment_logging', 0) == 0) ? false : true;
 
     $config['send_order'] = (variable_get('commerce_rbspayment_send_order', 0) == 0) ? false : true;
-    $config['logging'] = (variable_get('commerce_rbspayment_logging', 0) == 0) ? false : true;
+    $config['taxSystem'] = variable_get('commerce_rbspayment_tax_system', 0);
+
+    $config['ffd_version'] = variable_get('commerce_rbspayment_ffd_version', 'v105');
+
+    $config['ffd_paymentMethodType'] = variable_get('commerce_rbspayment_ffd_paymentMethodType', 1);
+    $config['ffd_paymentObjectType'] = variable_get('commerce_rbspayment_ffd_paymentObjectType', 1);
 
     $config['cms_name'] = "Drupal";
     $config['cms_version'] = VERSION;
+    $config['module_version'] = RBS_MODULE_VERSION;
 
 //    $config['tax_system'] = variable_get('commerce_rbspayment_tax_system', '');
 
@@ -182,42 +239,78 @@ function commerce_rbspayment_redirect_form($form, &$form_state, $order, $payment
         $itemsCnt = 1;
 
         foreach ($wrapper->commerce_line_items as $key => $line_item_wrapper) {
+
             $line_item_type = $line_item_wrapper->getBundle();
 
             if (in_array($line_item_type, commerce_product_line_item_types())) {
 
-
-                $items[] = array(
+                $item = array(
                     'positionId' => $itemsCnt++,
                     'itemAmount' => $line_item_wrapper->commerce_total->amount->value(),
                     'name' => $line_item_wrapper->commerce_product->value()->title,
                     'itemPrice' => $line_item_wrapper->commerce_unit_price->amount->value(),
                     'quantity' => array(
                         'value' => (float)number_format($line_item_wrapper->quantity->value(), 1),
-                        'measure' => 'piece'
+                        'measure' => 'шт'
                     ),
                     'tax' => array(
-                        'taxType' => 0
+                        'taxType' => 0 //
                     ),
                     'itemCode' => $line_item_wrapper->commerce_product->value()->product_id
                 );
 
+                // FFD 1.05 added
+                if ($config['ffd_version'] == 'v105') {
+
+                    $attributes = array();
+                    $attributes[] = array(
+                        "name" => "paymentMethod",
+                        "value" => $config['ffd_paymentMethodType']
+                    );
+                    $attributes[] = array(
+                        "name" => "paymentObject",
+                        "value" => $config['ffd_paymentObjectType']
+                    );
+
+                    $item['itemAttributes']['attributes'] = $attributes;
+
+                }
+
             } else {
-                $items[] = array(
+                $item = array(
                     'positionId' => $itemsCnt++,
                     'itemAmount' => $line_item_wrapper->commerce_total->amount->value(),
                     'name' => $line_item_wrapper->line_item_label->value(),
                     'itemPrice' => $line_item_wrapper->commerce_unit_price->amount->value(),
                     'quantity' => array(
                         'value' => (float)number_format($line_item_wrapper->quantity->value(), 1),
-                        'measure' => 'piece'
+                        'measure' => 'шт'
                     ),
                     'tax' => array(
-                        'taxType' => 0
+                        'taxType' => 0 //
                     ),
                     'itemCode' => $line_item_wrapper->line_item_id->value()
                 );
+
+                // FFD 1.05 added
+                if ($config['ffd_version'] == 'v105') {
+
+                    $attributes = array();
+                    $attributes[] = array(
+                        "name" => "paymentMethod",
+                        "value" => 4
+                    );
+                    $attributes[] = array(
+                        "name" => "paymentObject",
+                        "value" => 4
+                    );
+
+                    $item['itemAttributes']['attributes'] = $attributes;
+
+                }
             }
+
+            $items[] = $item;
         }
 
         $order_bundle = array(
@@ -227,16 +320,18 @@ function commerce_rbspayment_redirect_form($form, &$form_state, $order, $payment
             ),
             'cartItems' => array('items' => $items)
         );
+
+
         $config['order_bundle'] = $order_bundle;
     }
 
+  drupal_alter('commerce_rbspayment_receipt', $config, $order);
 
 	$rbs = new RBS($config);
 
-
 	$amount = $order->commerce_order_total[LANGUAGE_NONE][0]['amount'];
 	$return_url = $GLOBALS['base_url'] . '?q=cart/rbspayment/complete/' . $order->order_id;
-	
+
 	$response = $rbs->register_order($order_number, $amount, $return_url);
 
 	if (!isset($response['errorCode'])){
@@ -249,7 +344,7 @@ function commerce_rbspayment_redirect_form($form, &$form_state, $order, $payment
 
 
 /**
- * Callback for RBS Payment system response.
+ * Callback for RBSPayment system response.
  */
 function commerce_rbspayment_response($order_number = 0) {
 
@@ -291,15 +386,15 @@ function commerce_rbspayment_fail($order_number = 0){
  * Make a transaction
  */
 function commerce_rbspayment_transaction($order, $status) {
-	if ($status) {
-		$order_status = 'completed';
+  commerce_checkout_complete($order);
+  if ($status) {
+		$order_status = 'paid';
 		$transaction_status = COMMERCE_PAYMENT_STATUS_SUCCESS;
-		$message = t('Response from RBS Payment: successful');
+		$message = t('Response from RBSPayment: successful');
 	} else {
-		commerce_checkout_complete($order); 
 		$order_status = 'processing';
 		$transaction_status = COMMERCE_PAYMENT_STATUS_PENDING;
-		$message = t('Response from RBS Payment: pending');
+		$message = t('Response from RBSPayment: pending');
 	}
 
 	commerce_order_status_update($order, $order_status);
