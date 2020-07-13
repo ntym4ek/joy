@@ -135,21 +135,26 @@ var popupStatus = 0;
                 }
 
                 // определение региона
+              var needGeoLocation = false;
                 if ($.cookie('user_region')) {
                     var user_region = JSON.parse($.cookie('user_region'));
                     $("#user_region").html(user_region.data.settlement ? user_region.data.settlement : user_region.data.city);
 
-                    // обновить текст о бесплатной доставке
+
+                  if (user_region.data.shipping == undefined) {
+                    needGeoLocation = true;
+                  }
+                  // обновить текст о бесплатной доставке
                   if (user_region.data.shipping) {
                     $('#free_shipping').html(user_region.data.shipping).show();
-                  } else {
-                    $('#free_shipping').hide();
                   }
                 }
                 else {
-                    Drupal.getCityByIp().done(onSelect);
+                  needGeoLocation = true;
                 }
-
+                if (needGeoLocation) {
+                  Drupal.getCityByIp().done(onSelect);
+                }
 
 
 
