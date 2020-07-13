@@ -24,6 +24,12 @@ function commerce_helper_menu()
         'access arguments' => array('access manager settings'),
         'file' => 'includes/commerce_helper.admin.inc',
     );
+  $items['services/free-shipping-cost'] = array(
+    'page callback' => 'commerce_helper_free_shipping_cost_ajax_callback',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
     return $items;
 }
 
@@ -438,8 +444,8 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
             $delivery_text = 'платная';
 
             if ($reason_to_pay = ext_checkout_non_free_shipping($form_state['order'])) {
-                if ($reason_to_pay['reason'] == 'amount') {
-                    $free_shipping = 'Ещё немножко! До бесплатной доставки осталось заказать на ' . commerce_currency_format($reason_to_pay['amount'] * 100 - $products_base_amount, 'RUB');
+                if ($reason_to_pay['reason'] == 'cost') {
+                    $free_shipping = 'Ещё немножко! До бесплатной доставки осталось заказать на ' . commerce_currency_format($reason_to_pay['cost'] * 100 - $products_base_amount, 'RUB');
                     // если есть ограничение по весу, указать
                     $free_shipping .= (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT ? '<br /><span class="notice">(для заказов весом менее ' . CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT . ' кг)</span>' : '');
                 } elseif ($reason_to_pay['reason'] == 'weight') {
@@ -1040,6 +1046,22 @@ function commerce_helper_commerce_price_formatted_components_alter(&$components,
     $components['commerce_price_formatted_amount']['title'] = check_plain(t('Order total'));
 }
 
+/**
+ * возвращает текст о бесплатной доставке в зависимости от населенного пункта
+ */
+function commerce_helper_free_shipping_cost_ajax_callback()
+{
+  $output = '';
+  $kladr = $_POST["kladr"];
+  $cost = ext_checkout_get_free_shipping_amount($kladr);
+  if ($cost === 0) {
+    $output = 'Бесплатная доставка';
+  }
+  elseif ($cost > 0) {
+    $output = 'Бесплатная доставка от ' . format_plural((int)$cost, '@count rouble', '@count roubles');
+  }
+  print json_encode(['cost' => $output]);
+}
 
 
 

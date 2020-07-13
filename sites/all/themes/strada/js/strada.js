@@ -138,6 +138,13 @@ var popupStatus = 0;
                 if ($.cookie('user_region')) {
                     var user_region = JSON.parse($.cookie('user_region'));
                     $("#user_region").html(user_region.data.settlement ? user_region.data.settlement : user_region.data.city);
+
+                    // обновить текст о бесплатной доставке
+                  if (user_region.data.shipping) {
+                    $('#free_shipping').html(user_region.data.shipping).show();
+                  } else {
+                    $('#free_shipping').hide();
+                  }
                 }
                 else {
                     Drupal.getCityByIp().done(onSelect);
@@ -225,12 +232,19 @@ var popupStatus = 0;
 
             function onSelect(suggestion) {
                 // ждём выполнения всех запросов и пишем куку
-                $.when(Drupal.loadDelivery(suggestion), Drupal.getPostalCode(suggestion))
-                    .done(function(arg1, arg2) {
-                        $.extend(suggestion.data, arg1.data, arg2.data);
+                $.when(Drupal.loadDelivery(suggestion), Drupal.getPostalCode(suggestion), Drupal.loadFreeShipping(suggestion))
+                    .done(function(arg1, arg2, arg3) {
+                        $.extend(suggestion.data, arg1.data, arg2.data, { shipping: arg3});
                         $.cookie('user_region', JSON.stringify(suggestion), {path: "/"});
                         var user_region = JSON.parse($.cookie('user_region'));
                         $("#user_region").html(user_region.data.settlement ? user_region.data.settlement : user_region.data.city);
+
+                        // обновить текст о бесплатной доставке
+                        if (user_region.data.shipping) {
+                          $('#free_shipping').html(user_region.data.shipping).show();
+                        } else {
+                          $('#free_shipping').hide();
+                        }
                     });
             }
 
@@ -572,6 +586,25 @@ var popupStatus = 0;
         };
         return $.ajax(serviceUrl, params);
     }
+
+  /* --------------------- определить cумму бесплатной доставки --------------------------- */
+  Drupal.loadFreeShipping = function (suggestion) {
+    var promise = $.Deferred();
+    freeShipping(suggestion.data.kladr_id)
+      .done(function(response) {
+        if (response) {
+          promise.resolve(JSON.parse(response).cost);
+        } else promise.resolve({});
+      });
+    return promise;
+  };
+  function freeShipping(kladr_id) {
+    return $.ajax({
+      url: Drupal.settings.strada.base_url + "/services/free-shipping-cost",
+      type: "POST",
+      data: {"kladr": kladr_id}
+    });
+  }
 
     /* --------------------- форматирование ---------------------------------------- */
     Drupal.formatResult = function(value, currentValue, suggestion) {
