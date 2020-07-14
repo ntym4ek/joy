@@ -276,7 +276,8 @@ var popupStatus = 0;
             // FB завершение оформления
             $('.commerce-checkout-form-checkout .checkout-continue').on('mousedown', function() {
               if (typeof (fbq) === "function") {
-                fbq('track', 'Purchase');
+                var total = $('.checkout-summary .cs-total').data('cs-total');
+                fbq('track', 'Purchase', {value: total, currency: 'RUB'});
               }
             });
 

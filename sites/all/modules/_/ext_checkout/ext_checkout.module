@@ -280,7 +280,7 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
       ($coupon_amount < 0 ? '<div class="cs-discount"><span class="label">Промокод</span><span class="value">' . commerce_currency_format($coupon_amount, 'RUB') . '</span></div>' : '').
       '<div class="cs-weight"><span class="label">Вес</span><span class="value">' . $weight_text . '</span></div>' .
       (empty($shipping_label) ? '' : '<div class="cs-delivery"><span class="label">' . $shipping_label . '</span><span class="value">' . $delivery_text . '</span></div>') .
-      '<div class="cs-total"><span class="label">' . t('Total to pay') . '</span><span class="value">' . commerce_currency_format($total_amount, 'RUB') . '</span></div>' .
+      '<div class="cs-total" data-cs-total="' . $total_amount/100 . '"><span class="label">' . t('Total to pay') . '</span><span class="value">' . commerce_currency_format($total_amount, 'RUB') . '</span></div>' .
       '</div>',
   );
 
