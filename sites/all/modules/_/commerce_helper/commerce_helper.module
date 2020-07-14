@@ -130,18 +130,17 @@ function commerce_helper_cart_info_block()
 
 
 /**
- * --------------------------------- Изменение формы добавления в корзину ----------------------------------------------
  * Implements hook_form_alter
- * Implements hook_form_FORM_ID_alter().
  */
 function commerce_helper_form_alter(&$form, &$form_state, $form_id)
 {
-    // e.g form id: commerce_cart_add_to_cart_form_u6onPJSgS7pOgw0Tlo7zHy42LTQzbV913taANkYQKTo
+  // --------------------------------- Изменение формы добавления в корзину
+  // e.g form id: commerce_cart_add_to_cart_form_u6onPJSgS7pOgw0Tlo7zHy42LTQzbV913taANkYQKTo
     if (strpos($form_id, 'commerce_cart_add_to_cart_form') !== FALSE) {
         commerce_helper_form_commerce_add_to_cart_form_alter($form, $form_state);
     }
 
-    // в админка для менеджеров
+    // -------------------------------- В админке для менеджеров
     if ($form_id == 'commerce_order_ui_order_form') {
         // изменить набор статусов заказа
         $form['order_status']['status']['#options'] = array(
@@ -180,6 +179,14 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
             ],
             '#default_value' => empty($form['#entity']->data['payment_method']) ? '' : $form['#entity']->data['payment_method'],
         ];
+
+        // не менять метод оплаты, если оплачен
+        if (!empty($form_state["commerce_order"])) {
+          $balance = commerce_payment_order_balance($form_state["commerce_order"]);
+          if (isset($balance['amount']) && $balance['amount'] === 0) {
+            $form['payment_method']['#disabled'] = true;
+          }
+        }
         array_unshift($form['actions']['submit']['#submit'], 'commerce_helper_commerce_order_ui_order_form_submit');
     }
 }
