@@ -255,7 +255,7 @@ function ext_payment_commerce_order_pay_again_with_yandex($order)
         $user = user_load($order->uid);
 
         $modulePath = drupal_get_path('module', 'yamoney_api');
-        require_once $modulePath.DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'autoload.php';
+        require_once $modulePath.DIRECTORY_SEPARATOR.'yandex-checkout-sdk-php'.DIRECTORY_SEPARATOR.'lib'.DIRECTORY_SEPARATOR.'autoload.php';
         $apiClient = yamoney_api__common__get_api_client();
 
         $order_wrapper = entity_metadata_wrapper('commerce_order', $order);

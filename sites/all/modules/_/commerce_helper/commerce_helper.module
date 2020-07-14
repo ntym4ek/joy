@@ -173,7 +173,8 @@ function commerce_helper_form_alter(&$form, &$form_state, $form_id)
             '#type' => 'select',
             '#title' => 'Способ оплаты',
             '#options' => [
-                'ya_commerce_api|commerce_payment_ya_commerce_api' => 'Яндекс.Касса',
+                'ya_commerce_api|commerce_payment_ya_commerce_api' => 'Шлюз Яндекса',
+                'commerce_rbspayment|commerce_payment_commerce_rbspayment' => 'Шлюз Сбербанка',
                 'bank_transfer|commerce_payment_bank_transfer' => 'Банковский счёт',
                 'pay_on_delivery|commerce_payment_pay_on_delivery' => 'Оплата при получении',
             ],

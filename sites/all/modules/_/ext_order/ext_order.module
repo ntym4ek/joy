@@ -281,7 +281,14 @@ function ext_order_get_order_info($order, $including_line_items = false)
   $payment_title = $payment_method = $payment_addon = '';
   $payment_before_shipping = $is_online = FALSE;
   if (!empty($order_wr->value()->data['payment_method'])) {
-    $payment_method = $order_wr->value()->data['payment_method'];
+    //$payment_method = $order_wr->value()->data['payment_method'];
+
+    foreach (commerce_payment_transaction_load_multiple([], ['order_id' => $order->order_id]) as $transaction) {
+      if ($transaction->status == 'success') {
+        $payment_method = $transaction->instance_id;
+      }
+    }
+
     switch ($payment_method) {
       case 'commerce_rbspayment|commerce_payment_commerce_rbspayment':
         $payment_title = 'Онлайн, через сервис Сбербанка';
