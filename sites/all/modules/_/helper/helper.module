@@ -454,15 +454,7 @@ function helper_menu_alter(&$items) {
     $items['user/register']['type'] = MENU_CALLBACK;
     $items['user/password']['type'] = MENU_CALLBACK;
 }
-/**
- * --------------------------------- Перенести форму способа оплаты под соотв. radiobutton------------------------------
- * http://xandeadx.ru/blog/drupal/598
- * Implements hook_form_FORM_ID_alter().
- */
-//function helper_form_commerce_checkout_form_review_alter(&$form)
-//{
-//  drupal_add_js(drupal_get_path('module', 'helper') . '/js/payment-description.js');
-//}
+
 
 
 /**
@@ -566,30 +558,6 @@ function helper_menu_get_item_alter(&$router_item, $path, $original_map) {
     }
 }
 
-/** ------------------------------------------ Блокировка пула IP -------------------------------------------------
- */
-/*
- * Check IP block at boot time.
- * This function will deliver the block path if country is not allowed or user is using a proxy system.
- */
-
-//function helper_boot() {
-//  global $user;
-//  // ignore for Authentificated Users
-//  if ($user->uid != 0) {
-//    return;
-//  }
-//
-//  $user_ip = $_SERVER['REMOTE_ADDR'];
-//  $ip_pools = ['46.229.168.*', '46.229.169.*', '54.36.*.*', '66.249.76.*', '151.80.39.*', '212.193.117.*', '207.46.13.*'];
-//
-//  foreach ($ip_pools as $ip_pool) {
-//    $ip_regex = '/^' . preg_replace(['/\./', '/\*/'], ['\.', '[\d]+'], $ip_pool) . '$/';
-//    if ($match = preg_match($ip_regex,  $user_ip)) {
-//      drupal_access_denied();
-//    }
-//  }
-//}
 
 
 

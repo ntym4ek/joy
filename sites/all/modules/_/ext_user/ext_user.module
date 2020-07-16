@@ -13,6 +13,26 @@ function ext_user_menu_alter(&$items)
 }
 
 /**
+ * Implements hook_menu_local_tasks_alter()
+ */
+function ext_user_menu_local_tasks_alter(&$data, $router_item, $root_path)
+{
+  if (!isset($GLOBALS['user']->roles[3])) {
+    switch ($root_path) {
+      case 'admin/people':
+        foreach($data['actions']['output'] as $key => $link) {
+          if (!empty($link['#link']['path']) && $link['#link']['path'] == 'admin/people/create') {
+            unset($data['actions']['output'][$key]);
+            $data["actions"]["count"]--;
+          }
+        }
+        break;
+    }
+  }
+}
+
+
+/**
  * hook_module_implements_alter
  * change hook execution order, commerce_helper - last
  */
@@ -51,7 +71,7 @@ function ext_user_views_api() {
 /**
  * Implements hook_user_insert().
  */
-function ext_user_user_insert( &$edit, &$account, $category = NULL )
+function ext_user_user_insert(&$edit, &$account, $category)
 {
     // при регистрации нового пользователя установить уникальное имя: Пользователь #uid
     $new_name = t('User ') . $account->uid;
@@ -89,7 +109,7 @@ function ext_user_user_insert( &$edit, &$account, $category = NULL )
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function ext_user_form_user_login_alter (&$form, $form_state)
+function ext_user_form_user_login_alter(&$form, $form_state)
 {
     $form['#attributes']['class'][] = 'user-form-container';
     $form['name']['#prefix'] = '<div class="user-form">';
@@ -712,12 +732,6 @@ function ext_user_user_authenticate($name, $password)
     }
   }
   return $uid;
-}
-
-
-function ext_user_register_and_authenticate($name, $password)
-{
-
 }
 
 /**

@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * Implements hook_page_build().
+ */
+function add_marketing_page_build(&$page)
+{
+  // добавить Пользователю маркетинговую информацию о UTM из кукис
+  global $user;
+  if ($user->uid && !empty($_COOKIE['user_marketing'])) {
+    $marketing_server = [];
+    if (!empty($user->data['marketing'])) {
+      $marketing_server = $user->data['marketing'];
+    }
+    $marketing_browser = json_decode($_COOKIE['user_marketing'], true);
+    $marketing_server_old = $marketing_server;
+    $marketing_server = array_replace_recursive($marketing_server, $marketing_browser);
+    $user->data['marketing'] = $marketing_server;
+    if ($marketing_server_old != $marketing_server) {
+      user_save($user);
+    }
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function add_marketing_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'add_marketing') . '/views',
+  );
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function add_marketing_views_data_alter(&$data)
+{
+  $data['users']['marketing'] = array(
+    'field' => array(
+      'title' => t('Marketing'),
+      'help' => t('View gathered marketing info.'),
+      'handler' => 'add_marketing_handler_marketing',
+    ),
+  );
+}

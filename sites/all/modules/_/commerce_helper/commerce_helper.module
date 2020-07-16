@@ -813,6 +813,7 @@ function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path
             case 'admin/commerce/orders':
                 if (!empty($data['actions']['output'][0]['#link']['path']) && $data['actions']['output'][0]['#link']['path'] == 'admin/commerce/orders/add') {
                     unset($data['actions']['output'][0]);
+                  $data["actions"]["count"]--;
                 }
                 break;
             case 'admin/commerce/orders/%':
@@ -860,6 +861,7 @@ function commerce_helper_menu_local_tasks_alter(&$data, $router_item, $root_path
                 if ($value['#link']['path'] == "user/%/edit") {
                     // редактирование аккаунта перенесено в Local Actions
                     unset($data['tabs'][0]['output'][$key]);
+                  $data['tabs'][0]['output']['count']--;
                 }
             }
         }
