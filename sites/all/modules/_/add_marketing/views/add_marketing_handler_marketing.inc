@@ -26,9 +26,17 @@ class add_marketing_handler_marketing extends views_handler_field
 
     if (!empty($marketing['utm'])) {
       foreach($marketing["utm"] as $utm) {
-        if ($utm['utm_source'] == 'facebook') {
-          $output .= '<i class="fab fa-facebook-square"></i> ' . $utm['utm_medium'] . ' ' . $utm['utm_campaign'] . ' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y');
+        switch($utm['utm_source']) {
+          case 'facebook':
+            $output .= '<i class="fab fa-facebook-square"></i>';
+            break;
+          case 'instagram':
+            $output .= '<i class="fab fa-instagram-square"></i>';
+            break;
+          default :
+            $output .= drupal_strtoupper($utm['utm_source']);
         }
+        $output .= ' ' . $utm['utm_medium'] . ' ' . $utm['utm_campaign'] . ' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y');
       }
     }
     return $output;
