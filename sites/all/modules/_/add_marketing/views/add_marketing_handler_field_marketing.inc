@@ -3,7 +3,7 @@
 /**
  * Description of what my handler does.
  */
-class add_marketing_handler_marketing extends views_handler_field
+class add_marketing_handler_field_marketing extends views_handler_field
 {
   function init(&$view, &$options) {
     parent::init($view, $options);

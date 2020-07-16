@@ -4,5 +4,6 @@ version = 7.x-1.0
 core = 7.x
 package = Custom
 
-files[] = views/add_marketing_handler_marketing.inc
+files[] = views/add_marketing_handler_field_marketing.inc
+files[] = views/add_marketing_handler_filter_marketing.inc
 scripts[] = js/add_marketing.js

@@ -41,7 +41,12 @@ function add_marketing_views_data_alter(&$data)
     'field' => array(
       'title' => t('Marketing'),
       'help' => t('View gathered marketing info.'),
-      'handler' => 'add_marketing_handler_marketing',
+      'handler' => 'add_marketing_handler_field_marketing',
+    ),
+    'filter' => array(
+      'title' => t('Marketing'),
+      'help' => t('Filter by marketing info.'),
+      'handler' => 'add_marketing_handler_filter_marketing',
     ),
   );
 }
