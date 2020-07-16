@@ -21,7 +21,7 @@ class add_marketing_handler_marketing extends views_handler_field
    */
   function render($values) {
     $output = '';
-    $data = unserialize($values->users_data);
+    $data = unserialize($values->{$this->aliases["data"]});
     $marketing = empty($data['marketing']) ? [] : $data['marketing'];
 
     if (!empty($marketing['utm'])) {
