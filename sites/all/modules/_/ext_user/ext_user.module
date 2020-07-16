@@ -23,7 +23,6 @@ function ext_user_menu_local_tasks_alter(&$data, $router_item, $root_path)
         foreach($data['actions']['output'] as $key => $link) {
           if (!empty($link['#link']['path']) && $link['#link']['path'] == 'admin/people/create') {
             unset($data['actions']['output'][$key]);
-            $data["actions"]["count"]--;
           }
         }
         break;
