@@ -1,6 +1,6 @@
 <div class="ccf-item<?php print ($product_info['stock'] ? '' : ' out-of-stock'); ?>">
   <div class="ccf-image">
-    <img src="<?php print image_style_url('thumb', $product_info['image_url']); ?>" alt="<?php print $product_info['title']; ?>" />
+    <img src="<?php print image_style_url('thumbnail', $product_info['image_uri']); ?>" alt="<?php print $product_info['title']; ?>" />
   </div>
   <div class="ccf-info">
     <div class="ccf-product">

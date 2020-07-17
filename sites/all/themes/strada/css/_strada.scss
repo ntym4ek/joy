@@ -323,7 +323,7 @@ div.divider {
             background: #fff; box-shadow: 1px 1px 10px 4px #aaa;
             position: absolute; right: 0; top: 99%;
             padding: 16px;
-            opacity: 0;
+            opacity: 1; visibility: visible;
             @include transition(opacity 0.2s ease-in-out);
           }
           .cf-items {
@@ -336,14 +336,15 @@ div.divider {
             margin-bottom: 16px;
             padding-right: 16px;
           }
-          .ccf-item:not(:first-child) {
+          .ccf-item {
             display: flex;
             position: relative;
-            margin-top: 16px;
+            &:not(:first-child) { margin-top: 16px; }
           }
           .ccf-image {
             flex: 0 1 50px;
             margin-right: 15px;
+            img { width: 100%;  }
           }
           .ccf-info {
             flex: auto;
