@@ -320,7 +320,7 @@ div.divider {
           .bubble { position: relative; top: initial; right: initial; }
 
           .cart-fade-box {
-            background: #fff; box-shadow: 1px 1px 10px 4px #aaa;
+            background: #fff; box-shadow: 1px 1px 10px 4px #aaa; border-radius: 4px;
             position: absolute; right: 0; top: 99%;
             padding: 16px;
             opacity: 0; visibility: hidden;
@@ -333,7 +333,7 @@ div.divider {
           .cf-total {
             text-align: right;
             font-weight: 700;
-            margin-bottom: 16px;
+            margin: 8px 0;
             padding-right: 16px;
           }
           .ccf-item {
@@ -360,7 +360,7 @@ div.divider {
               justify-content: space-between;
             }
             .ccf-title {
-              color: $text-color; font-size: $font-size-xs;
+              color: $text-color; font-size: $font-size-small;
               margin-bottom: 2px;
               a { color: inherit; }
             }
