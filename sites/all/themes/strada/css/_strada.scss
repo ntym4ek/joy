@@ -209,6 +209,7 @@ div.divider {
         align-items: center;
         float: none;
         padding: 5px 0 0;
+      position: relative;
 
         .navbar-logo {
             flex: 0 0 100px; order: 1;
@@ -295,7 +296,12 @@ div.divider {
         }
         .navbar-cart {
             flex: 0 0 auto; order: 9;
-            position: relative;
+          &:hover {
+            .cart-fade-box {
+              visibility: visible;
+              opacity: 1;
+            }
+          }
             .btn:focus,
             .btn:hover { text-decoration: none; }
             a i {
@@ -312,6 +318,68 @@ div.divider {
           }
           .total { margin-top: 2px; }
           .bubble { position: relative; top: initial; right: initial; }
+
+          .cart-fade-box {
+            background: #fff; box-shadow: 1px 1px 10px 4px #aaa;
+            position: absolute; right: 0; top: 99%;
+            padding: 16px;
+            opacity: 0;
+            @include transition(opacity 0.2s ease-in-out);
+          }
+          .cf-items {
+            max-height: 300px;
+            overflow-y: auto;
+          }
+          .cf-total {
+            text-align: right;
+            font-weight: 700;
+            margin-bottom: 16px;
+            padding-right: 16px;
+          }
+          .ccf-item:not(:first-child) {
+            display: flex;
+            position: relative;
+            margin-top: 16px;
+          }
+          .ccf-image {
+            flex: 0 1 50px;
+            margin-right: 15px;
+          }
+          .ccf-info {
+            flex: auto;
+            display: flex;
+            justify-content: space-between;
+            .ccf-product {
+              flex: auto;
+              text-align: left;
+            }
+            .ccf-parameters {
+              flex: 0 0 100px;
+              display: flex;
+              justify-content: space-between;
+            }
+            .ccf-title {
+              color: $text-color; font-size: $font-size-xs;
+              margin-bottom: 2px;
+              a { color: inherit; }
+            }
+            .ccf-options {
+              color: $text-muted; font-size: $font-size-xs;
+            }
+            .ccf-stock {
+              display: none;
+            }
+            .ccf-qty {
+              color: $text-muted; font-size: $font-size-xs;
+              padding: 0 10px;
+            }
+            .ccf-total {
+              font-size: $font-size-xs;
+              padding: 0 10px;
+            }
+          }
+
+
         }
       .qty,
       .total {

@@ -147,7 +147,7 @@ function cart_ajax_refresh ($form, $form_state) {
     if (empty($form_state['cart_is_empty'])) {
         // вернуть форму и виджет корзины
         $commands = array(
-            ajax_command_replace('#cart', trim(commerce_helper_cart_info_block())),
+            ajax_command_replace('#cart', trim(ext_order_cart_info_block())),
             ajax_command_replace('#commerce-checkout-ajax-wrapper', trim(drupal_render($form))),
         );
     } else {

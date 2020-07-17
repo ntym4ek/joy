@@ -147,8 +147,8 @@
                 <?php endif; ?>
 
                 <?php if (empty($tsss)): ?>
-                <div class="navbar-cart" role="navigation">
-                    <?php print '<a id="cart" href="/cart" class="btn btn-link" title="Корзина">' . commerce_helper_cart_info_block() . '</a>'; ?>
+                <div id="cart" class="navbar-cart" role="navigation">
+                    <?php print ext_order_cart_info_block(); ?>
                 </div>
                 <?php endif; ?>
 
