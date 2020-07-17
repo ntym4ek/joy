@@ -76,20 +76,20 @@
 ?>
 <header id="navbar" role="banner" class="<?php print $navbar_classes; ?>">
 
-    <div class="line-1 row hidden-xs">
+    <div class="line-1 row">
         <?php if (empty($tsss)): ?>
         <div class="<?php print $container_class; ?>">
             <div class="topbar">
-                <div class="topbar-region"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
+                <div class="topbar-region hidden-xs"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
-                <div class="topbar-phone">
+                <div class="topbar-phone hidden-xs">
                     Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/<? print ext_user_normalize_phone(variable_get('manager_whatsapp', '8-922-910-99-40')); ?>" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a>
                 </div>
 
-                <div class="topbar-menu hidden-sm">
+                <div class="topbar-shipping"><a id="free_shipping" href="/info/delivery">Бесплатная доставка</a></div>
+                <div class="topbar-menu hidden-xs hidden-sm">
                     <ul class="dry-list">
 <!--                        <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>-->
-                        <li><a id="free_shipping" href="/info/delivery">Бесплатная доставка</a></li>
                         <li><a href="/info/payment">Оплата</a></li>
                         <li><a href="/info/return">Возврат</a></li>
                         <li><a href="/info/how-to-buy">Как купить</a></li>
