@@ -30,6 +30,24 @@ function helper_menu()
     return $items;
 }
 
+/**
+ * Implements hook_menu_alter()
+ */
+function helper_menu_alter(&$items)
+{
+  // убрать материалы с Главной
+  $items['node']['page callback'] = 'helper_empty_front_page_callback';
+
+  // "Удалить" в локальные задачи материала
+  // http://xandeadx.ru/blog/drupal/339
+  $items['node/%node/delete']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+
+  // убрать закладки со страницы входа
+  // https://eureka.ykyuen.info/2011/01/31/drupal-remove-the-tabs-in-user-registration-form/
+  $items['user']['type'] = MENU_CALLBACK;
+  $items['user/register']['type'] = MENU_CALLBACK;
+  $items['user/password']['type'] = MENU_CALLBACK;
+}
 
 function helper_permission() {
     return array(
@@ -50,6 +68,17 @@ function helper_theme() {
             'render element' => 'element',
         ),
     );
+}
+
+/**
+ * menu callback
+ * убрать материалы с главной
+ * @return array
+ */
+function helper_empty_front_page_callback()
+{
+  drupal_set_title('');
+  return array();
 }
 
 /**
@@ -440,21 +469,6 @@ function helper_preprocess_image_style(&$vars) {
     $vars['path'] = 'public://default_images/no_photo.png';
   }
 }
-/**
- * --------------------------------- "Удалить" в локальные задачи материала --------------------------------------------
- * http://xandeadx.ru/blog/drupal/339
- * Implements hook_menu_alter()
- */
-function helper_menu_alter(&$items) {
-  $items['node/%node/delete']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
-
-    // убрать закладки со страницы входа
-    // https://eureka.ykyuen.info/2011/01/31/drupal-remove-the-tabs-in-user-registration-form/
-    $items['user']['type'] = MENU_CALLBACK;
-    $items['user/register']['type'] = MENU_CALLBACK;
-    $items['user/password']['type'] = MENU_CALLBACK;
-}
-
 
 
 /**
