@@ -647,3 +647,30 @@ function _user_has_role($role_name, $acc = NULL)
     }
     return FALSE;
 }
+
+/**
+ * разрешаить открытие сайта в iframe для сторонних сайтов
+ * https://www.unmoscerinonelweb.com/blog/drupal-7-blocks-external-frame-due-to-x-frame-options/
+ */
+function helper_page_delivery_callback_alter(&$delivery_callback)
+{
+  $domains = variable_get('ur_com_xframe_allowed', array(
+    'metrika.yandex.ru',
+    'webvisor.com',
+  ));
+  // removing frameset limitation for certain referrers
+  $allow_frame = false;
+  foreach ($domains as $domain) {
+    if (strpos($_SERVER['HTTP_REFERER'], $domain ) !== false) {
+      $allow_frame = true;
+      break;
+    }
+  }
+  if ($allow_frame){
+    //setting the variable to false in order to avoid a future setting of the header
+    variable_set('x_frame_options', FALSE);
+  } else {
+    //default behavior
+    variable_set('x_frame_options', 'SAMEORIGIN');
+  }
+}
