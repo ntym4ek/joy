@@ -622,23 +622,23 @@ function ext_checkout_non_free_shipping($order)
 
 
     // Регион пользователя
-    $region_kladr = $city_kladr = '';
+    $region_kladr = $kladr = '';
     $field_name = commerce_physical_order_shipping_field_name($order);
     if (isset($_COOKIE['user_region']) && $cookie = json_decode($_COOKIE['user_region'], TRUE)) {
       // в первую очередь проверяем куки
       // так как регион могли сменить за пределами чекаута
 //      $region_kladr = $cookie['data']['region_kladr_id'];
-      $city_kladr = $cookie['data']['city_kladr_id'];
+      $kladr = $cookie['data']['kladr_id'];
     }
     elseif ($shipping_profile = $order_wr->{$field_name}->value()) {
       $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
 //      $region_kladr = $data['region']['data']['region_kladr_id'];
-      $city_kladr = $data['region']['data']['city_kladr_id'];
+      $kladr = $data['region']['data']['kladr_id'];
     }
 
     // получить платные регионы и сделать привязку
     // по зонам
-    if ($free_shipping_cost = ext_checkout_get_free_shipping_amount($city_kladr)) {
+    if ($free_shipping_cost = ext_checkout_get_free_shipping_amount($kladr)) {
 
       // если сумма не попадает в бесплатный промежуток Тарифной Зоны
       // возвращаем причину
