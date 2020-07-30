@@ -59,6 +59,7 @@
   <link rel="profile" href="<?php print $grddl_profile; ?>" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="yandex-verification" content="eaaccbc2447ae1e6" />
+  <meta name="facebook-domain-verification" content="qr1u7fj5nye47rmua096sb8i5zppej" />
   <?php print $head; ?>
   <title><?php print $head_title; ?></title>
   <?php print $styles; ?>

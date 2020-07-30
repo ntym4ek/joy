@@ -305,7 +305,7 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
                 }
             }
 
-            // добавить проверку на наличие в корзине отсутствующих товаров
+            // добавить свои действия на сабмит
             $form['actions']['checkout']['#submit'][] = 'commerce_helper_form_views_form_commerce_cart_form_submit';
 
 
@@ -591,8 +591,15 @@ function commerce_helper_cart_login_email_submit($form, &$form_state)
   drupal_goto('user/login');
 }
 
+/**
+ * Сабмит в корзине
+ * form_views_form_commerce_cart_form callback
+ * @param $form
+ * @param $form_state
+ */
 function commerce_helper_form_views_form_commerce_cart_form_submit($form, &$form_state)
 {
+  // добавить проверку на наличие в корзине отсутствующих товаров
     $out_of_stock_found = false;
     $order = $form_state['order'];
     foreach ($form_state['line_items'] as $line_item) {
@@ -607,6 +614,9 @@ function commerce_helper_form_views_form_commerce_cart_form_submit($form, &$form
         drupal_set_message('Товары, которых нет в наличии, были удалены из корзины', 'warning');
         commerce_order_save($order);
     }
+
+    // отправка события Инициации оформления заказа
+   //fbq('InitiateCheckout');
 }
 
 

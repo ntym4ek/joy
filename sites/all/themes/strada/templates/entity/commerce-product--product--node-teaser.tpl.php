@@ -1,7 +1,10 @@
 <?php
 ?>
 
-<div class="product teaser <?php print $classes; ?> clearfix ajax-host">
+<div class="product teaser <?php print $classes; ?> clearfix ajax-host"
+      data-price="<? print $commerce_price[0]["amount"]/100; ?>"
+      data-title="<? print $title; ?>"
+      data-variant="<? print $volume; ?>">
     <div class="product-card">
         <div class="p-image-block">
             <a href="<?php print $node_url; ?>" class="p-image">

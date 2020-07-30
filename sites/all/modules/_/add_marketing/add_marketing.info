@@ -6,4 +6,3 @@ package = Custom
 
 files[] = views/add_marketing_handler_field_marketing.inc
 files[] = views/add_marketing_handler_filter_marketing.inc
-scripts[] = js/add_marketing.js

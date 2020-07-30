@@ -481,6 +481,7 @@ function ext_checkout_free_shipping_validate($form, $form_state)
 
 /**
  * hook_commerce_checkout_complete()
+ * вызывается однократно при оформлении заказа
  */
 function ext_checkout_commerce_checkout_complete($order)
 {
@@ -510,9 +511,11 @@ function ext_checkout_commerce_checkout_complete($order)
         }
         $user_wr->save();
       }
-
     }
   }
+
+  // отправить событие Покупка для фейсбука
+  // fbq('Purchase', ['total' => $order_wr->commerce_order_total->amount->value()/100]);
 }
 
 /**
@@ -549,6 +552,56 @@ function ext_checkout_completion_message_callback($form, &$form_state, $checkout
       '#order' => $order,
     ),
   );
+}
+
+/**
+ * implements template_preprocess_HOOK()
+ * подготовка переменных для страницы Заказ оформлен
+ */
+function ext_checkout_preprocess_commerce_checkout_completion_message(&$vars)
+{
+  $order_info = ext_order_get_order_info($vars['order']);
+  $vars['order_info'] = $order_info;
+  $vars['shipping'] = $order_info['shipping'];
+  $vars['payment'] = $order_info['payment'];
+  $vars['coupons'] = $order_info['coupons'];
+  $vars['user'] = $order_info['user'];
+  $have_yandex_payment = module_exists('yamoney_api');
+  $have_sber_payment = module_exists('commerce_rbspayment');
+
+  $vars['payment_label'] = $vars['payment']['balance'] ? 'К оплате' : '<span class="brand-success">Оплачено</span>';
+  if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout') !== false) {
+    $vars['payment_label'] = 'Сумма';
+  }
+
+  // оплата
+  $payment_widget = '';
+  if ($vars['payment']['before_shipping']) {
+    if ($vars['payment']['balance']) {
+      if ($vars['payment']['is_online']) {
+        $vars['payment_widget'] =   '<div class="well">' .
+          '<h4>Ожидание поступления оплаты</h4>' .
+          '<p>Если Вы уже оплатили заказ онлайн, информация об оплате поступит к нам в течение нескольких минут.<br />Обновите страницу, чтобы увидеть поступление оплаты.</p>' .
+          '<p>Если оплата была неудачной, Вы можете попробовать ещё раз.</p>' .
+          ($have_yandex_payment ? '<a href="/user/' . $vars['user']['uid'] . '/orders/' . $order_info['id'] . '/pay/yandex" style="margin-right: 16px;" class="btn btn-primary">Оплатить онлайн через Яндекс.Кассу</a>' : '') .
+          (($have_sber_payment && user_has_role(PRODUCT_MANAGER_ROLE_ID)) ? '<a href="/user/' . $vars['user']['uid'] . '/orders/' . $order_info['id'] . '/pay/sberbank" class="btn btn-primary">Оплатить онлайн через Сбербанк</a>' : '') .
+          //              (($have_sber_payment) ? '<a href="/user/' . $user['uid'] . '/orders/' . $order_info['id'] . '/pay/sberbank" class="btn btn-primary">Оплатить онлайн через Сбербанк</a>' : '') .
+          '</div>';
+      } else {
+        $vars['payment_widget'] =   '<div class="well">' .
+          '<h4 class="text-warning">Ожидает оплаты</h4>' .
+          '</div>';
+      }
+    } else {
+      $vars['payment_widget'] =   '<div class="well">' .
+        '<h4 class="text-success">Заказ оплачен</h4>' .
+        '</div>';
+    }
+  } else {
+    $vars['payment_widget'] =   '<div class="well">' .
+      '<h4 class="text-warning">Оплата при получении</h4>' .
+      '</div>';
+  }
 }
 
 /**
@@ -700,3 +753,5 @@ function ext_checkout_get_free_shipping_amount($kladr)
 
   return false;
 }
+
+

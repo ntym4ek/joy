@@ -50,3 +50,73 @@ function add_marketing_views_data_alter(&$data)
     ),
   );
 }
+
+/*
+ * ---------------------------- Facebook ---------------------------------------
+ */
+
+/**
+ * вызов API трекинга событий facebook
+ */
+function fbq($event, $data = [])
+{
+  // токен из ЛК ФБ
+  $pixel_id = '2267509073307955';
+  $access_token = '';
+
+  $request = [
+    'event_name' => $event,
+    'event_time' => REQUEST_TIME,
+    'user_data' => [
+      "client_ip_address" => $_SERVER['REMOTE_ADDR'],
+      "client_user_agent" => $_SERVER['HTTP_USER_AGENT'],
+    ],
+  ];
+
+  if (!empty($_COOKIE['_fbp'])) {
+    $request['fbp'] = $_COOKIE['_fbp'];
+  }
+  if (!empty($_COOKIE['_fbc'])) {
+    $request['fbc'] = $_COOKIE['_fbc'];
+  }
+
+  switch ($event) {
+    case 'InitiateCheckout':
+      break;
+
+    case 'Purchase':
+      $request['custom_data'] = [
+        'value' => $data['total'],
+        'currency' => 'RUB',
+      ];
+      break;
+  }
+
+  // для dev сервера только вывести в лог
+  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+      CURLOPT_URL => "https://graph.facebook.com/v7.0/$pixel_id/events?access_token=" . $access_token,
+      CURLOPT_POST => true,
+      CURLOPT_POSTFIELDS => json_encode($request),
+      CURLOPT_RETURNTRANSFER => true
+    ]);
+
+    if ($result = curl_exec($ch)) {
+      return json_decode($result, TRUE);
+    } else return false;
+  } else {
+    watchdog('facebook', 'Эмуляция отправки события FBQ.<br />Событие: ' . $event . '.<br />Данные: ' . var_dump($request), [], WATCHDOG_DEBUG);
+    return true;
+  }
+}
+
+/**
+ * Implements hook_preprocess_page()
+ */
+function add_marketing_preprocess_page(&$vars)
+{
+  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+    drupal_add_js(drupal_get_path('module', 'add_marketing') . '/js/add_marketing.js');
+  }
+}

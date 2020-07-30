@@ -253,34 +253,6 @@ var popupStatus = 0;
                     });
             }
 
-
-            /* ------------------------------------------ Отслеживание действий для SMM ---------------------------- */
-            // FB корзина
-            $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').on('mousedown', function() {
-              if (typeof (fbq) === "function") {
-                fbq('track', 'AddToCart');
-              }
-            });
-            // FB избранное
-            $('a.add-to-wishlist').on('mousedown', function() {
-              if (typeof (fbq) === "function") {
-                fbq('track', 'AddToWishlist');
-              }
-            });
-            // FB начало оформления
-            $('.commerce-cart-form-checkout .checkout-continue').on('mousedown', function() {
-              if (typeof (fbq) === "function") {
-                fbq('track', 'InitiateCheckout');
-              }
-            });
-            // FB завершение оформления
-            $('.commerce-checkout-form-checkout .checkout-continue').on('mousedown', function() {
-              if (typeof (fbq) === "function") {
-                var total = $('.checkout-summary .cs-total').data('cs-total');
-                fbq('track', 'Purchase', {value: total, currency: 'RUB'});
-              }
-            });
-
             /* ------------------------------------------ Анимация добавления в корзину ----------------------------- */
             $('a.btn-add-to-cart').on('click', function() {
 
