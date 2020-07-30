@@ -65,12 +65,9 @@ function fbq($event, $data = [])
   $access_token = 'EAADZChLq0MxgBAGCZBLIX6VdaeZCtXoOTH9gB35pLYpjWukawivmjtr7uwz0gZADiVVJQfjUkVF2S58OQwROKJhq8m1skDB43zGsWo89mP64DSM3KaxiiRs78GaATQoqZChdEWQJCXvnwkaCZCqSZAyg5dzbyr7UvpiSall6rWBEGnNB9iYaKZBccIgbJmOkM9kZD';
 
   $request = [
-    'event_name' => $event,
-    'event_time' => REQUEST_TIME,
-    'user_data' => [
-      "client_ip_address" => $_SERVER['REMOTE_ADDR'],
-      "client_user_agent" => $_SERVER['HTTP_USER_AGENT'],
-    ],
+    'data' => [],
+    'test_event_code' => 'TEST4097',
+    'access_token' => $access_token,
   ];
 
   if (!empty($_COOKIE['_fbp'])) {
@@ -80,25 +77,39 @@ function fbq($event, $data = [])
     $request['fbc'] = $_COOKIE['_fbc'];
   }
 
+  $event = [
+    'event_name' => $event,
+    'event_time' => REQUEST_TIME,
+    'user_data' => [
+      "client_ip_address" => $_SERVER['REMOTE_ADDR'],
+      "client_user_agent" => $_SERVER['HTTP_USER_AGENT'],
+    ],
+  ];
+
   switch ($event) {
     case 'InitiateCheckout':
       break;
 
     case 'Purchase':
-      $request['custom_data'] = [
+      $event['custom_data'] = [
         'value' => $data['total'],
         'currency' => 'RUB',
       ];
       break;
   }
+  $request['data'][] = $event;
 
   // для dev сервера только вывести в лог
-  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+  if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) {
+    watchdog('facebook', 'Отправка события FBQ.<br />Событие: !event.<br />Данные: !request', array('!event' => $event, '!request' => '<pre>' . print_r( $request, true) . '</pre>'), WATCHDOG_DEBUG);
     $ch = curl_init();
     curl_setopt_array($ch, [
-      CURLOPT_URL => "https://graph.facebook.com/v7.0/$pixel_id/events?access_token=" . $access_token,
+      CURLOPT_URL => "https://graph.facebook.com/v7.0/$pixel_id/events",
       CURLOPT_POST => true,
       CURLOPT_POSTFIELDS => json_encode($request),
+      CURLOPT_HTTPHEADER => [
+        "Content-Type: application/json"
+      ],
       CURLOPT_RETURNTRANSFER => true
     ]);
 
@@ -106,7 +117,7 @@ function fbq($event, $data = [])
       return json_decode($result, TRUE);
     } else return false;
   } else {
-    watchdog('facebook', 'Эмуляция отправки события FBQ.<br />Событие: ' . $event . '.<br />Данные: ' . var_dump($request), [], WATCHDOG_DEBUG);
+    watchdog('facebook', 'Эмуляция отправки события FBQ.<br />Событие: !event.<br />Данные: !request', array('!event' => $event, '!request' => '<pre>' . print_r( $request, true) . '</pre>'), WATCHDOG_DEBUG);
     return true;
   }
 }
