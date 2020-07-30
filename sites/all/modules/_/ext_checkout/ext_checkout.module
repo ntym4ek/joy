@@ -515,7 +515,7 @@ function ext_checkout_commerce_checkout_complete($order)
   }
 
   // отправить событие Покупка для фейсбука
-  // fbq('Purchase', ['total' => $order_wr->commerce_order_total->amount->value()/100]);
+  fbq('Purchase', ['total' => $order_wr->commerce_order_total->amount->value()/100]);
 }
 
 /**

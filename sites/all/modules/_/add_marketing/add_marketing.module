@@ -62,7 +62,7 @@ function fbq($event, $data = [])
 {
   // токен из ЛК ФБ
   $pixel_id = '2267509073307955';
-  $access_token = '';
+  $access_token = 'EAADZChLq0MxgBAGCZBLIX6VdaeZCtXoOTH9gB35pLYpjWukawivmjtr7uwz0gZADiVVJQfjUkVF2S58OQwROKJhq8m1skDB43zGsWo89mP64DSM3KaxiiRs78GaATQoqZChdEWQJCXvnwkaCZCqSZAyg5dzbyr7UvpiSall6rWBEGnNB9iYaKZBccIgbJmOkM9kZD';
 
   $request = [
     'event_name' => $event,
