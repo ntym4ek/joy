@@ -215,6 +215,9 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   $key = array_search('commerce_checkout_form_validate', $form['buttons']['continue']['#validate']);
   array_splice($form['buttons']['continue']['#validate'], $key, 0, 'ext_checkout_free_shipping_validate');
 
+  // свой обработчик на оформление заказа при онлайн оплате не сработает
+//  array_unshift($form['buttons']['continue']['#submit'], 'ext_checkout_commerce_checkout_form_submit');
+
   // при нажатии Оформить заказ даже при наличии ошибок в форме доставки
   // line_item выбранной доставки добавляется в заказ
   // удаляем
@@ -313,6 +316,14 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   ];
 
 }
+
+/**
+ * submit callback
+ */
+function ext_checkout_commerce_checkout_form_submit($form, &$form_state)
+{
+}
+
 
 /**
  * validate callback
@@ -513,9 +524,6 @@ function ext_checkout_commerce_checkout_complete($order)
       }
     }
   }
-
-  // отправить событие Покупка для фейсбука
-  fbq('Purchase', ['total' => $order_wr->commerce_order_total->amount->value()/100]);
 }
 
 /**
@@ -621,6 +629,12 @@ function ext_checkout_commerce_order_presave($order)
       || ($order->original->status == 'cart' && $order->status == 'processing')                     // при оформлении заказа менеджером
     ) {
       $order->placed = REQUEST_TIME;
+
+//      if (!user_has_role(PRODUCT_MANAGER_ROLE_ID, $GLOBALS['user'])) {
+      // todo где правильно разместить реакцию на оформленный заказ?
+      $order_wr = entity_metadata_wrapper('commerce_order', $order);
+      fbq('Purchase', ['total' => $order_wr->commerce_order_total->amount->value()/100]);
+//      }
     }
   }
 

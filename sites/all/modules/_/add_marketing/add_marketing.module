@@ -66,7 +66,6 @@ function fbq($event, $data = [])
 
   $request = [
     'data' => [],
-    'test_event_code' => 'TEST4097',
     'access_token' => $access_token,
   ];
 
@@ -77,12 +76,15 @@ function fbq($event, $data = [])
     $request['fbc'] = $_COOKIE['_fbc'];
   }
 
-  $event = [
+  $event_array = [
     'event_name' => $event,
     'event_time' => REQUEST_TIME,
+    "event_source_url" => $GLOBALS['base_url'] . '/' . $_GET['q'],
     'user_data' => [
       "client_ip_address" => $_SERVER['REMOTE_ADDR'],
       "client_user_agent" => $_SERVER['HTTP_USER_AGENT'],
+//      'em' => hash('sha256', 'bla-bla-bla'),
+//      'ph' => hash('sha256', 'bla-bla-bla'),
     ],
   ];
 
@@ -91,16 +93,16 @@ function fbq($event, $data = [])
       break;
 
     case 'Purchase':
-      $event['custom_data'] = [
+      $event_array['custom_data'] = [
         'value' => $data['total'],
         'currency' => 'RUB',
       ];
       break;
   }
-  $request['data'][] = $event;
+  $request['data'][] = $event_array;
 
   // для dev сервера только вывести в лог
-  if (strpos($_SERVER['HTTP_HOST'], '.local') !== false) {
+  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
     watchdog('facebook', 'Отправка события FBQ.<br />Событие: !event.<br />Данные: !request', array('!event' => $event, '!request' => '<pre>' . print_r( $request, true) . '</pre>'), WATCHDOG_DEBUG);
     $ch = curl_init();
     curl_setopt_array($ch, [
@@ -127,7 +129,7 @@ function fbq($event, $data = [])
  */
 function add_marketing_preprocess_page(&$vars)
 {
-  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+//  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
     drupal_add_js(drupal_get_path('module', 'add_marketing') . '/js/add_marketing.js');
-  }
+//  }
 }

@@ -79,7 +79,11 @@
  * @ingroup templates
  */
 ?>
-<article id="node-<?php print $node->nid; ?>" class="product full <?php print $classes; ?>"<?php print $attributes; ?> itemscope itemtype="http://schema.org/Product">
+<article id="node-<?php print $node->nid; ?>" class="product full <?php print $classes; ?>"<?php print $attributes; ?> itemscope itemtype="http://schema.org/Product"
+         data-price="<? print $commerce_price[0]["amount"]/100; ?>"
+         data-title="<? print $title; ?>"
+         data-variant="<? print $volume; ?>">
+
     <div class="row">
 
         <div class="col-sm-7 product-image">

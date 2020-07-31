@@ -40,11 +40,17 @@
         onResizeEvent();
       });
 
-      // событие, срабатывающее на добавление в корзину
-      $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').click(function() {
-        onAddToCartEvent();
+      // клик по Товару
+      $('.product.teaser .p-title, .product.teaser .p-image').click(function() {
+        var el = $(this).closest('.product.teaser');
+        onCardClickEvent(el);
       });
-      // событие, срабатывающее на добавление в вишлист
+      // добавление в корзину
+      $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').click(function() {
+        var el = $(this).closest('.product');
+        onAddToCartEvent(el);
+      });
+      // добавление в вишлист
       $('a.add-to-wishlist').click(function() {
         onAddToWishlistEvent();
       });
@@ -52,20 +58,26 @@
 
       // -------------------------------- Обработка Событий --------------------
       function onPageLoadEvent() {
-        GTMcheckCardsImpressions();
+        // GTMcheckCardsImpressions();
+        GTMshowFullCardSendData();
       }
       function onScrollEvent() {
-        GTMcheckCardsImpressions();
+        // GTMcheckCardsImpressions();
       }
       function onResizeEvent() {
-        GTMcheckCardsImpressions();
+        // GTMcheckCardsImpressions();
       }
-      function onAddToCartEvent() {
-        // сообщить FB
+      function onAddToCartEvent(el) {
+        // FB
         fbq('track', 'AddToCart');
+        // GTM
+        GTMaddToCartSendData(el);
+      }
+      function onCardClickEvent(el) {
+        GTMclickCardSendData(el);
       }
       function onAddToWishlistEvent() {
-        // сообщить FB
+        // FB
         fbq('track', 'AddToWishlist');
       }
 
@@ -82,16 +94,71 @@
       // });
 
       // ------------------------- GTM -----------------------------------------
+      // ------------------------- Add to  Cart
+      function GTMaddToCartSendData() {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'ecommerce': {
+            'currencyCode': 'RUB',
+            'add': {
+              'products': [{
+                'name':  $(el).data('title'),
+                'price': $(el).data('price'),
+                'variant': $(el).data('variant'),
+                'quantity': 1
+              }]
+            }
+          },
+        });
+      }
+
+      // ------------------------- Show Full Card
+      function GTMshowFullCardSendData() {
+        if ($(".product").is(".full")) {
+          var el = $(".product.full");
+          window.dataLayer = window.dataLayer || [];
+          dataLayer.push({
+            'ecommerce': {
+              'currencyCode': 'RUB',
+              'detail': {
+                'actionField': {'list': ''},
+                'products': [{
+                  'name':  $(el).data('title'),
+                  'price': $(el).data('price'),
+                  'variant': $(el).data('variant'),
+                }]
+              }
+            },
+          });
+        }
+      }
+
+      // ------------------------- Card Click
+      function GTMclickCardSendData(el) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'ecommerce': {
+            'currencyCode': 'RUB',
+            'click': {
+              'actionField': {'list': ''},
+              'products': [{
+                'name':  $(el).data('title'),
+                'price': $(el).data('price'),
+                'variant': $(el).data('variant'),
+              }]
+            }
+          },
+        });
+      }
       // ------------------------- Card Impressions
       function GTMcheckCardsImpressions() {
         $(".product.teaser").each(function(index) {
-          if (!GTMcheckCardPositionAndSendDataToGTM(this)) {
+          if (!GTMcheckCardPositionAndSendData(this)) {
             return false;
           }
         });
       }
-
-      function GTMcheckCardPositionAndSendDataToGTM(el) {
+      function GTMcheckCardPositionAndSendData(el) {
         var div_position = $(el).offset();
 
         var see_x1 = $(document).scrollLeft();
@@ -108,10 +175,10 @@
           // если элемент в поле видимости и данные ещё не отправлялись, отправить
           if ($(el).data('was-impressed') !== true) {
             $(el).data('was-impressed', true);
-            // todo послать информацию
+            // послать информацию
             window.dataLayer = window.dataLayer || [];
             dataLayer.push({
-              'event': 'ProductImpressions',
+              'event': 'ProductClick',
               'ecommerce': {
                 'currencyCode': 'RUB',
                 'impressions': [
