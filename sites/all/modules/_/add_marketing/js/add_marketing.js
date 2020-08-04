@@ -29,7 +29,7 @@
         }
       }
 
-      // -------------------------------- Запуск Событий -----------------------
+      // -------------------------------- Events Fire -----------------------
       onPageLoadEvent();
 
       $(document).scroll(function(){
@@ -40,23 +40,47 @@
         onResizeEvent();
       });
 
-      // клик по Товару
+      // product click
       $('.product.teaser .p-title, .product.teaser .p-image').click(function() {
         var el = $(this).closest('.product.teaser');
         onCardClickEvent(el);
       });
-      // добавление в корзину
+      // add to cart
       $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').click(function() {
         var el = $(this).closest('.product');
         onAddToCartEvent(el);
       });
-      // добавление в вишлист
+      // add to wishlist
       $('a.add-to-wishlist').click(function() {
         onAddToWishlistEvent();
       });
 
+      $('body').once(function() {
+        // checkout page open
+        if ($('body').is('.page-checkout-checkout')) {
+          onCheckoutInitEvent();
+        }
+        // order completed
+        if ($('body').is('.page-checkout-complete')) {
+          onCheckoutCompleteEvent();
+        }
+      });
 
-      // -------------------------------- Обработка Событий --------------------
+      $('.commerce-checkout-form-checkout').once(function() {
+        // shipping method choose
+        $('.commerce_payment label.control-label').one('click', function() {
+          onPaymentClickEvent(this);
+        });
+        // payment method choose
+        $('.commerce_shipping label.control-label').one('click', function() {
+          onDeliveryClickEvent(this);
+        });
+      });
+
+
+
+
+      // -------------------------------- Events Processing --------------------
       function onPageLoadEvent() {
         // GTMcheckCardsImpressions();
         GTMshowFullCardSendData();
@@ -80,6 +104,24 @@
         // FB
         fbq('track', 'AddToWishlist');
       }
+      function onCheckoutInitEvent() {
+        GTMCheckoutSendData();
+      }
+      function onDeliveryClickEvent(el) {
+        var method = $(el).find('.carrier').text();
+        GTMDeliveryClickSendData(method);
+      }
+      function onPaymentClickEvent(el) {
+        var method = $(el).find('.carrier').text();
+        GTMDPaymentClickSendData(method);
+      }
+      function onCheckoutCompleteEvent() {
+        var paid = $('.order-complete .oc-total').data('paid');
+        var total = $('.order-complete .oc-total').data('total');
+        if (paid) {
+          GTMCheckoutCompleteEvent(total);
+        }
+      }
 
 
       // // FB начало оформления
@@ -94,6 +136,55 @@
       // });
 
       // ------------------------- GTM -----------------------------------------
+      // ------------------------- Choose Payment Method
+      function GTMCheckoutCompleteEvent(total) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'orderPaid',
+          'ecommerce': {
+            'currencyCode': 'RUB',
+            'checkout': {
+              'actionField': {revenue: total},
+            }
+          },
+        });
+      }
+      // ------------------------- Choose Payment Method
+      function GTMDPaymentClickSendData(method) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'checkout',
+          'ecommerce': {
+            'checkout': {
+              'actionField': {'step': 2, 'option': method},
+            }
+          },
+        });
+      }
+      // ------------------------- Choose Delivery Method
+      function GTMDeliveryClickSendData(method) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'checkout',
+          'ecommerce': {
+            'checkout': {
+              'actionField': {'step': 3, 'option': method},
+            }
+          },
+        });
+      }
+      // ------------------------- Checkout page open
+      function GTMCheckoutSendData() {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'checkout',
+          'ecommerce': {
+            'checkout': {
+              'actionField': {'step': 1},
+            }
+          },
+        });
+      }
       // ------------------------- Add to  Cart
       function GTMaddToCartSendData() {
         window.dataLayer = window.dataLayer || [];
@@ -178,7 +269,7 @@
             // послать информацию
             window.dataLayer = window.dataLayer || [];
             dataLayer.push({
-              'event': 'ProductClick',
+              'event': 'ProductImpressions',
               'ecommerce': {
                 'currencyCode': 'RUB',
                 'impressions': [

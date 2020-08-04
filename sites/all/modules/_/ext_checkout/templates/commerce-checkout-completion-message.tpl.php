@@ -44,7 +44,7 @@
           <? endif; ?>
 
             <dt><?php print $payment_label; ?></dt>
-            <dd class="oc-total" data-total="<? print $order_info['total']['amount']/100; ?>">
+            <dd class="oc-total" data-total="<? print $order_info['total']['amount']/100; ?>" data-paid="<? print ($payment['balance'] ? 'false' : 'true'); ?>">
                 <p><?php print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total']['formatted']) . '</span>'; ?></p>
                 <p><?php print empty($shipping['cost']) ? '' : ('С учётом ' . $shipping['cost'] . ' за доставку'); ?></p>
                 <p><?php print $payment['title']; ?></p>
