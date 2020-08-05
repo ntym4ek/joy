@@ -80,9 +80,9 @@
  */
 ?>
 <article id="node-<?php print $node->nid; ?>" class="product full <?php print $classes; ?>"<?php print $attributes; ?> itemscope itemtype="http://schema.org/Product"
-         data-price="<? print $commerce_price[0]["amount"]/100; ?>"
+         data-price="<? print $content["product:commerce_price"]["#items"][0]["amount"]/100; ?>"
          data-title="<? print $title; ?>"
-         data-variant="<? print $volume; ?>">
+         data-variant="">
 
     <div class="row">
 

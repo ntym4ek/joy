@@ -21,23 +21,34 @@ class add_marketing_handler_field_marketing extends views_handler_field
    */
   function render($values) {
     $output = '';
+    $output_arr = [];
     $data = unserialize($values->{$this->aliases["data"]});
     $marketing = empty($data['marketing']) ? [] : $data['marketing'];
 
     if (!empty($marketing['utm'])) {
       foreach($marketing["utm"] as $utm) {
-        switch($utm['utm_source']) {
+        $line = drupal_strtoupper($utm['utm_source']);
+        switch(strtolower($utm['utm_source'])) {
           case 'facebook':
-            $output .= '<i class="fab fa-facebook-square"></i>';
+            $line = '<i class="fab fa-facebook-square"></i>';
             break;
           case 'instagram':
-            $output .= '<i class="fab fa-instagram-square"></i>';
+            $line = '<i class="fab fa-instagram-square"></i>';
             break;
-          default :
-            $output .= drupal_strtoupper($utm['utm_source']);
+          case 'yandex':
+            $line = '<i class="fab fa-yandex"></i>';
+            break;
         }
-        $output .= ' ' . $utm['utm_medium'] . ' ' . $utm['utm_campaign'] . ' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y');
+        $line .= $utm['utm_medium'] ? ' ' . $utm['utm_medium'] : '';
+        $line .= $utm['utm_campaign'] ? ' ' . $utm['utm_campaign'] : '';
+        $line .= $utm['utm_content'] ? ' ' . $utm['utm_content'] : '';
+        $line .= $utm['utm_term'] ? ' ' . $utm['utm_term'] : '';
+        $line .= $utm['timestamp'] ? ' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y') : '';
+        $output_arr [] = $line;
       }
+    }
+    if ($output_arr) {
+      $output = implode('<br />', $output_arr);
     }
     return $output;
   }

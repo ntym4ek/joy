@@ -1,6 +1,22 @@
 <?php
 
 /**
+ * Implements hook_init().
+ */
+function integration_1c_init()
+{
+  if (!$_GET['q']) {
+    drupal_init_path();
+  }
+
+  // Для определённых адресов сбрасываем флаг кеширования
+  if (arg(0) == "api") {
+//    watchdog('integration_1c', 'Адрес запроса: !request', array('!request' => '<pre>' . print_r( $_GET['q'], true) . '</pre>'), WATCHDOG_DEBUG);
+    $GLOBALS['conf']['cache'] = 0;
+  }
+}
+
+/**
  * Implements hook_views_api().
  */
 function integration_1c_views_api()
