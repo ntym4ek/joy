@@ -39,11 +39,11 @@ class add_marketing_handler_field_marketing extends views_handler_field
             $line = '<i class="fab fa-yandex"></i>';
             break;
         }
-        $line .= $utm['utm_medium'] ? ' ' . $utm['utm_medium'] : '';
-        $line .= $utm['utm_campaign'] ? ' ' . $utm['utm_campaign'] : '';
-        $line .= $utm['utm_content'] ? ' ' . $utm['utm_content'] : '';
-        $line .= $utm['utm_term'] ? ' ' . $utm['utm_term'] : '';
-        $line .= $utm['timestamp'] ? ' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y') : '';
+        $line .= !empty($utm['utm_medium']) ? ' ' . $utm['utm_medium'] : '';
+        $line .= !empty($utm['utm_campaign']) ? ' ' . $utm['utm_campaign'] : '';
+        $line .= !empty($utm['utm_content']) ? ' ' . $utm['utm_content'] : '';
+        $line .= !empty($utm['utm_term']) ? ' ' . $utm['utm_term'] : '';
+        $line .= !empty($utm['timestamp']) ? ' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y') : '';
         $output_arr [] = $line;
       }
     }

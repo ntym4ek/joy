@@ -30,7 +30,7 @@
       }
 
       // -------------------------------- Events Fire -----------------------
-      onPageLoadEvent();
+
 
       $(document).scroll(function(){
         onScrollEvent();
@@ -46,7 +46,7 @@
         onCardClickEvent(el);
       });
       // add to cart
-      $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').click(function() {
+      $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').bind('mousedown touchstart', function() {
         var el = $(this).closest('.product');
         onAddToCartEvent(el);
       });
@@ -56,6 +56,8 @@
       });
 
       $('body').once(function() {
+        onPageLoadEvent();
+
         // checkout page open
         if ($('body').is('.page-checkout-checkout')) {
           onCheckoutInitEvent();
@@ -67,11 +69,11 @@
       });
 
       $('.commerce-checkout-form-checkout').once(function() {
-        // shipping method choose
+        // payment method choose
         $('.commerce_payment label.control-label').one('click', function() {
           onPaymentClickEvent(this);
         });
-        // payment method choose
+        // shipping method choose
         $('.commerce_shipping label.control-label').one('click', function() {
           onDeliveryClickEvent(this);
         });
@@ -138,6 +140,15 @@
       // ------------------------- GTM -----------------------------------------
       // ------------------------- Choose Payment Method
       function GTMCheckoutCompleteEvent(total) {
+        console.log({
+          'event': 'orderPaid',
+          'ecommerce': {
+            'currencyCode': 'RUB',
+            'checkout': {
+              'actionField': {revenue: total},
+            }
+          },
+        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'orderPaid',
@@ -151,6 +162,14 @@
       }
       // ------------------------- Choose Payment Method
       function GTMDPaymentClickSendData(method) {
+        console.log({
+          'event': 'checkout',
+          'ecommerce': {
+            'checkout': {
+              'actionField': {'step': 2, 'option': method},
+            }
+          },
+        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
@@ -163,6 +182,14 @@
       }
       // ------------------------- Choose Delivery Method
       function GTMDeliveryClickSendData(method) {
+        console.log({
+          'event': 'checkout',
+          'ecommerce': {
+            'checkout': {
+              'actionField': {'step': 3, 'option': method},
+            }
+          },
+        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
@@ -175,6 +202,14 @@
       }
       // ------------------------- Checkout page open
       function GTMCheckoutSendData() {
+        console.log({
+          'event': 'checkout',
+          'ecommerce': {
+            'checkout': {
+              'actionField': {'step': 1},
+            }
+          },
+        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
@@ -186,7 +221,22 @@
         });
       }
       // ------------------------- Add to  Cart
-      function GTMaddToCartSendData() {
+      function GTMaddToCartSendData(el) {
+        console.log(
+          {
+            'ecommerce': {
+              'currencyCode': 'RUB',
+              'add': {
+                'products': [{
+                  'name':  $(el).data('title'),
+                  'price': $(el).data('price'),
+                  'variant': $(el).data('variant'),
+                  'quantity': 1
+                }]
+              }
+            },
+          }
+        );
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'ecommerce': {
@@ -207,6 +257,19 @@
       function GTMshowFullCardSendData() {
         if ($(".product").is(".full")) {
           var el = $(".product.full");
+          console.log({
+            'ecommerce': {
+              'currencyCode': 'RUB',
+              'detail': {
+                'actionField': {'list': ''},
+                'products': [{
+                  'name':  $(el).data('title'),
+                  'price': $(el).data('price'),
+                  'variant': $(el).data('variant'),
+                }]
+              }
+            },
+          });
           window.dataLayer = window.dataLayer || [];
           dataLayer.push({
             'ecommerce': {
@@ -226,6 +289,19 @@
 
       // ------------------------- Card Click
       function GTMclickCardSendData(el) {
+        console.log({
+          'ecommerce': {
+            'currencyCode': 'RUB',
+            'click': {
+              'actionField': {'list': ''},
+              'products': [{
+                'name':  $(el).data('title'),
+                'price': $(el).data('price'),
+                'variant': $(el).data('variant'),
+              }]
+            }
+          },
+        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'ecommerce': {

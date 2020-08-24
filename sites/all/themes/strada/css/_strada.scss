@@ -372,6 +372,7 @@ div.divider {
             }
             .ccf-qty {
               color: $text-muted; font-size: $font-size-xs;
+              white-space: nowrap;
               padding: 0 10px;
             }
             .ccf-total {
