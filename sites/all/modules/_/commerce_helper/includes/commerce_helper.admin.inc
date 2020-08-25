@@ -54,6 +54,12 @@ function commerce_helper_settings($form, &$form_state)
         '#title' => 'Бесплатно от суммы',
         '#default_value' => variable_get('zone1_amount', 0),
     );
+    $form['fieldset1']['zone1_weight'] = array(
+        '#type' => 'textfield',
+        '#size' => 10,
+        '#title' => 'Бесплатно до веса',
+        '#default_value' => variable_get('zone1_weight', 5),
+    );
     $form['fieldset1']['zone1_regions'] = array(
         '#type' => 'select',
         '#title' => 'Регионы',
@@ -62,6 +68,22 @@ function commerce_helper_settings($form, &$form_state)
         '#options' => $regions,
         '#description' => 'Список регионов, для которых действует условие бесплатной доставки. Если список пустой, то условия будут действовать для всех регионов не вошедших в Зону 2 и 3.',
         '#default_value' => variable_get('zone1_regions', []),
+    );
+    $form['fieldset11'] = array('#type' => 'fieldset', '#title' => 'Тарифная зона 1.1', '#group' => 'vertical_tabs');
+    $form['fieldset11']['zone11_amount'] = array(
+        '#type' => 'textfield',
+        '#size' => 10,
+        '#title' => 'Бесплатно от суммы',
+        '#default_value' => variable_get('zone11_amount', 0),
+    );
+    $form['fieldset11']['zone11_regions'] = array(
+        '#type' => 'select',
+        '#title' => 'Регионы',
+        '#chosen' => TRUE,
+        '#multiple' => TRUE,
+        '#options' => $regions,
+        '#description' => 'Список регионов, для которых действует условие бесплатной доставки. Если список пустой, то условия будут действовать для всех регионов не вошедших в Зону 2 и 3.',
+        '#default_value' => variable_get('zone11_regions', []),
     );
 
     $form['fieldset2'] = array('#type' => 'fieldset', '#title' => 'Тарифная зона 2', '#group' => 'vertical_tabs');

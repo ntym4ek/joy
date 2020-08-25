@@ -2,7 +2,6 @@
 
 // вес в КГ до которого доставка может быть бесплатной
 // при ноле ограничений нет
-define('CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT', variable_get('free_shipping_weight', 0));
 
 
 /**
@@ -430,7 +429,7 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
                 if ($reason_to_pay['reason'] == 'cost') {
                     $free_shipping = 'Ещё немножко! До бесплатной доставки осталось заказать на ' . commerce_currency_format($reason_to_pay['cost'] * 100 - $products_base_amount, 'RUB');
                     // если есть ограничение по весу, указать
-                    $free_shipping .= (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT ? '<br /><span class="notice">(для заказов весом менее ' . CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT . ' кг)</span>' : '');
+                    $free_shipping .= ($reason_to_pay['weight'] ? '<br /><span class="notice">(для заказов весом менее ' . $reason_to_pay['weight'] . ' кг)</span>' : '');
                 } elseif ($reason_to_pay['reason'] == 'weight') {
                     $delivery_text .= '<br /><span class="notice">' . $reason_to_pay['text'] . '</span>';
                 } elseif ($reason_to_pay['reason'] == 'region') {
@@ -443,7 +442,7 @@ function commerce_helper_form_views_form_commerce_cart_form_default_alter(&$form
             $back_url = '/';
 
             if (isset($free_shipping) && variable_get('free_shipping_show_sum', 0)) {
-                if (variable_get('free_shipping_show_sum') == 1 || (CHECKOUT_FREE_SHIPPING_MIN_ORDER_AMOUNT * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
+                if (variable_get('free_shipping_show_sum') == 1 || ($reason_to_pay['cost'] * 100 - variable_get('free_shipping_show_sum', 0)*100 <= $products_base_amount)) {
                     $header = '<div class="cs-free">' . $free_shipping . '<a href="' . $back_url . '" class="btn btn-default">Добавить товары</a></div>';
                 }
             }
@@ -1046,7 +1045,7 @@ function commerce_helper_free_shipping_cost_ajax_callback()
 {
   $output = '';
   $kladr = $_POST["kladr"];
-  $cost = ext_checkout_get_free_shipping_amount($kladr);
+  $cost = ext_checkout_get_free_shipping_parameters($kladr);
   if ($cost === 0) {
     $output = 'Бесплатная доставка';
   }

@@ -705,24 +705,35 @@ function ext_checkout_non_free_shipping($order)
 
     // получить платные регионы и сделать привязку
     // по зонам
-    if ($free_shipping_cost = ext_checkout_get_free_shipping_amount($kladr)) {
+    if ($free_shipping_parameters = ext_checkout_get_free_shipping_parameters($kladr)) {
 
-      // если сумма не попадает в бесплатный промежуток Тарифной Зоны
-      // возвращаем причину
-      if ($products_amount_base < $free_shipping_cost * 100) {
+      $parameter = ['weight' => variable_get('free_shipping_weight', 0)];
+      foreach ($free_shipping_parameters as $free_shipping_parameter) {
+        if ($physical_weight['weight'] < $free_shipping_parameter['weight'] && $free_shipping_parameter['weight'] <= $parameter['weight']) {
+          $parameter = $free_shipping_parameter;
+        }
+      }
+
+
+      if (empty($parameter['cost'])) {
         $reason = [
-          'reason' => 'cost',
-          'cost' => $free_shipping_cost,
-          'text' => '<a href="/" class="text-warning">добавьте товаров на ' . number_format($free_shipping_cost - $products_amount_base / 100, 0, ',', '') . ' руб. для бесплатной доставки</a>'
+          'reason' => 'weight',
+          'weight' => $parameter['weight'],
+          'text' => '<a href="/info/delivery" class="text-danger">почему доставка платная?</a>'
         ];
       }
-    }
-
-    if (CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT != 0 && $physical_weight['weight'] >= CHECKOUT_FREE_SHIPPING_MIN_WEIGHT_AMOUNT) {
-      $reason = [
-        'reason' => 'weight',
-        'text' => '<a href="/info/delivery" class="text-danger">почему доставка платная?</a>'
-      ];
+      else {
+        // если сумма не попадает в бесплатный промежуток Тарифной Зоны
+        // возвращаем причину
+        if ($products_amount_base < $parameter['cost'] * 100) {
+          $reason = [
+            'reason' => 'cost',
+            'cost' => $parameter['cost'],
+            'weight' => $parameter['weight'],
+            'text' => '<a href="/" class="text-warning">добавьте товаров на ' . number_format($parameter['cost'] - $products_amount_base / 100, 0, ',', '') . ' руб. для бесплатной доставки</a>'
+          ];
+        }
+      }
     }
   }
 
@@ -732,8 +743,10 @@ function ext_checkout_non_free_shipping($order)
 /**
  * @param $kladr - кладр города или региона
  */
-function ext_checkout_get_free_shipping_amount($kladr)
+function ext_checkout_get_free_shipping_parameters($kladr)
 {
+  $parameters = [];
+  $weight = variable_get('free_shipping_weight', 0);
   $local_kladr = $kladr;
   $region_kladr = drupal_substr($kladr, 0, 2) . '00000000000';
 
@@ -741,7 +754,7 @@ function ext_checkout_get_free_shipping_amount($kladr)
     $tree = taxonomy_get_tree($vid, 0, null, TRUE);
     if ($region_kladr) {
       // три тарифные Зоны
-      foreach ([3, 2, 5, 4, 1] as $zindex) {
+      foreach ([3, 2, 5, 4, 11, 1] as $zindex) {
         $free_shipping_cost = variable_get('zone' . $zindex . '_amount', 0);
 
         $regions = [];
@@ -757,15 +770,18 @@ function ext_checkout_get_free_shipping_amount($kladr)
         // если регион попадает в заданный список Тарифной Зоны
         // или регионы в Зоне 1 не заданы, то для оставшихся
         if (($regions && (in_array($region_kladr, $regions) || in_array($local_kladr, $regions)))
-          || (!$regions && $zindex == 1)) {
-          return $free_shipping_cost;
-          break;
+          || (!$regions && in_array($zindex, [1, 11]))) {
+            $parameters[] = [
+              'cost' => $free_shipping_cost,
+              'weight' => variable_get('zone' . $zindex . '_weight', $weight),
+            ];
+            if (in_array($region_kladr, $regions) || in_array($local_kladr, $regions)) break;
         }
       }
     }
   }
 
-  return false;
+  return $parameters ? $parameters : false;
 }
 
 
