@@ -132,6 +132,7 @@ function popup_on_leave_send_email_callback()
 
     // отправить письмо
     drupal_mail('popup_on_leave', '', $mail, 'ru', $params);
+    ajax_deliver(array('#type' => 'ajax', '#commands' => []));
 }
 
 /**
