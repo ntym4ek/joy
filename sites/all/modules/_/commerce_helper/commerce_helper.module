@@ -1045,12 +1045,20 @@ function commerce_helper_free_shipping_cost_ajax_callback()
 {
   $output = '';
   $kladr = $_POST["kladr"];
-  $cost = ext_checkout_get_free_shipping_parameters($kladr);
-  if ($cost === 0) {
+  $free_shipping_parameters = ext_checkout_get_free_shipping_parameters($kladr);
+
+  $parameter = ['weight' => variable_get('free_shipping_weight', 0)];
+  foreach ($free_shipping_parameters as $free_shipping_parameter) {
+    if ($free_shipping_parameter['weight'] <= $parameter['weight']) {
+      $parameter = $free_shipping_parameter;
+    }
+  }
+
+  if ($parameter['cost'] === 0) {
     $output = 'Бесплатная доставка';
   }
-  elseif ($cost > 0) {
-    $output = 'Бесплатная доставка от ' . format_plural((int)$cost, '@count rouble', '@count roubles');
+  elseif ($parameter['cost'] > 0) {
+    $output = 'Бесплатная доставка от ' . format_plural((int)$parameter['cost'], '@count rouble', '@count roubles');
   }
   print json_encode(['cost' => $output]);
 }
