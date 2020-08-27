@@ -34,6 +34,12 @@ function commerce_helper_settings($form, &$form_state)
         '#required' => TRUE,
     );
 
+    $form['sign_in_before_checkout'] = array(
+      '#type' => 'checkbox',
+      '#title' => 'Включить авторизацию в корзине.',
+      '#default_value' => variable_get('sign_in_before_checkout', 1),
+      '#description' => 'При включении в корзине появляется форма авторизации через СМС (для новых пользователей выполняется регистрация с отправкой пароля). При отключении пользователи могут оформлять заказ анонимно с обязательным указанием email.',
+    );
 
     // получить список регионов
     $regions = [];

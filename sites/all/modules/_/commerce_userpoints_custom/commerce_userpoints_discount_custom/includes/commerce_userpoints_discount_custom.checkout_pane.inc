@@ -86,7 +86,11 @@ function commerce_userpoints_discount_custom_pane_checkout_form($form, &$form_st
     }
 
     $arguments = _commerce_userpoints_discount_custom_get_info($order, $default_currency['code']);
-    if ($arguments['@points_applied'] == 0) {
+    if (!$order->uid) {
+      $descr = t('<a href="/user/login?destination=checkout">Sign in</a> to use collected poins.');
+      $pane_form["amount"]["#disabled"] = true;
+      $pane_form["cup_submit"]["#disabled"] = true;
+    } elseif ($arguments['@points_applied'] == 0) {
         $descr = t('You have @points_available_txt. <a href="/info/userpoints">Use rules</a>', $arguments);
     } else {
         // вывести примененное количество со ссылкой на удаление
