@@ -84,44 +84,47 @@
          data-title="<? print $title; ?>"
          data-variant="">
 
-    <div class="row">
-
+  <div class="row">
+    <div class="product-intro col-xs-12">
+      <div class="row">
         <div class="col-sm-7 product-image">
-            <?php print render($content['product:field_p_image']);?>
+          <?php print render($content['product:field_p_image']);?>
         </div>
 
         <div class="clearfix visible-xs-block"></div>
 
-        <div class="col-sm-5 product-intro">
-            <div class="product-title">
-                <h1<?php print $title_attributes; ?> itemprop="name"><?php print $title; ?></h1>
-                <h2 class="product-summary" itemprop="description">
-                    <?php print str_replace('.', '', $body[0]['safe_summary']); ?>
-                </h2>
-            </div>
+        <div class="col-sm-5 product-breaf">
+          <div class="product-title">
+            <h1<?php print $title_attributes; ?> itemprop="name"><?php print $title; ?></h1>
+            <h2 class="product-summary" itemprop="description">
+              <?php print str_replace('.', '', $body[0]['safe_summary']); ?>
+            </h2>
+          </div>
 
-            <div class="product-price" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
-                <?php print render($content['product:commerce_price']);?>
-                <?php print render($content['product:field_p_out_of_stock']);?>
-            </div>
+          <div class="product-price" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
+            <?php print render($content['product:commerce_price']);?>
+            <?php print render($content['product:field_p_out_of_stock']);?>
+          </div>
 
-            <?php print render($content['field_product']); ?>
+          <?php print render($content['field_product']); ?>
 
-            <?php if($bought): ?>
+          <?php if($bought): ?>
             <div class="product-bought">
-                <h4>Этот товар любят!</h4>
-                <div class="pb-wrapper">
-                    <div class="pb-image">
-                        <img src="/sites/all/themes/strada/images/bags.png" alt="Популярный товар - JOY-MAGAZIN" />
-                    </div>
-                    <div class="pb-count">
-                        <?php print $bought; ?> его приобрели и уже получили
-                    </div>
+              <h4>Этот товар любят!</h4>
+              <div class="pb-wrapper">
+                <div class="pb-image">
+                  <img src="/sites/all/themes/strada/images/bags.png" alt="Популярный товар - JOY-MAGAZIN" />
                 </div>
+                <div class="pb-count">
+                  <?php print $bought; ?> его приобрели и уже получили
+                </div>
+              </div>
             </div>
-            <? endif; ?>
+          <? endif; ?>
         </div>
+      </div>
     </div>
+  </div>
 
     <div class="row">
         <div class="col-xs-12">
@@ -160,17 +163,17 @@
                 </div>
             </div>
             <?php endif; ?>
-
-            <?php if(!empty($content['field_pd_related'])): ?>
-            <div class="row">
-                  <h2 class="product-related-title col-xs-12">С этим товаром покупают</h2>
-                  <div class="product-related col-xs-12">
-                      <?php print render($content['field_pd_related']); ?>
-                  </div>
-            </div>
-            <?php endif; ?>
-
         </div>
     </div>
+
+  <?php if(!empty($content['field_pd_related'])): ?>
+    <div class="row">
+      <h2 class="product-related-title col-xs-12">С этим товаром покупают</h2>
+      <div class="product-related col-xs-12">
+        <?php print render($content['field_pd_related']); ?>
+      </div>
+    </div>
+  <?php endif; ?>
+
 </article>
 

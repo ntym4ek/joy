@@ -60,6 +60,11 @@ function ext_product_product_cart_update($product_id, $op, $mode = NULL) {
 
         // обновляем виджет корзины
         $output[] = ajax_command_invoke('#cart', 'html', [trim(ext_order_cart_info_block())]);
+        // если добавление товара со страницы корзины - обновить страницу
+        // todo обновить только блок корзины
+        if (str_replace($_SERVER["HTTP_ORIGIN"], '', $_SERVER["HTTP_REFERER"]) == '/cart') {
+          $output[] = array('command' => 'refresh_page');
+        }
       }
       else {
         // сообщение о неудачном добавлении

@@ -624,7 +624,7 @@ function commerce_helper_form_views_form_commerce_cart_form_submit($form, &$form
  */
 function commerce_helper_commerce_acf_commands_alter(&$commands, $cart_view)
 {
-    $commands[] = ajax_command_invoke('#cart', 'html', [trim(ext_order_cart_info_block())]);
+  $commands[] = ajax_command_invoke('#cart', 'html', [trim(ext_order_cart_info_block())]);
 }
 
 /**

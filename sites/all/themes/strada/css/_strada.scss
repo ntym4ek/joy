@@ -847,12 +847,14 @@ $navbar-strada-toggle-border-color:       #ddd;
 
 .view-catalog-products,
 .view-commerce-wishlist-page,
+.view-related-items,
 .view-search-results {
     .view-content {
         display: flex; flex-wrap: wrap;
         margin: 0 (-$grid-gutter-width/2);
         .view-item {
             flex: 0 1 100%;
+          max-width: 235px;
             padding: 0 $grid-gutter-width/2;
             position: relative;
             padding-bottom: $grid-gutter-width;
@@ -2069,7 +2071,16 @@ form[id^="user-profile-form"] {
         }
     }
 
-    .product-intro {
+  .product-intro,
+  .product-related,
+  .product-description {
+      margin-bottom: $grid-gutter-width*4;
+      @media #{$mobile} {
+        margin-bottom: $grid-gutter-width*2;
+      }
+  }
+
+    .product-breaf {
         .product-title {
             border-bottom: 1px solid $divider-color;
             padding-bottom: $grid-gutter-width;
@@ -2136,9 +2147,13 @@ form[id^="user-profile-form"] {
         }
     }
 
+
     .product-description {
-        h2 { margin-top: $grid-gutter-width*4; }
-        .field { margin-top: $grid-gutter-width*2; }
+      .field { margin-top: $grid-gutter-width*2; }
+      table td {
+        border: 1px solid #ccc;
+        padding: 4px 8px;
+      }
 
         .product-period {
             .month-list {
@@ -2373,6 +2388,8 @@ form[id^="user-profile-form"] {
 
 /* ------------------------------------------------- Блоки ---------------------------------------------------------- */
 .front .block {
+  color: $brand-primary;
+  text-align: center;
     margin: $grid-gutter-width/2 0;
 }
 .region-sidebar-first .block { margin-bottom: $grid-gutter-width*2; }
@@ -2407,14 +2424,12 @@ form[id^="user-profile-form"] {
     .view-product-reviews.view-display-id-block {
         background: #f7f7f7;
         padding: $grid-gutter-width*4;
-        margin-top:  $grid-gutter-width*4;
     }
 
     @media #{$mobile} {
         margin: 0 (-$grid-gutter-width/2);
         .view-product-reviews.view-display-id-block {
             padding: $grid-gutter-width;
-            margin-top: $grid-gutter-width*2;
         }
         .fivestar-average-stars { margin-top: $grid-gutter-width; }
     }
