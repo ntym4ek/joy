@@ -104,7 +104,7 @@ function commerce_helper_settings($form, &$form_state)
         '#chosen' => TRUE,
         '#multiple' => TRUE,
         '#options' => $regions,
-        '#description' => 'Список регионов, для которых действует условие бесплатной доставки.',
+        '#description' => 'Список регионов, для которых действует условие бесплатной доставки. Если список пустой, то условия будут действовать для всех регионов не вошедших в Зону 2 и 3.',
         '#default_value' => variable_get('zone2_regions', []),
     );
 

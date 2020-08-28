@@ -10,9 +10,12 @@
  */
 function helper_settings($form, &$form_state)
 {
+  $form['vertical_tabs'] = array('#type' => 'vertical_tabs');
+
     $form['main'] = array(
         '#type' => 'fieldset',
         '#title' => 'Общие настройки',
+      '#group' => 'vertical_tabs',
     );
 
     $form['main']['support_phone'] = array(
@@ -40,9 +43,11 @@ function helper_settings($form, &$form_state)
         '#required' => TRUE,
     );
 
+
     $form['front'] = array(
         '#type' => 'fieldset',
         '#title' => 'Главная страница',
+        '#group' => 'vertical_tabs',
     );
 
     $terms = taxonomy_get_tree(taxonomy_vocabulary_machine_name_load('menu')->vid);
@@ -74,6 +79,7 @@ function helper_settings($form, &$form_state)
     $form['front_center_banner'] = array(
         '#type' => 'fieldset',
         '#title' => 'Центральный баннер на главной',
+      '#group' => 'vertical_tabs',
     );
     $form['front_center_banner']['front_center_banner_status'] = array(
         '#type' => 'checkbox',
@@ -114,60 +120,12 @@ function helper_settings($form, &$form_state)
         ),
     );
 
-    /** -------------------------------------------------------------------------------------------------------- */
-    $form['side_banner'] = array(
-        '#type' => 'fieldset',
-        '#title' => 'Боковой баннер в каталоге',
-    );
-    $form['side_banner']['side_banner_status'] = array(
-        '#type' => 'checkbox',
-        '#title' => 'Включить',
-        '#default_value' => variable_get('side_banner_status', 0),
-    );
-    $form['side_banner']['side_banner_title'] = array(
-        '#type' => 'textfield',
-        '#title' => 'Заголовок баннера',
-        '#default_value' => variable_get('side_banner_title', ''),
-        '#required' => true
-    );
-    $form['side_banner']['side_banner_image'] = array(
-        '#type' => 'managed_file',
-        '#title' => 'Боковой баннер',
-        '#theme' => 'image_widget',
-        '#description' => 'Выберите файл с расширением jpg, размер 260 точек по ширине, высота в пределах разумного',
-        '#upload_location' => "public://images/banner/",
-        '#upload_validators' => array(
-            'file_validate_is_image' => array(),
-            'file_validate_extensions' => array('jpg'),
-        ),
-        '#default_value' => variable_get('side_banner_image', 0),
-        '#element_validate' => array('file_managed_file_validate'),
-        '#states' => array(
-            'visible' => array(
-                'input[name="side_banner_status"]' => array(
-                    'checked' => TRUE,
-                ),
-            ),
-        ),
-    );
-    $form['side_banner']['side_banner_url'] = array(
-        '#type' => 'textfield',
-        '#title' => 'Боковой баннер - ссылка',
-        '#description' => '',
-        '#default_value' => variable_get('side_banner_url', ''),
-        '#states' => array(
-            'visible' => array(
-                'input[name="side_banner_status"]' => array(
-                    'checked' => TRUE,
-                ),
-            ),
-        ),
-    );
 
     /** -------------------------------------------------------------------------------------------------------- */
     $form['line2x_1_banner'] = array(
         '#type' => 'fieldset',
         '#title' => 'Первая линия баннеров',
+      '#group' => 'vertical_tabs',
     );
     $form['line2x_1_banner']['line2x_1_banner_status'] = array(
         '#type' => 'checkbox',
@@ -271,6 +229,7 @@ function helper_settings($form, &$form_state)
     $form['line2x_2_banner'] = array(
         '#type' => 'fieldset',
         '#title' => 'Вторая линия баннеров',
+      '#group' => 'vertical_tabs',
     );
     $form['line2x_2_banner']['line2x_2_banner_status'] = array(
         '#type' => 'checkbox',
@@ -374,6 +333,7 @@ function helper_settings($form, &$form_state)
     $form['line2x_3_banner'] = array(
         '#type' => 'fieldset',
         '#title' => 'Третья линия баннеров',
+      '#group' => 'vertical_tabs',
     );
     $form['line2x_3_banner']['line2x_3_banner_status'] = array(
         '#type' => 'checkbox',
@@ -473,10 +433,148 @@ function helper_settings($form, &$form_state)
         ),
     );
 
-    $form['#validate'][] = 'helper_settings_images_validate';
-    $form['#submit'][] = 'helper_settings_images_submit';
+  /** -------------------------------------------------------------------------------------------------------- */
+  $form['side_banner'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Боковой баннер в каталоге',
+    '#group' => 'vertical_tabs',
+  );
+  $form['side_banner']['side_banner_status'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Включить',
+    '#default_value' => variable_get('side_banner_status', 0),
+  );
+  $form['side_banner']['side_banner_title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Заголовок баннера',
+    '#default_value' => variable_get('side_banner_title', ''),
+    '#required' => true
+  );
+  $form['side_banner']['side_banner_image'] = array(
+    '#type' => 'managed_file',
+    '#title' => 'Боковой баннер',
+    '#theme' => 'image_widget',
+    '#description' => 'Выберите файл с расширением jpg, размер 260 точек по ширине, высота в пределах разумного',
+    '#upload_location' => "public://images/banner/",
+    '#upload_validators' => array(
+      'file_validate_is_image' => array(),
+      'file_validate_extensions' => array('jpg'),
+    ),
+    '#default_value' => variable_get('side_banner_image', 0),
+    '#element_validate' => array('file_managed_file_validate'),
+    '#states' => array(
+      'visible' => array(
+        'input[name="side_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
+  $form['side_banner']['side_banner_url'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Боковой баннер - ссылка',
+    '#description' => '',
+    '#default_value' => variable_get('side_banner_url', ''),
+    '#states' => array(
+      'visible' => array(
+        'input[name="side_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
 
-    return system_settings_form($form);
+  $form['related'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Сопутствующие товары',
+    '#group' => 'vertical_tabs',
+  );
+
+  // Get the count of products of the type
+  $products = db_query("SELECT product_id, title FROM {commerce_product}")->fetchAllKeyed();
+  $form['related']['related_items'] = array(
+    '#type' => 'select',
+    '#title' => 'Список',
+    '#options' => $products,
+    '#default_value' => variable_get('related_items', []),
+    '#description' => 'Товары для вывода в блоках сопутствующих товаров на страницах описания товара и в корзине',
+    '#multiple' => true,
+    '#chosen' => true,
+  );
+
+  /** -------------------------------------------------------------------------------------------------------- */
+  $form['side_banner'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Боковой баннер в каталоге',
+    '#group' => 'vertical_tabs',
+  );
+  $form['side_banner']['side_banner_status'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Включить',
+    '#default_value' => variable_get('side_banner_status', 0),
+  );
+  $form['side_banner']['side_banner_title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Заголовок баннера',
+    '#default_value' => variable_get('side_banner_title', ''),
+    '#required' => true
+  );
+  $form['side_banner']['side_banner_image'] = array(
+    '#type' => 'managed_file',
+    '#title' => 'Боковой баннер',
+    '#theme' => 'image_widget',
+    '#description' => 'Выберите файл с расширением jpg, размер 260 точек по ширине, высота в пределах разумного',
+    '#upload_location' => "public://images/banner/",
+    '#upload_validators' => array(
+      'file_validate_is_image' => array(),
+      'file_validate_extensions' => array('jpg'),
+    ),
+    '#default_value' => variable_get('side_banner_image', 0),
+    '#element_validate' => array('file_managed_file_validate'),
+    '#states' => array(
+      'visible' => array(
+        'input[name="side_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
+  $form['side_banner']['side_banner_url'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Боковой баннер - ссылка',
+    '#description' => '',
+    '#default_value' => variable_get('side_banner_url', ''),
+    '#states' => array(
+      'visible' => array(
+        'input[name="side_banner_status"]' => array(
+          'checked' => TRUE,
+        ),
+      ),
+    ),
+  );
+
+  $form['related'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Сопутствующие товары',
+    '#group' => 'vertical_tabs',
+  );
+
+  // Get the count of products of the type
+  $products = db_query("SELECT product_id, title FROM {commerce_product}")->fetchAllKeyed();
+  $form['related']['related_items'] = array(
+    '#type' => 'select',
+    '#title' => 'Список',
+    '#options' => $products,
+    '#default_value' => variable_get('related_items', []),
+    '#description' => 'Товары для вывода в блоках сопутствующих товаров на страницах описания товара и в корзине',
+    '#multiple' => true,
+    '#chosen' => true,
+  );
+
+  $form['#validate'][] = 'helper_settings_images_validate';
+  $form['#submit'][] = 'helper_settings_images_submit';
+
+  return system_settings_form($form);
 }
 
 
