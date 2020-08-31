@@ -19,7 +19,7 @@ function ext_payment_menu()
 /**
  * ------------------------------------------ commerce rbspayment (Шлюз Сбера) -----------------------------------------
  */
-function ext_payment_commerce_rbspayment_receipt_alter(&$config, $order)
+function ext_payment_commerce_rbspayment_custom_receipt_alter(&$config, $order)
 {
   $items_with_spread = ext_payment_get_items_with_spread_discount($order);
   // подставить ниже новую стоимость товаров и доставки
@@ -177,7 +177,6 @@ function ext_payment_get_items_with_spread_discount($order)
   return $items;
 }
 
-
 /**
  * ------------------------------------------ Яндекс.Касса (Yandex.Kassa) ----------------------------------------------
  */
@@ -214,7 +213,7 @@ function ext_payment_yamoney_api_complete()
 function ext_payment_commerce_payment_method_info_alter(&$payment_methods)
 {
     $payment_methods['ya_commerce_api']['display_title'] = '<div class="carrier">' . t('Pay online') . '</div><div class="message">Через Яндекс. Банковские карты, банк-онлайн и другие.</div>';
-    $payment_methods['commerce_rbspayment']['display_title'] = '<div class="carrier">' . t('Pay online') . '</div><div class="message">Visa. MasterCard. Банк онлайн и другое.</div>';
+    $payment_methods['commerce_rbspayment_custom']['display_title'] = '<div class="carrier">' . t('Pay online') . '</div><div class="message">Visa. MasterCard. Банк онлайн и другое.</div>';
 }
 
 function ext_payment_commerce_order_pay_again($order, $gate)
@@ -232,7 +231,7 @@ function ext_payment_commerce_order_pay_again($order, $gate)
 function ext_payment_commerce_order_pay_again_with_sber($order)
 {
   $order_wr = entity_metadata_wrapper('commerce_order', $order->order_id);
-  commerce_rbspayment_redirect_form([], $form_state, $order_wr->value(), '');
+  commerce_rbspayment_custom_redirect_form([], $form_state, $order_wr->value(), '');
 }
 
 

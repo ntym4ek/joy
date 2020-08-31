@@ -2,13 +2,13 @@
 /**
  * Including RBS class
  */
-include('commerce_rbspayment.class');
+include('commerce_rbspayment_custom.class');
 define('RBS_MODULE_VERSION' , '2.2');
 
 /**
  * Implements hook_permission().
  */
-function commerce_rbspayment_permission() {
+function commerce_rbspayment_custom_permission() {
 	return array(
 		'administer commerce_rbspayment' => array(
 			'title' => t('Administer Commerce RBSPayment'),
@@ -21,23 +21,23 @@ function commerce_rbspayment_permission() {
 /**
  * Implements hook_menu().
  */
-function commerce_rbspayment_menu() {
+function commerce_rbspayment_custom_menu() {
 	$items['admin/commerce/config/rbspayment'] = array(
 		'title' => 'RBSPayment configuration',
 		'page callback' => 'drupal_get_form',
-		'page arguments' => array('commerce_rbspayment_config'),
+		'page arguments' => array('commerce_rbspayment_custom_config'),
 		'access arguments' => array('administer commerce_rbspayment'),
 		'type' => MENU_NORMAL_ITEM,
 	);
 	$items['cart/rbspayment/complete'] = array(
 		'title' => 'Order payment complete',
-		'page callback' => 'commerce_rbspayment_response',
+		'page callback' => 'commerce_rbspayment_custom_response',
 		'access callback' => TRUE,
 		'type' => MENU_CALLBACK,
 	);
 	$items['cart/rbspayment/fail'] = array(
 		'title' => 'Unsuccessful payment',
-		'page callback' => 'commerce_rbspayment_fail',
+		'page callback' => 'commerce_rbspayment_custom_fail',
 		'access arguments' => array('access content'),
 		'type' => MENU_CALLBACK,
 	);
@@ -48,9 +48,9 @@ function commerce_rbspayment_menu() {
 /**
  * Implements hook_commerce_payment_method_info().
  */
-function commerce_rbspayment_commerce_payment_method_info() {
+function commerce_rbspayment_custom_commerce_payment_method_info() {
 	$payment_methods = array();
-	$payment_methods['commerce_rbspayment'] = array(
+	$payment_methods['commerce_rbspayment_custom'] = array(
 		'title' => "Оплата картой банка",
 		'description' => t('Payment via RBSPayment system'),
 		'terminal' => FALSE,
@@ -65,7 +65,7 @@ function commerce_rbspayment_commerce_payment_method_info() {
 /**
  * Payment method settings form.
  */
-function commerce_rbspayment_config() {
+function commerce_rbspayment_custom_config() {
 	$form['commerce_rbspayment_user_name'] = array(
 		'#type' => 'textfield',
 		'#title' => "Логин мерчанта",
@@ -196,7 +196,7 @@ function commerce_rbspayment_config() {
 /**
  * Payment method callback: submit form.
  */
-function commerce_rbspayment_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+function commerce_rbspayment_custom_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
 	$form = array();
 	$text = '<div class="rbspayment">Оплата кредитной картой</div>';
 	$form['info'] = array('#markup' => $text);
@@ -207,7 +207,7 @@ function commerce_rbspayment_submit_form($payment_method, $pane_values, $checkou
 /*
  * Payment method callback
  */
-function commerce_rbspayment_redirect_form($form, &$form_state, $order, $payment_method) {
+function commerce_rbspayment_custom_redirect_form($form, &$form_state, $order, $payment_method) {
 
     $config['user_name'] = variable_get('commerce_rbspayment_user_name', '');
     $config['password'] = variable_get('commerce_rbspayment_password', '');
@@ -325,7 +325,7 @@ function commerce_rbspayment_redirect_form($form, &$form_state, $order, $payment
         $config['order_bundle'] = $order_bundle;
     }
 
-  drupal_alter('commerce_rbspayment_receipt', $config, $order);
+  drupal_alter('commerce_rbspayment_custom_receipt', $config, $order); // добавлено к исходному коду
 
 	$rbs = new RBS($config);
 
@@ -346,7 +346,7 @@ function commerce_rbspayment_redirect_form($form, &$form_state, $order, $payment
 /**
  * Callback for RBSPayment system response.
  */
-function commerce_rbspayment_response($order_number = 0) {
+function commerce_rbspayment_custom_response($order_number = 0) {
 
     $orderId = (!empty($_GET['orderId'])) ? $_GET['orderId'] : null;
 
@@ -362,7 +362,7 @@ function commerce_rbspayment_response($order_number = 0) {
 		$response = $rbs->get_order_status_by_orderId($orderId);
 
 		$status = (($response['orderStatus'] == 1) || ($response['orderStatus'] == 2)) ? true : false;
-		commerce_rbspayment_transaction($order, $status);
+    commerce_rbspayment_custom_transaction($order, $status);
 		if ($status) {
 			drupal_goto('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key']);
 		} else {
@@ -371,7 +371,7 @@ function commerce_rbspayment_response($order_number = 0) {
 	}
 }
 
-function commerce_rbspayment_fail($order_number = 0){
+function commerce_rbspayment_custom_fail($order_number = 0){
 	if ($order_number != 0) {
 		$form = array();
 		$form['description'] = array(
@@ -385,10 +385,10 @@ function commerce_rbspayment_fail($order_number = 0){
 /*
  * Make a transaction
  */
-function commerce_rbspayment_transaction($order, $status) {
+function commerce_rbspayment_custom_transaction($order, $status) {
   commerce_checkout_complete($order);
   if ($status) {
-		$order_status = 'paid';
+		$order_status = 'paid';  // изменено, по сравнению с исходным кодом
 		$transaction_status = COMMERCE_PAYMENT_STATUS_SUCCESS;
 		$message = t('Response from RBSPayment: successful');
 	} else {

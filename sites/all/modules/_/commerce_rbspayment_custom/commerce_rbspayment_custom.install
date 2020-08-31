@@ -4,13 +4,13 @@
  * @file
  * Install function for the commerce_rbspayment module.
  */
- 
+
 /**
  * Implementation of hook_requirements().
  *
  * Verifies that PHP CURL library is installed on the server
  */
-function commerce_rbspayment_requirements($phase) {
+function commerce_rbspayment_custom_requirements($phase) {
 	$t = get_t();
 	$has_curl = function_exists('curl_init');
 	$requirements['commerce_rbspayment_curl'] = array(
@@ -32,7 +32,7 @@ function commerce_rbspayment_requirements($phase) {
 /**
  * Implements hook_uninstall().
  */
-function commerce_rbspayment_uninstall() {
+function commerce_rbspayment_custom_uninstall() {
 	variable_del('commerce_rbspayment_user_name');
 	variable_del('commerce_rbspayment_password');
 	variable_del('commerce_rbspayment_stage');

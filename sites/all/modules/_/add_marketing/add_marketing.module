@@ -51,6 +51,25 @@ function add_marketing_views_data_alter(&$data)
   );
 }
 
+
+/**
+ * Implements hook_commerce_order_presave()
+ */
+function add_marketing_commerce_order_presave($order)
+{
+  if (empty($order->original)) return;
+
+  // при удачной оплате Cбером отправить событие Purchase
+  if ($order->original->status != 'paid' && $order->status == 'paid'
+      && isset($order->data['payment_method']) && $order->data['payment_method'] == 'commerce_rbspayment_custom|commerce_payment_commerce_rbspayment_custom') {
+
+    if (!user_has_role(PRODUCT_MANAGER_ROLE_ID, $GLOBALS['user'])) {
+      $order_wr = entity_metadata_wrapper('commerce_order', $order);
+      fbq('Purchase', ['total' => $order_wr->commerce_order_total->amount->value()/100]);
+    }
+  }
+}
+
 /*
  * ---------------------------- Facebook ---------------------------------------
  */

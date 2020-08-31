@@ -2,7 +2,7 @@
 /**
  * Including configuration file
  */
-include('commerce_rbspayment.config');
+include('commerce_rbspayment_custom.config');
 
 /**
  * Интеграция платежного шлюза RBS с CMS интернет-магазинов

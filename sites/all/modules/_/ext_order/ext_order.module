@@ -303,7 +303,7 @@ function ext_order_get_order_info($order, $including_line_items = false)
       }
 
       switch ($payment_method) {
-        case 'commerce_rbspayment|commerce_payment_commerce_rbspayment':
+        case 'commerce_rbspayment_custom|commerce_payment_commerce_rbspayment_custom':
           $payment_title = 'Онлайн, через сервис Сбербанка';
           $payment_before_shipping = TRUE;
           $is_online = TRUE;

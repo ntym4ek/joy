@@ -6,7 +6,7 @@ $payment = $order_info['payment'];
 $coupons = $order_info['coupons'];
 $user = $order_info['user'];
 $have_yandex_payment = module_exists('yamoney_api');
-$have_sber_payment = module_exists('commerce_rbspayment');
+$have_sber_payment = module_exists('commerce_rbspayment_custom');
 
 $ordet_title = 'Информация о заказе';
 $ordet_num_title = 'Номер заказа';

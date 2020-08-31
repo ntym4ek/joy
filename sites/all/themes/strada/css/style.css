@@ -7658,7 +7658,7 @@ div.divider {
   .view-related-items .view-content .view-item,
   .view-search-results .view-content .view-item {
     flex: 0 1 100%;
-    max-width: 235px;
+    max-width: 251px;
     padding: 0 8px;
     position: relative;
     padding-bottom: 16px; }

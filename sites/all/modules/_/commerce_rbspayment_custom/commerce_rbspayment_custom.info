@@ -1,6 +1,6 @@
-name = Commerce RBS Payment
-description = Payments via RBS
-package = Commerce (payment)
+name = Commerce RBS Payment Custom
+description = Изменённый модуль оплаты Commerce RBS Payment
+package = custom
 dependencies[] = commerce
 dependencies[] = commerce_ui
 dependencies[] = commerce_payment

@@ -575,7 +575,7 @@ function ext_checkout_preprocess_commerce_checkout_completion_message(&$vars)
   $vars['coupons'] = $order_info['coupons'];
   $vars['user'] = $order_info['user'];
   $have_yandex_payment = module_exists('yamoney_api');
-  $have_sber_payment = module_exists('commerce_rbspayment');
+  $have_sber_payment = module_exists('commerce_rbspayment_custom');
 
   $vars['payment_label'] = $vars['payment']['balance'] ? 'К оплате' : '<span class="brand-success">Оплачено</span>';
   if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout') !== false) {
@@ -629,21 +629,9 @@ function ext_checkout_commerce_order_presave($order)
       || ($order->original->status == 'cart' && $order->status == 'processing')                     // при оформлении заказа менеджером
     ) {
       $order->placed = REQUEST_TIME;
-
-//      if (!user_has_role(PRODUCT_MANAGER_ROLE_ID, $GLOBALS['user'])) {
-      // todo где правильно разместить реакцию на оформленный заказ?
-      $order_wr = entity_metadata_wrapper('commerce_order', $order);
-      fbq('Purchase', ['total' => $order_wr->commerce_order_total->amount->value()/100]);
-//      }
     }
   }
 
-  // модуль сбера при удачной оплате ставит статус Завершено
-  // заменить на Оплачено
-  if (($order->original->status == 'checkout_payment' && $order->status == 'completed')
-    && ($order->data['payment_method'] == 'commerce_rbspayment|commerce_payment_commerce_rbspayment')) {
-    $order->status = 'paid';
-  }
 }
 
 
