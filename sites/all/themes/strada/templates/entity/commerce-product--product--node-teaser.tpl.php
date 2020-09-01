@@ -8,7 +8,7 @@
     <div class="product-card">
         <div class="p-image-block">
             <a href="<?php print $node_url; ?>" class="p-image">
-                <img src="<?php print $image_url; ?>" class="img-responsive" alt="<?php print $title; ?>">
+                <img src="<?php print $image_url; ?>" class="img-responsive" loading="lazy" alt="<?php print $title; ?>">
             </a>
 
             <?php $index = 1; ?>

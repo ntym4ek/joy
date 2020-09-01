@@ -83,7 +83,7 @@
 <article id="node-<?php print $node->nid; ?>" class="review teaser <?php print $classes; ?> clearfix"<?php print $attributes; ?> itemprop="review" itemscope itemtype="http://schema.org/Review">
     <header>
         <div class="pr-user-image">
-            <img src="<?php print $user_image; ?>" />
+            <img src="<?php print $user_image; ?>" loading="lazy" />
         </div>
         <div class="pr-user-info">
           <span itemprop="author"><?php print $user_name; ?></span>

@@ -72,7 +72,7 @@
         <?php foreach ($element['#items'] as $key => $image):?>
             <div class="item<?php print ($key ? '': ' active'); ?>">
                 <a class="fancybox" rel="group" href="<?php print image_style_url('product_full', $image['uri']); ?>">
-                    <img itemprop="image" src="<?php print image_style_url('product_description', $image['uri']); ?>" alt="<?php print htmlspecialchars($element["#object"]->title) . ' - ' . t('Image') . ' ' . ($key+1); ?>">
+                    <img itemprop="image" loading="lazy" src="<?php print image_style_url('product_description', $image['uri']); ?>" alt="<?php print htmlspecialchars($element["#object"]->title) . ' - ' . t('Image') . ' ' . ($key+1); ?>">
                 </a>
             </div>
         <? endforeach; ?>
