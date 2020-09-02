@@ -359,11 +359,11 @@ function commerce_helper_form_taxonomy_form_term_alter(&$form, &$form_state)
 {
   // в словаре Категорий товаров добавить поле для добавления товаров в категорию
   if ($form_state['term']->vid == 2) {
-    $form_state['products'] = _commerce_helper_get_products_by_category($form_state['term']->tid, true);
+    $form_state['products'] = commerce_helper_get_products_by_category($form_state['term']->tid, true);
     $form['products'] = [
       '#type' => 'select',
       '#title' => 'Список товаров категории',
-      '#options' => _commerce_helper_get_products_by_category(),
+      '#options' => commerce_helper_get_products_by_category(),
       '#default_value' => $form_state['products'],
       '#chosen' => true,
       '#multiple' => true,
@@ -413,7 +413,7 @@ function commerce_helper_taxonomy_form_term_submit($form, $form_state)
 }
 
 // определить товары, входящие в Категорию
-function _commerce_helper_get_products_by_category($tid = null, $id_only = false)
+function commerce_helper_get_products_by_category($tid = null, $id_only = false)
 {
   $output = [];
   $query = db_select('node', 'n')->distinct();

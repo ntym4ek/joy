@@ -1613,7 +1613,10 @@ form[id^="user-profile-form"] {
             display: inline-block;
             width: 100%;
         }
-        img { width: 100%; }
+        img.img-responsive {
+          width: 100%;
+          min-height: 203px;
+        }
         .novelty,
         .popular,
         .discount {

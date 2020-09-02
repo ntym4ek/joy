@@ -131,6 +131,7 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
 
   $form['cart_contents']['#prefix'] = '<h4>' . t('Order contents') . '<a href="/cart">' . t('Change') . '</a></h4>';
 
+  /** -------------------------------------------- настройка Блока доставки ---------------------------------------------------- */
   $form['customer_profile_shipping']['#prefix'] = '<h4>' . t('Destination region') . '</h4>';
 
   $form['commerce_shipping']['#prefix'] = '<h4>' . t('Shipping service') . '</h4>';
@@ -154,7 +155,7 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
 //      if (!empty($data['boxberry'])) unset($form['commerce_shipping']['commerce_shipping_messages']);
 //    }
 //  }
-
+  /** -------------------------------------------- настройка Блока оплаты ---------------------------------------------------- */
   $form['commerce_payment']['#prefix'] = '<h4>' . t('Payment service') . '</h4>';
   $form['commerce_payment']['payment_method']['#after_build'][] = 'ext_checkout_payment_radios_alter';
   $form['commerce_payment']['payment_method']['#ajax']['callback'] = 'ext_checkout_commerce_checkout_form_refresh';
@@ -162,7 +163,18 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   $form['commerce_payment']['payment_details'] = [];
   if (isset($form['commerce_payment']['commerce_payment_messages'])) unset($form['commerce_payment']['commerce_payment_messages']);
 
-  // при динамическом формировании списка методов оплаты (отключение онлайн методов при сумме заказа == 0)
+  // для третьей тарифной зоны убрать постоплату
+  if (isset($shipping_profile->field_data["und"][0]["value"])) {
+    $field_data = json_decode($shipping_profile->field_data["und"][0]["value"], true);
+    $kladr = $field_data['region']['data']['kladr_id'];
+    if ($parameters = ext_checkout_get_free_shipping_parameters($kladr)) {
+      if ($parameters[0]['zone'] == 3) {
+        unset($form["commerce_payment"]["payment_method"]["#options"]["pay_on_delivery|commerce_payment_pay_on_delivery"]);
+      }
+    }
+  }
+
+  // при динамическом формировании списка методов оплаты (отключение онлайн методов при сумме заказа == 0 и исключении постоплаты для зоны 3)
   // отключенный метод может остаться в #default_value
   if (!isset($form["commerce_payment"]["payment_method"]["#options"][$form["commerce_payment"]["payment_method"]["#default_value"]])) {
     if (count($form["commerce_payment"]["payment_method"]["#options"])) {
@@ -172,6 +184,9 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
       $form["commerce_payment"]["payment_method"]["#default_value"] = '';
     }
   }
+
+
+
 
   /** -------------------------------------------- настройка Commerce Coupons ---------------------------------------------------- */
   unset($form['commerce_coupon']['coupon_code']['#title']);
@@ -223,7 +238,7 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   // удаляем
   commerce_shipping_delete_shipping_line_items($form_state['order']);
 
-  // сформировать блок Order Summary
+  /** -------------------------------------------- блок Order Summary ---------------------------------------------------- */
   $order_wr = entity_metadata_wrapper('commerce_order', $form_state['order']);
   $order_total = $order_wr->commerce_order_total->value();
   $products_amount = commerce_price_component_total($order_total, 'base_price')['amount'];
@@ -762,6 +777,7 @@ function ext_checkout_get_free_shipping_parameters($kladr)
             $parameters[] = [
               'cost' => $free_shipping_cost,
               'weight' => variable_get('zone' . $zindex . '_weight', $weight),
+              'zone' => $zindex,
             ];
             if (in_array($region_kladr, $regions) || in_array($local_kladr, $regions)) break;
         }
