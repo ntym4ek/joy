@@ -122,7 +122,6 @@ function fbq($event, $data = [])
 
   // для dev сервера только вывести в лог
   if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
-    //watchdog('facebook', 'Отправка события FBQ.<br />Событие: !event.<br />Данные: !request', array('!event' => $event, '!request' => '<pre>' . print_r( $request, true) . '</pre>'), WATCHDOG_DEBUG);
     $ch = curl_init();
     curl_setopt_array($ch, [
       CURLOPT_URL => "https://graph.facebook.com/v7.0/$pixel_id/events",
@@ -135,6 +134,7 @@ function fbq($event, $data = [])
     ]);
 
     if ($result = curl_exec($ch)) {
+      watchdog('facebook', 'Отправка события FBQ.<br />Событие: !event.<br />Данные: !request<br />Ответ: !result', array('!event' => $event, '!request' => '<pre>' . print_r( $request, true) . '</pre>', '!result' => '<pre>' . print_r( $result, true) . '</pre>'), WATCHDOG_DEBUG);
       return json_decode($result, TRUE);
     } else return false;
   } else {

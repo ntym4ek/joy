@@ -138,17 +138,8 @@
       // });
 
       // ------------------------- GTM -----------------------------------------
-      // ------------------------- Choose Payment Method
+      // ------------------------- Checkout Complete
       function GTMCheckoutCompleteEvent(total) {
-        console.log({
-          'event': 'orderPaid',
-          'ecommerce': {
-            'currencyCode': 'RUB',
-            'checkout': {
-              'actionField': {revenue: total},
-            }
-          },
-        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'orderPaid',
@@ -162,14 +153,6 @@
       }
       // ------------------------- Choose Payment Method
       function GTMDPaymentClickSendData(method) {
-        console.log({
-          'event': 'checkout',
-          'ecommerce': {
-            'checkout': {
-              'actionField': {'step': 2, 'option': method},
-            }
-          },
-        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
@@ -182,14 +165,6 @@
       }
       // ------------------------- Choose Delivery Method
       function GTMDeliveryClickSendData(method) {
-        console.log({
-          'event': 'checkout',
-          'ecommerce': {
-            'checkout': {
-              'actionField': {'step': 3, 'option': method},
-            }
-          },
-        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
@@ -202,14 +177,6 @@
       }
       // ------------------------- Checkout page open
       function GTMCheckoutSendData() {
-        console.log({
-          'event': 'checkout',
-          'ecommerce': {
-            'checkout': {
-              'actionField': {'step': 1},
-            }
-          },
-        });
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
@@ -222,21 +189,6 @@
       }
       // ------------------------- Add to  Cart
       function GTMaddToCartSendData(el) {
-        console.log(
-          {
-            'ecommerce': {
-              'currencyCode': 'RUB',
-              'add': {
-                'products': [{
-                  'name':  $(el).data('title'),
-                  'price': $(el).data('price'),
-                  'variant': $(el).data('variant'),
-                  'quantity': 1
-                }]
-              }
-            },
-          }
-        );
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'ecommerce': {
@@ -257,33 +209,23 @@
       function GTMshowFullCardSendData() {
         if ($(".product").is(".full")) {
           var el = $(".product.full");
-          console.log({
-            'ecommerce': {
-              'currencyCode': 'RUB',
-              'detail': {
-                'actionField': {'list': ''},
-                'products': [{
-                  'name':  $(el).data('title'),
-                  'price': $(el).data('price'),
-                  'variant': $(el).data('variant'),
-                }]
-              }
-            },
-          });
-          window.dataLayer = window.dataLayer || [];
-          dataLayer.push({
-            'ecommerce': {
-              'currencyCode': 'RUB',
-              'detail': {
-                'actionField': {'list': ''},
-                'products': [{
-                  'name':  $(el).data('title'),
-                  'price': $(el).data('price'),
-                  'variant': $(el).data('variant'),
-                }]
-              }
-            },
-          });
+          var price = $(el).data('price');
+          if (price) {
+            window.dataLayer = window.dataLayer || [];
+            dataLayer.push({
+              'ecommerce': {
+                'currencyCode': 'RUB',
+                'detail': {
+                  'actionField': {'list': ''},
+                  'products': [{
+                    'name':  $(el).data('title'),
+                    'price': $(el).data('price'),
+                    'variant': $(el).data('variant'),
+                  }]
+                }
+              },
+            });
+          }
         }
       }
 
