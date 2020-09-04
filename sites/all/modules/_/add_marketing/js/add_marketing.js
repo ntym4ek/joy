@@ -116,6 +116,7 @@
       function onPaymentClickEvent(el) {
         var method = $(el).find('.carrier').text();
         GTMDPaymentClickSendData(method);
+        fbq('track', 'AddPaymentInfo');
       }
       function onCheckoutCompleteEvent() {
         var paid = $('.order-complete .oc-total').data('paid');
