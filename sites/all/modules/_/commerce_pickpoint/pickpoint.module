@@ -1,0 +1,463 @@
+<?php
+
+/**
+ * @file
+ * Defines an example shipping method for testing and development.
+ */
+
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ */
+function pickpoint_commerce_shipping_method_info()
+{
+  $shipping_methods['pickpoint_shipping_method'] = array(
+      'title' => t('Boxberry shipping method'),
+      'description' => t('Defines shipping method by PickPoint.'),
+  );
+
+  return $shipping_methods;
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ */
+function pickpoint_commerce_shipping_service_info()
+{
+  $shipping_services['pickpoint_shipping_service'] = array(
+    'title' => t('Pickpoint shipping service'),
+    'display_title' => 'Pickpoint',
+    'shipping_method' => 'pickpoint_shipping_method',
+    'price_component' => 'shipping',
+    'weight' => 2,
+    'callbacks' => array(
+      'rate' => 'pickpoint_service_rate_order',
+      'details_form' => 'pickpoint_service_details_form',
+      'details_form_validate' => 'pickpoint_service_details_form_validate',
+      'details_form_submit' => 'pickpoint_service_details_form_submit',
+    ),
+  );
+
+  return $shipping_services;
+}
+
+/**
+ * Shipping service callback: returns a base price array for a shipping service
+ * calculated for the given order.
+ */
+function pickpoint_service_rate_order($shipping_service, $order)
+{
+    $rate = array(
+        'amount' => -1,
+        'currency_code' => 'RUB',
+        'data' => [],
+    );
+
+  // при переходе на страницу оформления запрос на расчёт выполняется дважды:
+  // при первом построении формы и автонажатии кнопки Recalc
+  // чтобы страница открывалась без задержек расчёт делаем только по кнопке Recalc
+  if (arg(0) != 'checkout') {
+    $rates = &drupal_static(__FUNCTION__);
+    if (!$rates) {
+      $rate_request = pickpoint_build_rate_request($order);
+
+      // поле с данными о доставке
+      $order_wr = entity_metadata_wrapper('commerce_order', $order);
+      $field_name = commerce_physical_order_shipping_field_name($order);
+      $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+
+      if (empty($rate_request["errors"])) {
+        $cache_key = $rate_request['city'] . $rate_request['region'] . $rate_request['weight'] . $rate_request['amount'] . $rate_request["target_point"];
+        if (strpos($_SERVER['HTTP_HOST'], '.local') === false)  {
+          $cache = commerce_shipping_rates_cache_get('pickpoint' . $cache_key, $order, 600);
+        } else {
+          $cache = commerce_shipping_rates_cache_get('pickpoint' . $cache_key, $order, 1);
+        }
+
+        if (!$cache) {
+          try {
+            $response = pickpoint_api_request($rate_request);
+          } catch (Exception $e) {
+            $response['cost_data'][] = ['err' => $e->getMessage()];
+          }
+
+          // если пустой ответ или ошибка
+          if ($response["ErrorCode"]) {
+            $rate['data']['errors'][] = $response["ErrorMessage"];
+            $field_data['pickpoint'] = [];
+          }
+          // расчёт выполнен
+          else {
+            // сохраняем стоимость доставки
+            if (!isset($field_data['pickpoint']['backend'])) {
+              $field_data['pickpoint']['backend'] = [];
+            }
+            $field_data['pickpoint']['backend'] = $response;
+
+            $rate['amount'] = ceil($response["Services"][0]["Tariff"]) * 100;
+            $rate['data']['delivery_time'] = $response["DPMin"] . '-' . $response["DPMax"] . ' д.';
+            if (!empty($field_data['pickpoint']['point']['address'])) {
+              $rate['data']['address'] = $field_data['pickpoint']['point']['address'];
+            }
+
+            if (!ext_checkout_non_free_shipping($order)) {
+              $rate['amount'] = 0;
+            }
+
+            commerce_shipping_rates_cache_set('pickpoint' . $cache_key, $order, $rate);
+          }
+        }
+        else {
+          $rate = $cache;
+        }
+      }
+      else {
+        $rate['data']['errors'] = $rate_request['errors'];
+        $field_data['pickpoint'] = [
+          'errors' => $rate_request['errors'],
+        ];
+      }
+
+      $order_wr->{$field_name}->field_data = json_encode($field_data);
+      $order_wr->{$field_name}->save();
+    }
+  }
+
+  // если доставка всё ещё равна нулю, то это ошибка
+  return ($rate['amount'] != -1 || isset($rate['data']['errors'])) ? $rate : false;
+}
+
+/**
+ * подготовить массив для запроса
+ */
+function pickpoint_build_rate_request($order)
+{
+  $request = [];
+
+  // проверка веса и размеров
+  $check = ext_order_check_product_parameters($order);
+  if ($check['weight']['weight'] > 100) {
+    $request['errors']['weight'] = 'Вес превышает 100 кг';
+  }
+  elseif (!empty($check['errors']['weight'])) {
+    $request['errors'] = $check['errors'];
+  }
+
+  $weight = $amount = $target_point = $city = $region = '';
+  if (empty($request['errors'])) {
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+    $field_name = commerce_physical_order_shipping_field_name($order);
+    $shipping_profile = $order_wr->{$field_name}->value();
+
+    // базовые данные
+    if (isset($shipping_profile->field_data['und'][0]['value'])) {
+      $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+      $weight = commerce_physical_order_weight($order, 'kg')['weight'];
+      $amount = $order_wr->commerce_order_total->value()['amount'] / 100;
+      $city = !empty($data['region']['data']['settlement']) ? $data['region']['data']['settlement'] : $data['region']['data']['city'];
+
+      // пикпоинт требует регион в строгом формате, причем Москва это Московская область
+      if ($data["region"]["data"]["region_type"] == 'г') {
+        if ($data["region"]["data"]["region"] == 'Москва') $region = 'Московская обл.';
+        if ($data["region"]["data"]["region"] == 'Санкт-Петербург') $region = 'Ленинградская обл.';
+        if ($data["region"]["data"]["region"] == 'Севастополь') $region = 'Крым респ.';
+      } elseif ($data["region"]["data"]["region_type_full"] == 'область') {
+        $region = $data['region']['data']['region'] . ' обл.';
+      } elseif ($data["region"]["data"]["region_type_full"] == 'республика') {
+        $region = $data['region']['data']['region'] . ' респ.';
+      } elseif ($data["region"]["data"]["region_type_full"] == 'край') {
+        $region = $data["region"]["data"]["region_with_type"];
+      }
+
+      // возможно пункт уже выбран, нужно получить данные о нём
+      if (!empty($data['pickpoint'])) {
+        $target_point = empty($data['pickpoint']['point']['id']) ? '' : $data['pickpoint']['point']['id'];
+      }
+    }
+
+    if (empty($city)) {
+      $request['errors']['zipcode'] = 'Выберите населенный пункт из списка';
+    }
+  }
+
+  $request += [
+      'weight' => $weight,
+      'amount' => $amount,
+      'city' => $city,
+      'region' => $region,
+      'target_point' => $target_point,
+  ];
+
+    return $request;
+}
+
+/**
+ * выполнить запрос стоимости
+ */
+function pickpoint_api_request($data)
+{
+  $session = variable_get('commerce_pickpoint_session', []);
+  $login = 'vq7uGq';
+  $pass = '4tyjgtVV';
+  $ikn = '9990813812';
+  $error_messages = array();
+
+  // запросить новый $session_id, если отсутствует или не актуален
+  if (empty($session) || time()+60 > strtotime($session['expires']) ) {
+    $session = [];
+    $request = [
+      'Login' => $login,
+      'Password' => $pass,
+    ];
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, "https://e-solution.pickpoint.ru/api/login");
+    curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+    curl_setopt($curl, CURLOPT_POST, true);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($request));
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    $result = curl_exec($curl);
+
+    if (curl_error($curl)) {
+      $error_messages[] = curl_error($curl);
+    }
+    curl_close($curl);
+
+    $response = json_decode($result, true);
+    if (isset($response)) {
+      if (empty($response['ErrorMessage'])) {
+        $session = [
+          'id' => $response['SessionId'],
+          'expires' => $response["ExpiresIn"],
+        ];
+        variable_set('commerce_pickpoint_session', $session);
+      } else {
+        $error_messages = array_merge($error_messages, $response['ErrorMessage']);
+      }
+    }
+  }
+
+
+  // Build the array of header information for the request.
+  if ($session['id']) {
+    $request = [
+      "SessionId" =>  $session['id'],
+      "IKN" =>        $ikn,
+      "FromCity" =>   'Киров',
+      "ToCity" =>     $data['city'],
+      "ToRegion" =>   $data['region'],
+//      "Length" =>                              "Длина отправления, см",
+//      "Depth" =>                "Глубина отправления, см",
+//      "Width" =>                 "Ширина отправления, см",
+      "Weight" =>     $data['weight']
+    ];
+    if (!empty($data['target_point'])) {
+      $request["PTNumber"] =  $data['target_point'];
+    }
+
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, "https://e-solution.pickpoint.ru/api/calctariff");
+    curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type:application/json']);
+    curl_setopt($curl, CURLOPT_POST, TRUE);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($request));
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
+    $result = curl_exec($curl);
+  }
+
+  if (curl_error($curl)) {
+    $error_messages[] = curl_error($curl);
+  }
+  curl_close($curl);
+
+  $response = json_decode($result, true);
+
+  // Validate the response object.
+  if (isset($response)) {
+    // Collect additional error messages.
+    if ($response['ErrorMessage']) {
+      $error_messages = array_merge($error_messages, $response['ErrorMessage']);
+    }
+  }
+
+  // Output any error messages to watchdog.
+  if (count($error_messages)) {
+    watchdog('pickpoint', 'Pickpoint API request error(s):<ul><li>!errors</li></ul>', array('!errors' => implode('</li><li>', $error_messages)), WATCHDOG_ERROR);
+  }
+
+  return $response;
+}
+
+/**
+ * Allows modules to alter the options array generated to select a shipping
+ * service on the checkout form.
+ */
+function pickpoint_commerce_shipping_service_rate_options_alter(&$options, $order)
+{
+  if (isset($order->shipping_rates['pickpoint_shipping_service'] )) {
+      $line_item = $order->shipping_rates['pickpoint_shipping_service'];
+      $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
+      $data = $line_item_wr->commerce_unit_price->data->value();
+
+      $message = $cost = '';
+      if (empty($data['errors'])) {
+          $cost = $line_item_wr->commerce_unit_price->amount->value();
+          $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
+      } else {
+        $message = '<span class="text-danger">' . 'Ошибка расчёта: ' . drupal_strtolower(implode(', ', $data['errors'])) . '</span>';
+      }
+
+      $options['pickpoint_shipping_service'] = '<div class="carrier">Заберу в<br />Pickpoint</div>' .
+                                               '<div class="message">' . $message . '</div>' .
+                                               '<div class="cost">' . $cost . '</div>';
+  }
+}
+
+
+/**
+ * Shipping service callback: returns the shipping service details form.
+ */
+function pickpoint_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
+{
+    $pane_form = array();
+
+    if (!empty($order->shipping_rates['pickpoint_shipping_service'])) {
+        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $order->shipping_rates['pickpoint_shipping_service']);
+        if ($line_item_wrapper->value()) $data = $line_item_wrapper->commerce_unit_price->data->value();
+    }
+
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $weight = commerce_physical_order_weight($order, 'g')['weight'];
+    $products_amount_base = commerce_price_component_total($order_wrapper->commerce_order_total->value(), 'base_price')['amount'];
+
+    $pane_form['order_amount'] = ['#type' => 'hidden', '#value' => $products_amount_base/100, '#attributes' => ['class' => ['pickpoint-order-amount']]];
+    $pane_form['order_weight'] = ['#type' => 'hidden', '#value' => $weight, '#attributes' => ['class' => ['pickpoint-order-weight']]];
+
+    // адрес пункта выдачи
+    $pane_form['select'] = [
+        '#type' => 'item',
+        '#markup' =>    '<label class="control-label">Адрес постамата</label>' .
+                        '<div><span class="pickpoint_addr_show">' . (empty($data['address']) ? '' : $data['address']) . '</span> ' .
+                        (empty($data['address']) ?
+                          '<a href="#" id="pickpoint_link"><strong>Выбрать постамат</strong></a>'
+                            : ' (' . '<a href="#"  id="pickpoint_link"><strong>изменить постамат</strong></a>' . ')') .
+                        '</div>'
+        ];
+
+  $user_info = ext_user_get_user_info($order->uid, true);
+
+  $pane_form['username'] = array(
+    '#title' => 'Фамилия, Имя, Отчество',
+    '#type' => 'textfield',
+    '#default_value' => empty($user_info['name']['fullname']) ? '' : $user_info['name']['fullname'],
+  );
+  $pane_form['phone'] = array(
+    '#title' => 'Телефон',
+    '#type' => 'textfield',
+    '#attributes' => ['class' => ['masked-phone']],
+    '#default_value' => empty($user_info['phone']) ? '' : $user_info['phone'],
+  );
+
+  $pane_form['callme'] = array(
+    '#title' => t('Call me to get details about my order and delivery'),
+    '#type' => 'checkbox',
+    '#default_value' => empty($user_info['address']['callme']) ? '' : $user_info['address']['callme'],
+  );
+
+    return $pane_form;
+}
+
+/**
+ * Shipping service callback: validates the shipping service details.
+ */
+function pickpoint_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
+{
+  $order_wr = entity_metadata_wrapper('commerce_order', $order);
+  $field_name = commerce_physical_order_shipping_field_name($order);
+  $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+
+  $validate = true;
+  if (empty($field_data["pickpoint"]["point"]) || isset($field_data["pickpoint"]["point"]["err"])) {
+    form_set_error(implode('][', array_merge($form_parents, ['select'])), 'Выберите пункт доставки на карте и нажмите "Выбрать отделение"');
+    $validate = false;
+  }
+
+  $field = 'username';
+  if (empty($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Заполните это поле');
+    $validate = false;
+  }
+  if (drupal_strlen($details_values[$field]) < 5) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Поле заполнено некорректно');
+    $validate = false;
+  }
+  $field = 'phone';
+  if (!ext_user_valid_phone($details_values[$field])) {
+    form_set_error(implode('][', array_merge($form_parents, [$field])), 'Укажите в формате 7 (xxx) xxx-xxxx');
+    $validate = false;
+  }
+
+  return $validate;
+}
+
+/**
+ * Shipping service callback
+ */
+function pickpoint_service_details_form_submit($details_form, $details_values, $line_item)
+{
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
+  $order_wrapper->field_username = $details_values['username'];
+  $order_wrapper->field_phone = ext_user_normalize_phone($details_values['phone']);
+  $order_wrapper->commerce_customer_shipping->field_callme = $details_values['callme'];
+  $order_wrapper->commerce_customer_shipping->save();
+  $order_wrapper->save();
+}
+
+/**
+ * Implements hook_preprocess_page
+ */
+function pickpoint_preprocess_page(&$vars)
+{
+  if (arg(0) == 'checkout' && empty(arg(2))) {
+    // добавляем скрипт Pickpoint
+    drupal_add_js('https://pickpoint.ru/select/postamat.js', ['type' => 'external', 'scope' => 'footer']);
+    drupal_add_js(drupal_get_path('module', 'pickpoint') . '/js/pickpoint.js', ['scope' => 'footer']);
+  }
+}
+
+// callback функция, возвращающая информацию о доставке для заказов
+function pickpoint_shipping_service_info($item, $shipping_profile)
+{
+  $component_data = empty($item->commerce_total['und'][0]['data']) ? [] : $item->commerce_total['und'][0]['data'];
+  $field_data = empty($shipping_profile->field_data['und'][0]['value']) ? null : json_decode($shipping_profile->field_data['und'][0]['value'], true);
+  $point_id = null;
+
+  // адрес
+  $address = empty($component_data['address']) ? '' : $component_data['address'];
+
+  // на время сохранения последствий ошибки
+  if (!$address && !empty($field_data['pickpoint']['point']['address'])) {
+    $address = $field_data['pickpoint']['point']['address'];
+  }
+
+  if (!$point_id && !empty($field_data['pickpoint'])) {
+    if (!empty($field_data['pickpoint']['point']['id'])) $point_id = $field_data['pickpoint']['point']['id'];
+  }
+
+  return [
+    'title' => $item->line_item_label,
+    'method' => $item->commerce_shipping_service['und'][0]['value'],
+    'address' => $address,
+    'point_id' => $point_id,
+  ];
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function pickpoint_form_commerce_checkout_form_checkout_alter(&$form, &$form_state)
+{
+  // проверить, может быть для Pickpoint пункт уже выбран
+  // сбросить ошибку для модуля вывода ошибок под элементами
+  if (!empty($form_state['input']['commerce_shipping']['service_details']['pickpoint_set'])) {
+    unset($form_state['storage']['errors']['commerce_shipping][service_details][select']);
+  }
+}

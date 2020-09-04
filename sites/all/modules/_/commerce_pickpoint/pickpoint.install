@@ -1,0 +1,39 @@
+<?php
+
+/**
+ * @file
+ * Install function for the commerce_rbspayment module.
+ */
+
+/**
+ * Implementation of hook_requirements().
+ *
+ * Verifies that PHP CURL library is installed on the server
+ */
+function pickpoint_requirements($phase)
+{
+	$t = get_t();
+	$has_curl = function_exists('curl_init');
+	$requirements['pickpoint_curl'] = array(
+		'title' => $t('cURL'),
+		'value' => $has_curl ? $t('Enabled') : $t('Not found'),
+	);
+	if (!$has_curl) {
+		$requirements['pickpoint_curl']['severity'] = REQUIREMENT_ERROR;
+		$requirements['pickpoint_curl']['description'] = $t("Pickpoint зависит от <a href='!curl_url'>cURL</a> библиотеки.", array('!curl_url' => "<a href='http://php.net/manual/en/curl.setup.php'>http://php.net/manual/en/curl.setup.php</a>"));
+	}
+	return $requirements;
+}
+
+/**
+ * @file
+ * Uninstall function for the pickpoint module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function pickpoint_uninstall()
+{
+	variable_del('commerce_pickpoint_session');
+}
