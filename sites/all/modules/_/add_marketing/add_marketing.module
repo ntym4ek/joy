@@ -59,10 +59,10 @@ function add_marketing_commerce_order_presave($order)
 {
   if (empty($order->original)) return;
 
-  // при удачной оплате Cбером отправить событие Purchase
-  if ($order->original->status != 'paid' && $order->status == 'paid'
-      && isset($order->data['payment_method']) && $order->data['payment_method'] == 'commerce_rbspayment_custom|commerce_payment_commerce_rbspayment_custom') {
-
+  // при оформлении заказа покупателем отправить событие Purchase
+  if  (($order->original->status == 'checkout_checkout' && $order->status == 'pending')
+    || ($order->original->status == 'checkout_checkout' && $order->status == 'checkout_payment')
+  ) {
     if (!user_has_role(PRODUCT_MANAGER_ROLE_ID, $GLOBALS['user'])) {
       $order_wr = entity_metadata_wrapper('commerce_order', $order);
       fbq('Purchase', ['total' => $order_wr->commerce_order_total->amount->value()/100]);
