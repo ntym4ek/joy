@@ -163,16 +163,13 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   $form['commerce_payment']['payment_details'] = [];
   if (isset($form['commerce_payment']['commerce_payment_messages'])) unset($form['commerce_payment']['commerce_payment_messages']);
 
-  // для третьей тарифной зоны убрать постоплату
-  if (isset($shipping_profile->field_data["und"][0]["value"])) {
-    $field_data = json_decode($shipping_profile->field_data["und"][0]["value"], true);
-    $kladr = $field_data['region']['data']['kladr_id'];
-    if ($parameters = ext_checkout_get_free_shipping_parameters($kladr)) {
-      if ($parameters[0]['zone'] == 3) {
-        unset($form["commerce_payment"]["payment_method"]["#options"]["pay_on_delivery|commerce_payment_pay_on_delivery"]);
-      }
-    }
+
+  // для заказов дороже заданного значения убрать постоплату
+  $order_total_amount = $order_wr->commerce_order_total->amount->value();
+  if (variable_get('prepaid_order_sum', 2000) && $order_total_amount/100 > variable_get('prepaid_order_sum', 2000)) {
+    unset($form["commerce_payment"]["payment_method"]["#options"]["pay_on_delivery|commerce_payment_pay_on_delivery"]);
   }
+
 
   // при динамическом формировании списка методов оплаты (отключение онлайн методов при сумме заказа == 0 и исключении постоплаты для зоны 3)
   // отключенный метод может остаться в #default_value
@@ -239,7 +236,6 @@ function ext_checkout_form_commerce_checkout_form_checkout_alter(&$form, &$form_
   commerce_shipping_delete_shipping_line_items($form_state['order']);
 
   /** -------------------------------------------- блок Order Summary ---------------------------------------------------- */
-  $order_wr = entity_metadata_wrapper('commerce_order', $form_state['order']);
   $order_total = $order_wr->commerce_order_total->value();
   $products_amount = commerce_price_component_total($order_total, 'base_price')['amount'];
   $userpoints_amount = commerce_price_component_total($order_total, 'userpoints')['amount'];
