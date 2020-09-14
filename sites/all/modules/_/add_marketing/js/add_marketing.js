@@ -30,6 +30,22 @@
       }
 
       // -------------------------------- Events Fire -----------------------
+      // отследить событие авторизации и регистрации
+      $(".user-form-container .form-submit").click(function() {
+        // отследить нажатие сабмита
+        localStorage.login = $(".form-item-name input").val();
+      });
+      if (localStorage.login != undefined && Drupal.settings.user.uid) {
+        // если с момента создания пользователя до открытия страницы не более 5 минут,
+        // то он новорег
+        if (Date.now() - Drupal.settings.user.created*1000 < 300000) {
+          onUserRegistration(localStorage.login);
+        } else {
+          onUserAuthorization(localStorage.login);
+        }
+        localStorage.removeItem("login");
+      }
+
 
 
       $(document).scroll(function(){
@@ -93,6 +109,12 @@
       function onResizeEvent() {
         // GTMcheckCardsImpressions();
       }
+      function onUserAuthorization(login) {
+        GTMuserAuthorization(login);
+      }
+      function onUserRegistration(login) {
+        GTMuserRegistration(login);
+      }
       function onAddToCartEvent(el) {
         // FB
         fbq('track', 'AddToCart');
@@ -139,6 +161,30 @@
       // });
 
       // ------------------------- GTM -----------------------------------------
+      // ------------------------- Authorization
+      function GTMuserAuthorization(login) {
+        var type = login.indexOf("@") !== -1 ? "При помощи e-mail" : "При помощи телефона";
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'UA event',
+          'eventCategory': 'Авторизация',
+          'eventAction': type,
+          'virtualPage': '/virtual/authorization',
+          'virtualPageTitle': 'Авторизация',
+        });
+      }
+      // ------------------------- Registration
+      function GTMuserRegistration(login) {
+        var type = login.indexOf("@") !== -1 ? "При помощи e-mail" : "При помощи телефона";
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'UA event',
+          'eventCategory': 'Регистрация',
+          'eventAction': type,
+          'virtualPage': '/virtual/registration',
+          'virtualPageTitle': 'Регистрация'
+        });
+      }
       // ------------------------- Checkout Complete
       function GTMCheckoutCompleteEvent(total) {
         window.dataLayer = window.dataLayer || [];

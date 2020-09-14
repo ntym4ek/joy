@@ -1,6 +1,22 @@
 <?php
 
 /**
+ * Implements hook_menu().
+ */
+function add_marketing_menu()
+{
+  $items['admin/config/joy/marketing'] = array(
+    'title' => 'Настройки маркетинга',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('add_marketing_settings'),
+    'access arguments' => array('access manager settings'),
+    'file' => 'includes/add_marketing.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
  * Implements hook_page_build().
  */
 function add_marketing_page_build(&$page)
@@ -69,6 +85,7 @@ function add_marketing_commerce_order_presave($order)
     }
   }
 }
+
 
 /*
  * ---------------------------- Facebook ---------------------------------------
@@ -151,4 +168,10 @@ function add_marketing_preprocess_page(&$vars)
 //  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
     drupal_add_js(drupal_get_path('module', 'add_marketing') . '/js/add_marketing.js');
 //  }
+  drupal_add_js(array(
+    'user' => [
+      'uid' => $GLOBALS['user']->uid,
+      'created' => empty($GLOBALS["user"]->created) ? null : $GLOBALS["user"]->created,
+    ]
+  ), 'setting');
 }

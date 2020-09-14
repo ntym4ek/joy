@@ -36,7 +36,7 @@ function commerce_helper_settings($form, &$form_state)
 
     $form['prepaid_order_sum'] = array(
         '#type' => 'textfield',
-        '#title' => 'Сумма заказа для отправки только по предоплат',
+        '#title' => 'Сумма заказа для отправки только по предоплате',
         '#description' => 'Сумма, от которой заказ можно оформить только с предоплатой. 0 - отключить ограничение.',
         '#default_value' => variable_get('prepaid_order_sum', 2000),
         '#required' => TRUE,
