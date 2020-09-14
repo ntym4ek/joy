@@ -30,24 +30,6 @@
       }
 
       // -------------------------------- Events Fire -----------------------
-      // отследить событие авторизации и регистрации
-      $(".user-form-container .form-submit").click(function() {
-        // отследить нажатие сабмита
-        localStorage.login = $(".form-item-name input").val();
-      });
-      if (localStorage.login != undefined && Drupal.settings.user.uid) {
-        // если с момента создания пользователя до открытия страницы не более 5 минут,
-        // то он новорег
-        if (Date.now() - Drupal.settings.user.created*1000 < 300000) {
-          onUserRegistration(localStorage.login);
-        } else {
-          onUserAuthorization(localStorage.login);
-        }
-        localStorage.removeItem("login");
-      }
-
-
-
       $(document).scroll(function(){
         onScrollEvent();
       });
@@ -85,11 +67,50 @@
       });
 
       $('.commerce-checkout-form-checkout').once(function() {
-        // payment method choose
+        // отследить событие авторизации и регистрации ------------------------
+        $(".user-form-container .form-submit").click(function() {
+          // отследить нажатие сабмита
+          localStorage.login = $(".form-item-name input").val();
+        });
+        if (localStorage.login != undefined && Drupal.settings.user.uid) {
+          // если с момента создания пользователя до открытия страницы не более 5 минут,
+          // то он новорег
+          if (Date.now() - Drupal.settings.user.created*1000 < 300000) {
+            onUserRegistration(localStorage.login);
+          } else {
+            onUserAuthorization(localStorage.login);
+          }
+          localStorage.removeItem("login");
+        }
+
+        // todo отследить применение промокода -------------------------------------
+        $(".commerce_coupon [name=coupon_add]").bind('mousedown touchstart', function() {
+          // отследить нажатие сабмита
+          localStorage.promocode = $(".form-item-commerce-coupon-coupon-code input").val();
+        });
+        if (localStorage.promocode != undefined) {
+          var promocode_redeemed = $(".commerce_coupon .views-field-code").text();
+          onUserPromocodeUse(localStorage.promocode.trim(), promocode_redeemed.trim());
+          localStorage.removeItem("promocode");
+        }
+
+        // отследить событие списания баллов ----------------------------------
+        $("#commerce-userpoints-discount [name=cup_submit]").bind('mousedown touchstart', function() {
+          // отследить нажатие сабмита
+          localStorage.userpoints = $(".form-item-commerce-userpoints-discount-custom-amount input").val();
+        });
+        if (localStorage.userpoints != undefined) {
+          var points_redeemed = $(".commerce-userpoints-info").data("points-redeemed");
+          onUserPointsUse(localStorage.userpoints, points_redeemed);
+          localStorage.removeItem("userpoints");
+        }
+
+
+        // payment method choose ----------------------------------------------
         $('.commerce_payment label.control-label').one('click', function() {
           onPaymentClickEvent(this);
         });
-        // shipping method choose
+        // shipping method choose ---------------------------------------------
         $('.commerce_shipping label.control-label').one('click', function() {
           onDeliveryClickEvent(this);
         });
@@ -130,6 +151,12 @@
       }
       function onCheckoutInitEvent() {
         GTMCheckoutSendData();
+      }
+      function onUserPromocodeUse(promocode_used, promocode_redeemed) {
+        GTMuserPromocodeUse(promocode_used, promocode_redeemed);
+      }
+      function onUserPointsUse(points_used, points_redeemed) {
+        GTMuserPointsUse(points_used, points_redeemed);
       }
       function onDeliveryClickEvent(el) {
         var method = $(el).find('.carrier').text();
@@ -183,6 +210,30 @@
           'eventAction': type,
           'virtualPage': '/virtual/registration',
           'virtualPageTitle': 'Регистрация'
+        });
+      }
+      // ------------------------- Promocode use
+      function GTMuserPromocodeUse(promocode_used, promocode_redeemed) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'UA event',
+          'eventCategory': 'Активация промокода',
+          'eventAction': promocode_used,
+          'eventLabel': (promocode_used && (promocode_used === promocode_redeemed)) ? "Действителен" : "Не действителен",
+          'virtualPage': '/virtual/promo_code_activation',
+          'virtualPageTitle': 'Активация промо-кода'
+        });
+      }
+      // ------------------------- Userpoints use
+      function GTMuserPointsUse(points_used, points_redeemed) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'UA event',
+          'eventCategory': 'Использование баллов',
+          'eventAction': points_used,
+          'eventLabel': points_redeemed === 0 ? 'Не списано' : 'Списано',
+          'virtualPage': '/virtual/userpoints_use',
+          'virtualPageTitle': 'Использование баллов'
         });
       }
       // ------------------------- Checkout Complete
