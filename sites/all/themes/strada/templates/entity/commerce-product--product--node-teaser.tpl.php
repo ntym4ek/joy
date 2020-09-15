@@ -2,6 +2,7 @@
 ?>
 
 <div class="product teaser <?php print $classes; ?> clearfix ajax-host"
+      data-id="<? print $commerce_product->product_id; ?>"
       data-price="<? print $commerce_price[0]["amount"]/100; ?>"
       data-title="<? print $title; ?>"
       data-variant="<? print $volume; ?>">

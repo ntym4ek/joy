@@ -33,7 +33,7 @@ $line_item_info = ext_order_get_line_item_info($row->_field_data['commerce_line_
         <?php print $fields['field_p_image']->wrapper_prefix . $fields['field_p_image']->label_html . $fields['field_p_image']->content . $fields['field_p_image']->wrapper_suffix; ?>
     </div>
     <div class="ccf-info">
-        <div class="ccf-product">
+        <div class="ccf-product" data-id="<?php print $line_item_info['product_info']['id']; ?>" data-price="<?php print $line_item_info['product_info']['price_wo_format']; ?>" data-quantity="<?php print $line_item_info['qty']; ?>">
             <div class="ccf-title"><?php print $line_item_info['product_info']['title']; ?></div>
             <div class="ccf-options">
                 <?php foreach($line_item_info['options'] as $option) { print '<div>' . $option . '</div>'; } ?>

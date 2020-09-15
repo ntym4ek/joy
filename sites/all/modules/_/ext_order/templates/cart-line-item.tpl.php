@@ -3,7 +3,7 @@
     <img src="<?php print image_style_url('thumbnail', $product_info['image_uri']); ?>" alt="<?php print $product_info['title']; ?>" />
   </div>
   <div class="ccf-info">
-    <div class="ccf-product">
+    <div class="ccf-product" data-id="<?php print $product_info['id']; ?>">
       <div class="ccf-title"><?php print $product_info['title']; ?></div>
       <div class="ccf-options">
         <?php foreach($options as $option) { print '<div>' . $option . '</div>'; } ?>

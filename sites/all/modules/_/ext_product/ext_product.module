@@ -274,9 +274,11 @@ function ext_product_get_info($product)
   }
 
   return [
+    'id' => $pid,
     'title' => $title,
     'tare' => $tare,
     'summary' => $summary,
+    'price_wo_format' => $commerce_price['amount']/100,
     'price' => $price,
     'discount_percent' => $discount_percent,
     'node_url' => $node_url,

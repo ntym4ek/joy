@@ -38,16 +38,107 @@
         onResizeEvent();
       });
 
+      // отследить событие авторизации и регистрации ------------------------
+      $(".user-form-container .form-submit").click(function() {
+        // отследить нажатие сабмита
+        localStorage.login = $(".form-item-name input").val();
+      });
+      if (localStorage.login != undefined && Drupal.settings.user.uid) {
+        // если с момента создания пользователя до открытия страницы не более 5 минут,
+        // то он новорег
+        if (Date.now() - Drupal.settings.user.created*1000 < 300000) {
+          onUserRegistration(localStorage.login);
+        } else {
+          onUserAuthorization(localStorage.login);
+        }
+        localStorage.removeItem("login");
+      }
+
+
       // product click
       $('.product.teaser .p-title, .product.teaser .p-image').click(function() {
         var el = $(this).closest('.product.teaser');
         onCardClickEvent(el);
       });
-      // add to cart
-      $('a.btn-add-to-cart, .commerce-add-to-cart .form-submit').bind('mousedown touchstart', function() {
-        var el = $(this).closest('.product');
-        onAddToCartEvent(el);
+
+      // Добавить в корзину из каталога
+      $('a.btn-add-to-cart').once(function() {
+        $(this).bind('mousedown touchstart', function() {
+          var productList = $(this).closest(".row").children(".product-related-title").text().trim(); // products related
+          if (productList === "") {
+            productList = $(this).closest(".block").find("h2").text().trim(); // blocks
+          }
+
+          var list = "";
+          if ($("body").is(".front")) {
+            list = "Главная страница";
+          } else if ($("body").is(".page-node")) {
+            list = productList;
+          }
+
+          var el = $(this).closest('.product');
+          var action = "Нажали «Купить» из каталога";
+          onAddToCartEvent(list, action, {
+            "id": $(el).data("id"),
+            "name": $(el).data('title'),
+            "variant": $(el).data('variant'),
+            "price": $(el).data('price'),
+            "quantity": 1,
+            "list": productList,
+          });
+        });
       });
+      // Добавить в корзину из описания
+      $('.commerce-add-to-cart').once(function() {
+        $('.commerce-add-to-cart .form-submit').bind('mousedown touchstart', function() {
+          var el = $(this).closest('.product');
+          var list = "Карточка товара";
+          var action = "Нажали «Купить» из карточки товара";
+          onAddToCartEvent(list, action, {
+            "id": $("[name=product_id]").val(),
+            "name": $(el).data('title'),
+            "variant": $(".attribute-widgets > .form-item > label").text() + ": " + $(".attribute-widgets  .active.form-item > label").text().trim(),
+            "price": $(".product-breaf .price-amount").text().replace("₽", "").trim(),
+            "quantity": 1,
+          });
+        });
+      });
+      // Добавление и Удаление из на странице корзины
+      $('.ccf-item').once(function() {
+        var item = $(this);
+        item.find(".commerce-quantity-plusminus-link-increase a").bind('mousedown touchstart', function() {
+          onAddToCartEvent("Корзина", "Нажали плюс в корзине", {
+            "id": item.find(".ccf-product").data("id"),
+            "name": item.find(".ccf-title").text(),
+            "variant": item.find(".ccf-options").text().trim(),
+            "price": item.find(".ccf-product").data("price"),
+          });
+        });
+        item.find(".delete-line-item, .commerce-quantity-plusminus-link-decrease a").bind('mousedown touchstart', function() {
+          onDeleteFromCartEvent({
+            "id": item.find(".ccf-product").data("id"),
+            "name": item.find(".ccf-title").text(),
+            "variant": item.find(".ccf-options").text().trim(),
+            "price": item.find(".ccf-product").data("price"),
+          });
+        });
+      });
+
+      $('.commerce-add-to-cart').once(function() {
+        $('.commerce-add-to-cart .form-submit').bind('mousedown touchstart', function() {
+          var el = $(this).closest('.product');
+          var list = "Карточка товара";
+          var action = "Нажали «Купить» из карточки товара";
+          onAddToCartEvent(list, action, {
+            "id": $("[name=product_id]").val(),
+            "name": $(el).data('title'),
+            "variant": $(".attribute-widgets > .form-item > label").text() + ": " + $(".attribute-widgets  .active.form-item > label").text().trim(),
+            "price": $(".product-breaf .price-amount").text().replace("₽", "").trim(),
+            "quantity": 1,
+          });
+        });
+      });
+
       // add to wishlist
       $('a.add-to-wishlist').click(function() {
         onAddToWishlistEvent();
@@ -55,6 +146,16 @@
 
       $('body').once(function() {
         onPageLoadEvent();
+
+        // cart page open
+        if ($('body').is('.page-cart')) {
+          onCartOpenEvent();
+        }
+
+        // клик по кнопке "Перейти к оформлению"
+        $('.page-cart .checkout-continue').bind('mousedown touchstart', function() {
+          onCheckoutClickEvent();
+        });
 
         // checkout page open
         if ($('body').is('.page-checkout-checkout')) {
@@ -66,24 +167,9 @@
         }
       });
 
-      $('.commerce-checkout-form-checkout').once(function() {
-        // отследить событие авторизации и регистрации ------------------------
-        $(".user-form-container .form-submit").click(function() {
-          // отследить нажатие сабмита
-          localStorage.login = $(".form-item-name input").val();
-        });
-        if (localStorage.login != undefined && Drupal.settings.user.uid) {
-          // если с момента создания пользователя до открытия страницы не более 5 минут,
-          // то он новорег
-          if (Date.now() - Drupal.settings.user.created*1000 < 300000) {
-            onUserRegistration(localStorage.login);
-          } else {
-            onUserAuthorization(localStorage.login);
-          }
-          localStorage.removeItem("login");
-        }
 
-        // todo отследить применение промокода -------------------------------------
+      $('.commerce-checkout-form-checkout').once(function() {
+        // отследить применение промокода -------------------------------------
         $(".commerce_coupon [name=coupon_add]").bind('mousedown touchstart', function() {
           // отследить нажатие сабмита
           localStorage.promocode = $(".form-item-commerce-coupon-coupon-code input").val();
@@ -106,12 +192,19 @@
         }
 
 
+
         // payment method choose ----------------------------------------------
-        $('.commerce_payment label.control-label').one('click', function() {
+        // отправить при загрузке страницы
+        onPaymentClickEvent($('.commerce_payment .active label.control-label'));
+        // отправить при выборе
+        $('.commerce_payment label.control-label').on('click', function() {
           onPaymentClickEvent(this);
         });
         // shipping method choose ---------------------------------------------
-        $('.commerce_shipping label.control-label').one('click', function() {
+        // отправить при загрузке страницы
+        onDeliveryClickEvent($('.commerce_shipping .active label.control-label'));
+        // отправить при выборе
+        $('.commerce_shipping label.control-label').on('click', function() {
           onDeliveryClickEvent(this);
         });
       });
@@ -136,19 +229,28 @@
       function onUserRegistration(login) {
         GTMuserRegistration(login);
       }
-      function onAddToCartEvent(el) {
-        // FB
+      function onAddToCartEvent(list, action, item) {
         fbq('track', 'AddToCart');
-        // GTM
-        GTMaddToCartSendData(el);
+        GTMaddToCartSendData(list, action, item);
+      }
+      function onDeleteFromCartEvent(item) {
+        GTMdeleteFromCartSendData(item);
       }
       function onCardClickEvent(el) {
         GTMclickCardSendData(el);
       }
       function onAddToWishlistEvent() {
-        // FB
         fbq('track', 'AddToWishlist');
       }
+      function onCartOpenEvent() {
+        saveCartContentToLocalStorage();
+        GTMcartOpenSendData();
+      }
+
+      function onCheckoutClickEvent() {
+        saveCartContentToLocalStorage();
+      }
+
       function onCheckoutInitEvent() {
         GTMCheckoutSendData();
       }
@@ -159,28 +261,24 @@
         GTMuserPointsUse(points_used, points_redeemed);
       }
       function onDeliveryClickEvent(el) {
-        var method = $(el).find('.carrier').text();
-        GTMDeliveryClickSendData(method);
-      }
-      function onPaymentClickEvent(el) {
-        var method = $(el).find('.carrier').text();
-        GTMDPaymentClickSendData(method);
-        fbq('track', 'AddPaymentInfo');
-      }
-      function onCheckoutCompleteEvent() {
-        var paid = $('.order-complete .oc-total').data('paid');
-        var total = $('.order-complete .oc-total').data('total');
-        if (paid) {
-          GTMCheckoutCompleteEvent(total);
+        var method = $(el).find(".carrier").text();
+        if (method) {
+          GTMDeliveryClickSendData(method);
         }
       }
+      function onPaymentClickEvent(el) {
+        var method = $(el).find(".carrier").text();
+        if (method) {
+          GTMDPaymentClickSendData(method);
+          fbq("track", "AddPaymentInfo");
+        }
+      }
+      function onCheckoutCompleteEvent() {
+        // var paid = $('.order-complete .oc-total').data('paid');
+        var total = $('.order-complete .oc-total').data('total');
+          GTMCheckoutCompleteEvent(total);
+      }
 
-
-      // // FB начало оформления
-      // $('.commerce-cart-form-checkout .checkout-continue').click(function() {
-      //   fbq('track', 'InitiateCheckout');
-      // });
-      // // FB завершение оформления (со страницы )
       //
       // $('.commerce-checkout-form-checkout .checkout-continue').click(function() {
       //   var total = $('.checkout-summary .cs-total').data('cs-total');
@@ -198,6 +296,7 @@
           'eventAction': type,
           'virtualPage': '/virtual/authorization',
           'virtualPageTitle': 'Авторизация',
+          'userId': Drupal.settings.user.uid,
         });
       }
       // ------------------------- Registration
@@ -209,7 +308,8 @@
           'eventCategory': 'Регистрация',
           'eventAction': type,
           'virtualPage': '/virtual/registration',
-          'virtualPageTitle': 'Регистрация'
+          'virtualPageTitle': 'Регистрация',
+          'userId': Drupal.settings.user.uid,
         });
       }
       // ------------------------- Promocode use
@@ -221,7 +321,8 @@
           'eventAction': promocode_used,
           'eventLabel': (promocode_used && (promocode_used === promocode_redeemed)) ? "Действителен" : "Не действителен",
           'virtualPage': '/virtual/promo_code_activation',
-          'virtualPageTitle': 'Активация промо-кода'
+          'virtualPageTitle': 'Активация промо-кода',
+          'userId': Drupal.settings.user.uid,
         });
       }
       // ------------------------- Userpoints use
@@ -233,32 +334,38 @@
           'eventAction': points_used,
           'eventLabel': points_redeemed === 0 ? 'Не списано' : 'Списано',
           'virtualPage': '/virtual/userpoints_use',
-          'virtualPageTitle': 'Использование баллов'
+          'virtualPageTitle': 'Использование баллов',
+          'userId': Drupal.settings.user.uid,
         });
       }
-      // ------------------------- Checkout Complete
-      function GTMCheckoutCompleteEvent(total) {
-        window.dataLayer = window.dataLayer || [];
-        dataLayer.push({
-          'event': 'orderPaid',
-          'ecommerce': {
-            'currencyCode': 'RUB',
-            'checkout': {
-              'actionField': {revenue: total},
-            }
-          },
-        });
-      }
-      // ------------------------- Choose Payment Method
-      function GTMDPaymentClickSendData(method) {
+
+
+      // ------------------------- Cart page open
+      function GTMcartOpenSendData() {
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
           'ecommerce': {
             'checkout': {
-              'actionField': {'step': 2, 'option': method},
+              'actionField': {'step': 1, 'action': 'checkout'},
+              'products' : getCartContentFromLocalStorage()
             }
           },
+          'userId': Drupal.settings.user.uid,
+        });
+      }
+      // ------------------------- Checkout page open
+      function GTMCheckoutSendData() {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'checkout',
+          'ecommerce': {
+            'checkout': {
+              'actionField': {'step': 2, 'action': 'checkout'},
+              'products' : getCartContentFromLocalStorage()
+            }
+          },
+          'userId': Drupal.settings.user.uid,
         });
       }
       // ------------------------- Choose Delivery Method
@@ -269,37 +376,75 @@
           'ecommerce': {
             'checkout': {
               'actionField': {'step': 3, 'option': method},
+              'products' : getCartContentFromLocalStorage()
             }
           },
+          'userId': Drupal.settings.user.uid,
         });
       }
-      // ------------------------- Checkout page open
-      function GTMCheckoutSendData() {
+      // ------------------------- Choose Payment Method
+      function GTMDPaymentClickSendData(method) {
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
           'ecommerce': {
             'checkout': {
-              'actionField': {'step': 1},
+              'actionField': {'step': 5, 'option': method},
+              'products' : getCartContentFromLocalStorage()
+            }
+          },
+          'userId': Drupal.settings.user.uid,
+        });
+      }
+
+      // ------------------------- Checkout Complete
+      function GTMCheckoutCompleteEvent(total) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'orderPaid',
+          'ecommerce': {
+            'currencyCode': 'RUB',
+            'checkout': {
+              'actionField': {revenue: total},
+              'products' : getCartContentFromLocalStorage()
             }
           },
         });
       }
+
+
       // ------------------------- Add to  Cart
-      function GTMaddToCartSendData(el) {
+      function GTMaddToCartSendData(list, action, item) {
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
+          'event': 'addToCart',
+          'eventCategory': 'Добавление в корзину',
+          'eventAction': action,
+          'eventLabel': item.name,
           'ecommerce': {
-            'currencyCode': 'RUB',
             'add': {
-              'products': [{
-                'name':  $(el).data('title'),
-                'price': $(el).data('price'),
-                'variant': $(el).data('variant'),
-                'quantity': 1
-              }]
+              'actionField': {'list': list},
+              'products': [item]
             }
           },
+          'userId': Drupal.settings.user.uid,
+        });
+      }
+
+      // ------------------------- Delete From Cart
+      function GTMdeleteFromCartSendData(item) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'removeFromCart',
+          'eventCategory': 'ecommerce',
+          'eventAction': 'removeFromCart',
+          'eventLabel': item.name,
+          'ecommerce': {
+            'remove': {
+              'products': [item]
+            }
+          },
+          'userId': Drupal.settings.user.uid,
         });
       }
 
@@ -309,53 +454,40 @@
           var el = $(".product.full");
           var price = $(el).data('price');
           if (price) {
-            window.dataLayer = window.dataLayer || [];
-            dataLayer.push({
-              'ecommerce': {
-                'currencyCode': 'RUB',
-                'detail': {
-                  'actionField': {'list': ''},
-                  'products': [{
-                    'name':  $(el).data('title'),
-                    'price': $(el).data('price'),
-                    'variant': $(el).data('variant'),
-                  }]
-                }
-              },
-            });
+            // window.dataLayer = window.dataLayer || [];
+            // dataLayer.push({
+            //   'ecommerce': {
+            //     'currencyCode': 'RUB',
+            //     'detail': {
+            //       'actionField': {'list': ''},
+            //       'products': [{
+            //         'name':  $(el).data('title'),
+            //         'price': $(el).data('price'),
+            //         'variant': $(el).data('variant'),
+            //       }]
+            //     }
+            //   },
+            // });
           }
         }
       }
 
       // ------------------------- Card Click
       function GTMclickCardSendData(el) {
-        console.log({
-          'ecommerce': {
-            'currencyCode': 'RUB',
-            'click': {
-              'actionField': {'list': ''},
-              'products': [{
-                'name':  $(el).data('title'),
-                'price': $(el).data('price'),
-                'variant': $(el).data('variant'),
-              }]
-            }
-          },
-        });
         window.dataLayer = window.dataLayer || [];
-        dataLayer.push({
-          'ecommerce': {
-            'currencyCode': 'RUB',
-            'click': {
-              'actionField': {'list': ''},
-              'products': [{
-                'name':  $(el).data('title'),
-                'price': $(el).data('price'),
-                'variant': $(el).data('variant'),
-              }]
-            }
-          },
-        });
+        // dataLayer.push({
+        //   'ecommerce': {
+        //     'currencyCode': 'RUB',
+        //     'click': {
+        //       'actionField': {'list': ''},
+        //       'products': [{
+        //         'name':  $(el).data('title'),
+        //         'price': $(el).data('price'),
+        //         'variant': $(el).data('variant'),
+        //       }]
+        //     }
+        //   },
+        // });
       }
       // ------------------------- Card Impressions
       function GTMcheckCardsImpressions() {
@@ -384,18 +516,18 @@
             $(el).data('was-impressed', true);
             // послать информацию
             window.dataLayer = window.dataLayer || [];
-            dataLayer.push({
-              'event': 'ProductImpressions',
-              'ecommerce': {
-                'currencyCode': 'RUB',
-                'impressions': [
-                  {
-                    'name': $(el).data('title'),
-                    'price': $(el).data('price'),
-                    'variant': $(el).data('variant'),
-                  }]
-              },
-            });
+            // dataLayer.push({
+            //   'event': 'ProductImpressions',
+            //   'ecommerce': {
+            //     'currencyCode': 'RUB',
+            //     'impressions': [
+            //       {
+            //         'name': $(el).data('title'),
+            //         'price': $(el).data('price'),
+            //         'variant': $(el).data('variant'),
+            //       }]
+            //   },
+            // });
           }
         } else {
           // если элемент ещё не был показан и не виден, то все следующие также не видны,
@@ -405,6 +537,26 @@
           }
         }
         return true;
+      }
+
+      // сохранить корзину в localStorage
+      function saveCartContentToLocalStorage() {
+        if ($('body').is('.page-cart')) {
+          var items = [];
+          $(".view-items .view-item").each(function () {
+            items.push({
+              "id": $(this).find(".ccf-product").data("id"),
+              "name": $(this).find(".ccf-title").text(),
+              "variant": $(this).find(".ccf-options").text().trim(),
+              "price": $(this).find(".ccf-product").data("price"),
+              "quantity": $(this).find(".ccf-product").data("quantity"),
+            });
+          });
+          localStorage.cartProducts = JSON.stringify(items);
+        }
+      }
+      function getCartContentFromLocalStorage() {
+        return localStorage.cartProducts !== undefined ? JSON.parse(localStorage.cartProducts) : false;
       }
 
     }

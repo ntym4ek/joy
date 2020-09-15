@@ -81,8 +81,7 @@
 ?>
 <article id="node-<?php print $node->nid; ?>" class="product full <?php print $classes; ?>"<?php print $attributes; ?> itemscope itemtype="http://schema.org/Product"
          data-price="<? print $content["product:commerce_price"]["#items"][0]["amount"]/100; ?>"
-         data-title="<? print $title; ?>"
-         data-variant="">
+         data-title="<? print $title; ?>">
 
   <div class="row">
     <div class="product-intro col-xs-12">

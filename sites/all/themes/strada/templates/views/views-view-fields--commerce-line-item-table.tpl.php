@@ -31,7 +31,7 @@ $line_item_info = ext_order_get_line_item_info($row->_field_data['line_item_id']
 
 <div class="ccf-item">
     <div class="ccf-info">
-        <div class="ccf-product">
+        <div class="ccf-product" data-id="<?php print $line_item_info['product_info']['id']; ?>">
             <div class="ccf-title"><?php print $line_item_info['product_info']['title']; ?></div>
             <div class="ccf-options">
                 <?php foreach($line_item_info['options'] as $option) { print '<div>' . $option . '</div>'; } ?>

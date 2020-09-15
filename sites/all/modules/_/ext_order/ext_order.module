@@ -545,7 +545,7 @@ function ext_order_get_line_item_info($line_item)
     $result = [
       'product_info' => $product_info,
       'options' => $options,
-      'qty' => $line_item_wr->quantity->value(),
+      'qty' => (int)$line_item_wr->quantity->value(),
       'qty_formatted' => (int)$line_item_wr->quantity->value() . ' шт.',
       'total' => $line_item_wr->commerce_total->amount->value()/100,
       'total_formatted' => commerce_currency_format($line_item_wr->commerce_total->amount->value(), 'RUB'),
