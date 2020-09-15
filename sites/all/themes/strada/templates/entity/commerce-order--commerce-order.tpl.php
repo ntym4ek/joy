@@ -21,13 +21,13 @@ if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout')
 $payment_widget = '';
 if ($payment['before_shipping']) {
     if ($payment['balance']) {
-        if ($payment['is_online'] && $view_mode == 'customer') {
+        if ($payment['is_online']) {
             $payment_widget =   '<div class="well">' .
                                     '<h4>Ожидание поступления оплаты</h4>' .
                                     '<p>Если Вы уже оплатили заказ онлайн, информация об оплате поступит к нам в течение нескольких минут.<br />Обновите страницу, чтобы увидеть поступление оплаты.</p>' .
                                     '<p>Если оплата была неудачной, Вы можете попробовать ещё раз.</p>' .
               ($have_yandex_payment ? '<a href="/user/' . $user['uid'] . '/orders/' . $order_info['id'] . '/pay/yandex" style="margin-right: 16px;" class="btn btn-primary">Оплатить онлайн через Яндекс.Кассу</a>' : '') .
-              (($have_sber_payment && user_has_role(PRODUCT_MANAGER_ROLE_ID)) ? '<a href="/user/' . $user['uid'] . '/orders/' . $order_info['id'] . '/pay/sberbank" class="btn btn-primary">Оплатить онлайн через Сбербанк</a>' : '') .
+              ($have_sber_payment  ? '<a href="/user/' . $user['uid'] . '/orders/' . $order_info['id'] . '/pay/sberbank" class="btn btn-primary">Оплатить онлайн через Сбербанк</a>' : '') .
 //              (($have_sber_payment) ? '<a href="/user/' . $user['uid'] . '/orders/' . $order_info['id'] . '/pay/sberbank" class="btn btn-primary">Оплатить онлайн через Сбербанк</a>' : '') .
                                 '</div>';
         } else {

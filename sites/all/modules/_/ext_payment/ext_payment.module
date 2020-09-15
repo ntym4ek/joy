@@ -27,6 +27,7 @@ function ext_payment_commerce_rbspayment_custom_receipt_alter(&$config, $order)
 
   $items = array();
   $itemsCnt = 1;
+  $line_item_shipping_id = 0;
 
   foreach ($order_wr->commerce_line_items as $key => $line_item_wr) {
     $line_item_id = $line_item_wr->getIdentifier();
@@ -65,43 +66,49 @@ function ext_payment_commerce_rbspayment_custom_receipt_alter(&$config, $order)
           $item['itemAttributes']['attributes'] = $attributes;
 
         }
-
+        $items[] = $item;
       }
+
       if ($line_item_type == 'shipping') {
-        $item = [
-          'positionId' => $itemsCnt++,
-          'itemAmount' => $items_with_spread[$line_item_id]['amount'],
-          'name' => $line_item_wr->line_item_label->value(),
-          'itemPrice' => $items_with_spread[$line_item_id]['amount'],
-          'quantity' => [
-            'value' => 1,
-            'measure' => 'шт'
-          ],
-          'tax' => [
-            'taxType' => 0 //
-          ],
-          'itemCode' => $line_item_wr->line_item_id->value()
-        ];
-
-        // FFD 1.05 added
-        if ($config['ffd_version'] == 'v105') {
-
-          $attributes = [];
-          $attributes[] = [
-            "name" => "paymentMethod",
-            "value" => 4
-          ];
-          $attributes[] = [
-            "name" => "paymentObject",
-            "value" => 4
-          ];
-
-          $item['itemAttributes']['attributes'] = $attributes;
-        }
+        $line_item_shipping_id =  $line_item_wr->getIdentifier();
       }
 
-      $items[] = $item;
+
     }
+  }
+
+  if (!empty($items_with_spread[$line_item_shipping_id])) {
+    $item = [
+      'positionId' => $itemsCnt,
+      'itemAmount' => $items_with_spread[$line_item_shipping_id]['amount'],
+      'name' => $items_with_spread[$line_item_shipping_id]['title'],
+      'itemPrice' => $items_with_spread[$line_item_shipping_id]['amount'],
+      'quantity' => [
+        'value' => 1,
+        'measure' => 'шт'
+      ],
+      'tax' => [
+        'taxType' => 0
+      ],
+      'itemCode' => $line_item_shipping_id
+    ];
+
+    // FFD 1.05 added
+    if ($config['ffd_version'] == 'v105') {
+
+      $attributes = [];
+      $attributes[] = [
+        "name" => "paymentMethod",
+        "value" => 4
+      ];
+      $attributes[] = [
+        "name" => "paymentObject",
+        "value" => 4
+      ];
+
+      $item['itemAttributes']['attributes'] = $attributes;
+    }
+    $items[] = $item;
   }
 
   $config['order_bundle'] = array(
@@ -139,6 +146,7 @@ function ext_payment_get_items_with_spread_discount($order)
   // добавить товары с доставкой в чек
   // на стоимость товаров раскинуть сумму фиксированной скидки
   $total_w_koef = $amount_sh = $line_item_id_sh = 0;
+  $line_item_shipping = null;
   foreach ($order_wr->commerce_line_items as $delta => $line_item_wr) {
     if (in_array($line_item_wr->getBundle(), commerce_product_line_item_types())) {
 
@@ -147,7 +155,7 @@ function ext_payment_get_items_with_spread_discount($order)
 
       $quantity = $line_item_wr->quantity->value();
       $items[$line_item_wr->getIdentifier()] = [
-        'type' => 'shipping',
+        'type' => $line_item_wr->getBundle(),
         'title' => $line_item_wr->commerce_product->label(),
         'price' => $amount_w_koef,
         'amount' => $amount_w_koef*$quantity,
@@ -157,8 +165,7 @@ function ext_payment_get_items_with_spread_discount($order)
     }
 
     if ($line_item_wr->getBundle() == 'shipping') {
-      $amount_sh = $line_item_wr->commerce_total->amount->value();
-      $line_item_id_sh = $line_item_wr->getIdentifier();
+      $line_item_shipping = $line_item_wr;
     }
   }
 
@@ -166,11 +173,16 @@ function ext_payment_get_items_with_spread_discount($order)
   $diff = $product_total - $discount_total - $total_w_koef;
 
   // добавляем разницу на доставку
-  if ($line_item_id_sh) {
-    $items[$line_item_wr->getIdentifier()] = [
+  // записи о доставке может не быть, добавляем с id = 0
+  if ($diff || $line_item_shipping) {
+    $line_item_id = $line_item_shipping ? $line_item_shipping->getIdentifier() : 0;
+    $amount = $line_item_shipping ? $line_item_shipping->commerce_total->amount->value() : 0;
+    $title = $line_item_shipping ? $line_item_shipping->label() : 'Доставка';
+    $items[$line_item_id] = [
       'type' => 'shipping',
-      'amount' => $amount_sh + $diff,
-      'price' => $amount_sh + $diff,
+      'title' => $title,
+      'amount' => $amount + $diff,
+      'price' => $amount + $diff,
     ];
   }
 
