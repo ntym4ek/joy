@@ -54,8 +54,6 @@
         localStorage.removeItem("login");
       }
 
-
-
       // product click
       $('.product.teaser .p-title, .product.teaser .p-image').once(function() {
         $(this).click(function() {
@@ -158,6 +156,14 @@
         if ($('body').is('.page-checkout-complete')) {
           onCheckoutCompleteEvent();
         }
+
+        // обработчик для кнопки карусели (тк js, то кнопка появляется не сразу)
+        setTimeout(function() {
+          $(".flex-direction-nav .flex-next").click(function(){
+            onCarouselNextClickEvent();
+          });
+        }, 1000);
+
       });
 
 
@@ -207,7 +213,7 @@
 
       // -------------------------------- Events Processing --------------------
       function onPageLoadEvent() {
-        // GTMcheckCardsImpressions();
+        // просмотр описания товара
         if ($("body").is(".node-type-product")) {
           var el = $(".product.full");
           GTMshowFullCardSendData({
@@ -217,12 +223,19 @@
             "price": $(".product-breaf .price-amount").text().replace("₽", "").trim(),
           });
         }
+        setTimeout(function() {
+          GTMcheckCardsImpressions();
+        }, 1000);
+
       }
       function onScrollEvent() {
-        // GTMcheckCardsImpressions();
+        GTMcheckCardsImpressions();
       }
       function onResizeEvent() {
-        // GTMcheckCardsImpressions();
+        GTMcheckCardsImpressions();
+      }
+      function onCarouselNextClickEvent() {
+        setTimeout(GTMcheckCardsImpressions, 1000);
       }
       function onUserAuthorization(login) {
         GTMuserAuthorization(login);
@@ -406,6 +419,7 @@
               'products' : getCartContentFromLocalStorage()
             }
           },
+          'userId': Drupal.settings.user.uid,
         });
       }
 
@@ -483,52 +497,55 @@
       }
       // ------------------------- Card Impressions
       function GTMcheckCardsImpressions() {
-        $(".product.teaser").each(function(index) {
-          if (!GTMcheckCardPositionAndSendData(this)) {
-            return false;
-          }
+        $(".view-carousel .product.teaser").each(function(index) {
+          GTMcheckCardPositionAndSendData(this, $(this).closest(".view-carousel"));
+        });
+        $(".view:not(.view-carousel) .product.teaser, .field .product.teaser").each(function(index) {
+          GTMcheckCardPositionAndSendData(this);
         });
       }
-      function GTMcheckCardPositionAndSendData(el) {
-        var div_position = $(el).offset();
+      function GTMcheckCardPositionAndSendData(el, box = null) {
+        var el_pos = $(el).offset();
 
         var see_x1 = $(document).scrollLeft();
         var see_x2 = $(window).width() + $(document).scrollLeft();
         var see_y1 = $(document).scrollTop();
         var see_y2 = $(window).height() + $(document).scrollTop();
+        if (box)  {
+          var box_pos = $(box).offset();
+          var box_x1 = box_pos.left;
+          var box_x2 = box_pos.left + $(box).width();
+          var box_y1 = box_pos.top;
+          var box_y2 = box_pos.top + $(box).height();
+        }
 
-        var div_x1 = div_position.left;
-        var div_x2 = div_position.left + $(el).width();
-        var div_y1 = div_position.top;
-        var div_y2 = div_position.top + $(el).height();
+        var el_x1 = el_pos.left;
+        var el_x2 = el_pos.left + $(el).width();
+        var el_y1 = el_pos.top;
+        var el_y2 = el_pos.top + $(el).height()/2;
 
-        if( div_x1 >= see_x1 && div_x2 <= see_x2 && div_y1 >= see_y1 && div_y2 <= see_y2 ){
+        if (( el_x1 > 0 && el_x1 >= see_x1 && el_x2 <= see_x2 && el_y1 > 0 && el_y1 >= see_y1 && el_y2 <= see_y2 )
+          && ((!box) || (box && el_x1 >= box_x1 && el_x2 <= box_x2 && el_y1 >= box_y1 && el_y2 <= box_y2))) {
           // если элемент в поле видимости и данные ещё не отправлялись, отправить
           if ($(el).data('was-impressed') !== true) {
-            $(el).data('was-impressed', true);
+            $(el).addClass('was-impressed').data('was-impressed', true);
             // послать информацию
             window.dataLayer = window.dataLayer || [];
-            // dataLayer.push({
-            //   'event': 'ProductImpressions',
-            //   'ecommerce': {
-            //     'currencyCode': 'RUB',
-            //     'impressions': [
-            //       {
-            //         'name': $(el).data('title'),
-            //         'price': $(el).data('price'),
-            //         'variant': $(el).data('variant'),
-            //       }]
-            //   },
-            // });
-          }
-        } else {
-          // если элемент ещё не был показан и не виден, то все следующие также не видны,
-          // по возврату из функции выйти из цикла
-          if ($(el).data('was-impressed') !== true) {
-            return false;
+            dataLayer.push({
+              'event': 'productImpression',
+              'eventCategory': 'ecommerce',
+              'eventAction': 'productImpression',
+              'ecommerce': {
+                'impressions': [{
+                    'id': $(el).data('id'),
+                    'name': $(el).data('title'),
+                    'price': $(el).data('price'),
+                    'variant': $(el).data('variant'),
+                  }]
+              },
+            });
           }
         }
-        return true;
       }
 
       // сохранить корзину в localStorage
