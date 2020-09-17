@@ -55,36 +55,33 @@
       }
 
 
+
       // product click
-      $('.product.teaser .p-title, .product.teaser .p-image').click(function() {
-        var el = $(this).closest('.product.teaser');
-        onCardClickEvent(el);
+      $('.product.teaser .p-title, .product.teaser .p-image').once(function() {
+        $(this).click(function() {
+          var el = $(this).closest('.product.teaser');
+          onCardClickEvent(getPageListing(), {
+            "id": $(el).data("id"),
+            "name": $(el).data('title'),
+            "variant": $(el).data('variant'),
+            "price": $(el).data('price'),
+            "list": getProductsListing(el),
+          });
+          localStorage.fromListing = getPageListing();
+        });
       });
 
       // Добавить в корзину из каталога
       $('a.btn-add-to-cart').once(function() {
         $(this).bind('mousedown touchstart', function() {
-          var productList = $(this).closest(".row").children(".product-related-title").text().trim(); // products related
-          if (productList === "") {
-            productList = $(this).closest(".block").find("h2").text().trim(); // blocks
-          }
-
-          var list = "";
-          if ($("body").is(".front")) {
-            list = "Главная страница";
-          } else if ($("body").is(".page-node")) {
-            list = productList;
-          }
-
           var el = $(this).closest('.product');
-          var action = "Нажали «Купить» из каталога";
-          onAddToCartEvent(list, action, {
+          onAddToCartEvent(getPageListing(), "Нажали «Купить» из каталога", {
             "id": $(el).data("id"),
             "name": $(el).data('title'),
             "variant": $(el).data('variant'),
             "price": $(el).data('price'),
             "quantity": 1,
-            "list": productList,
+            "list": getProductsListing(el),
           });
         });
       });
@@ -92,9 +89,7 @@
       $('.commerce-add-to-cart').once(function() {
         $('.commerce-add-to-cart .form-submit').bind('mousedown touchstart', function() {
           var el = $(this).closest('.product');
-          var list = "Карточка товара";
-          var action = "Нажали «Купить» из карточки товара";
-          onAddToCartEvent(list, action, {
+          onAddToCartEvent("Карточка товара", "Нажали «Купить» из карточки товара", {
             "id": $("[name=product_id]").val(),
             "name": $(el).data('title'),
             "variant": $(".attribute-widgets > .form-item > label").text() + ": " + $(".attribute-widgets  .active.form-item > label").text().trim(),
@@ -127,9 +122,7 @@
       $('.commerce-add-to-cart').once(function() {
         $('.commerce-add-to-cart .form-submit').bind('mousedown touchstart', function() {
           var el = $(this).closest('.product');
-          var list = "Карточка товара";
-          var action = "Нажали «Купить» из карточки товара";
-          onAddToCartEvent(list, action, {
+          onAddToCartEvent("Карточка товара", "Нажали «Купить» из карточки товара", {
             "id": $("[name=product_id]").val(),
             "name": $(el).data('title'),
             "variant": $(".attribute-widgets > .form-item > label").text() + ": " + $(".attribute-widgets  .active.form-item > label").text().trim(),
@@ -215,7 +208,15 @@
       // -------------------------------- Events Processing --------------------
       function onPageLoadEvent() {
         // GTMcheckCardsImpressions();
-        GTMshowFullCardSendData();
+        if ($("body").is(".node-type-product")) {
+          var el = $(".product.full");
+          GTMshowFullCardSendData({
+            "id": $("[name=product_id]").val(),
+            "name": $(el).data('title'),
+            "variant": $(".attribute-widgets > .form-item > label").text() + ": " + $(".attribute-widgets  .active.form-item > label").text().trim(),
+            "price": $(".product-breaf .price-amount").text().replace("₽", "").trim(),
+          });
+        }
       }
       function onScrollEvent() {
         // GTMcheckCardsImpressions();
@@ -236,8 +237,8 @@
       function onDeleteFromCartEvent(item) {
         GTMdeleteFromCartSendData(item);
       }
-      function onCardClickEvent(el) {
-        GTMclickCardSendData(el);
+      function onCardClickEvent(list, item) {
+        GTMclickCardSendData(list, item);
       }
       function onAddToWishlistEvent() {
         fbq('track', 'AddToWishlist');
@@ -279,11 +280,7 @@
           GTMCheckoutCompleteEvent(total);
       }
 
-      //
-      // $('.commerce-checkout-form-checkout .checkout-continue').click(function() {
-      //   var total = $('.checkout-summary .cs-total').data('cs-total');
-      //   fbq('track', 'Purchase', {value: total, currency: 'RUB'});
-      // });
+
 
       // ------------------------- GTM -----------------------------------------
       // ------------------------- Authorization
@@ -449,45 +446,40 @@
       }
 
       // ------------------------- Show Full Card
-      function GTMshowFullCardSendData() {
-        if ($(".product").is(".full")) {
-          var el = $(".product.full");
-          var price = $(el).data('price');
-          if (price) {
-            // window.dataLayer = window.dataLayer || [];
-            // dataLayer.push({
-            //   'ecommerce': {
-            //     'currencyCode': 'RUB',
-            //     'detail': {
-            //       'actionField': {'list': ''},
-            //       'products': [{
-            //         'name':  $(el).data('title'),
-            //         'price': $(el).data('price'),
-            //         'variant': $(el).data('variant'),
-            //       }]
-            //     }
-            //   },
-            // });
-          }
-        }
+      function GTMshowFullCardSendData(item) {
+        var list = !!localStorage.fromListing ? localStorage.fromListing : "";
+        localStorage.removeItem("fromListing");
+
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'productDetails',
+          'eventCategory': 'ecommerce',
+          'eventAction': 'productDetails',
+          'ecommerce': {
+            'detail': {
+              'actionField': {'list': list},
+              'products': [item]
+            }
+          },
+          'userId': Drupal.settings.user.uid,
+        });
       }
 
       // ------------------------- Card Click
-      function GTMclickCardSendData(el) {
+      function GTMclickCardSendData(list, item) {
         window.dataLayer = window.dataLayer || [];
-        // dataLayer.push({
-        //   'ecommerce': {
-        //     'currencyCode': 'RUB',
-        //     'click': {
-        //       'actionField': {'list': ''},
-        //       'products': [{
-        //         'name':  $(el).data('title'),
-        //         'price': $(el).data('price'),
-        //         'variant': $(el).data('variant'),
-        //       }]
-        //     }
-        //   },
-        // });
+        dataLayer.push({
+          'event': 'productClick',
+          'eventCategory': 'ecommerce',
+          'eventAction': 'productClick',
+          'ecommerce': {
+            'click': {
+              'actionField': {'list': list},
+              'products': [item]
+            }
+          },
+          'userId': Drupal.settings.user.uid,
+        });
       }
       // ------------------------- Card Impressions
       function GTMcheckCardsImpressions() {
@@ -557,6 +549,31 @@
       }
       function getCartContentFromLocalStorage() {
         return localStorage.cartProducts !== undefined ? JSON.parse(localStorage.cartProducts) : false;
+      }
+
+      // определить листинг страницы
+      function getPageListing() {
+        var list = "";
+        if ($("body").is(".front")) {
+          list = "Главная страница";
+        } else if ($("body").is(".page-node")) {
+          list = "Карточка товара";
+        } else if ($("body").is(".page-taxonomy")) {
+          list = $(".page-header h1").text().trim();
+        }
+        return list;
+      }
+
+      // определить листинг карточки товара
+      function getProductsListing(product) {
+        var productList = $(product).closest(".row").children(".product-related-title").text().trim(); // products related
+        if (productList === "") {
+          productList = $(product).closest(".block").find("h2").text().trim(); // blocks
+        }
+        if (productList === "") {
+          productList = $(".page-header h1").text().trim(); // catalog
+        }
+        return productList;
       }
 
     }
