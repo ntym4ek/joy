@@ -38,7 +38,7 @@
         onResizeEvent();
       });
 
-      // отследить событие авторизации и регистрации ------------------------
+      // отследить событие авторизации и регистрации --
       $(".user-form-container .form-submit").click(function() {
         // отследить нажатие сабмита
         localStorage.login = $(".form-item-name input").val();
@@ -54,7 +54,7 @@
         localStorage.removeItem("login");
       }
 
-      // product click
+      // product click --
       $('.product.teaser .p-title, .product.teaser .p-image').once(function() {
         $(this).click(function() {
           var el = $(this).closest('.product.teaser');
@@ -64,6 +64,7 @@
             "variant": $(el).data('variant'),
             "price": $(el).data('price'),
             "list": getProductsListing(el),
+            'position': $(el).parent().index()+1
           });
           localStorage.fromListing = getPageListing();
         });
@@ -157,13 +158,17 @@
           onCheckoutCompleteEvent();
         }
 
-        // обработчик для кнопки карусели (тк js, то кнопка появляется не сразу)
+        // обработчик Flexslider carousel кнопки Next (тк js, то кнопка появляется не сразу)
         setTimeout(function() {
           $(".flex-direction-nav .flex-next").click(function(){
-            onCarouselNextClickEvent();
+            onFlexCarouselNextClickEvent();
           });
         }, 1000);
 
+        // обработчик Bootstrap carousel after slide
+        $('#views-bootstrap-carousel-1').on('slid.bs.carousel', function () {
+          onBStrapCarouselSlideEvent();
+        });
       });
 
 
@@ -225,17 +230,23 @@
         }
         setTimeout(function() {
           GTMcheckCardsImpressions();
+          GTMcheckBannersImpressions();
         }, 1000);
 
       }
       function onScrollEvent() {
         GTMcheckCardsImpressions();
+        GTMcheckBannersImpressions();
       }
       function onResizeEvent() {
         GTMcheckCardsImpressions();
+        GTMcheckBannersImpressions();
       }
-      function onCarouselNextClickEvent() {
+      function onFlexCarouselNextClickEvent() {
         setTimeout(GTMcheckCardsImpressions, 1000);
+      }
+      function onBStrapCarouselSlideEvent() {
+        GTMcheckBannersImpressions();
       }
       function onUserAuthorization(login) {
         GTMuserAuthorization(login);
@@ -498,13 +509,72 @@
       // ------------------------- Card Impressions
       function GTMcheckCardsImpressions() {
         $(".view-carousel .product.teaser").each(function(index) {
-          GTMcheckCardPositionAndSendData(this, $(this).closest(".view-carousel"));
+          GTMCardImpressionSendData(this, $(this).closest(".view-carousel"));
         });
         $(".view:not(.view-carousel) .product.teaser, .field .product.teaser").each(function(index) {
-          GTMcheckCardPositionAndSendData(this);
+          GTMCardImpressionSendData(this);
         });
       }
-      function GTMcheckCardPositionAndSendData(el, box = null) {
+      function GTMCardImpressionSendData(el, box = null) {
+        if (checkDivPosition(el, box)) {
+          // если элемент в поле видимости и данные ещё не отправлялись, отправить
+          if ($(el).data('was-impressed') !== true) {
+            $(el).addClass('was-impressed').data('was-impressed', true);
+            // послать информацию
+            window.dataLayer = window.dataLayer || [];
+            dataLayer.push({
+              'event': 'productImpression',
+              'eventCategory': 'ecommerce',
+              'eventAction': 'productImpression',
+              'ecommerce': {
+                'impressions': [{
+                  'id': $(el).data('id'),
+                  'name': $(el).data('title'),
+                  'price': $(el).data('price'),
+                  'variant': $(el).data('variant'),
+                  'position': $(el).parent().index()+1
+                }]
+              },
+            });
+          }
+        }
+      }
+
+
+      // ------------------------- Banner Impressions
+      function GTMcheckBannersImpressions() {
+        $(".carousel-inner .item.active").each(function(index) {
+          GTMBannerImpressionSendData(this);
+        });
+      }
+      function GTMBannerImpressionSendData(el, box = null) {
+        if (checkDivPosition(el, box)) {
+          // если элемент в поле видимости и данные ещё не отправлялись, отправить
+          if ($(el).data('was-impressed') !== true) {
+            $(el).addClass('was-impressed').data('was-impressed', true);
+            // послать информацию
+            window.dataLayer = window.dataLayer || [];
+            dataLayer.push({
+              'event': 'promotionView',
+              'eventCategory': 'ecommerce',
+              'eventAction': 'promotionView',
+              'ecommerce': {
+                'promoView': {
+                  'promotions': [{
+                    'id': $(el).find("img").attr("alt"),
+                    'name': $(el).find("img").attr("alt"),
+                    'creative': 'Слайдер на главной',
+                    'position': $(el).index()+1
+                  }]
+                },
+              },
+            });
+          }
+        }
+      }
+
+      // проверить видимость элемента в окне браузера, опционально в пределах элемента
+      function checkDivPosition(el, box = null) {
         var el_pos = $(el).offset();
 
         var see_x1 = $(document).scrollLeft();
@@ -526,26 +596,9 @@
 
         if (( el_x1 > 0 && el_x1 >= see_x1 && el_x2 <= see_x2 && el_y1 > 0 && el_y1 >= see_y1 && el_y2 <= see_y2 )
           && ((!box) || (box && el_x1 >= box_x1 && el_x2 <= box_x2 && el_y1 >= box_y1 && el_y2 <= box_y2))) {
-          // если элемент в поле видимости и данные ещё не отправлялись, отправить
-          if ($(el).data('was-impressed') !== true) {
-            $(el).addClass('was-impressed').data('was-impressed', true);
-            // послать информацию
-            window.dataLayer = window.dataLayer || [];
-            dataLayer.push({
-              'event': 'productImpression',
-              'eventCategory': 'ecommerce',
-              'eventAction': 'productImpression',
-              'ecommerce': {
-                'impressions': [{
-                    'id': $(el).data('id'),
-                    'name': $(el).data('title'),
-                    'price': $(el).data('price'),
-                    'variant': $(el).data('variant'),
-                  }]
-              },
-            });
-          }
+          return true;
         }
+        return false;
       }
 
       // сохранить корзину в localStorage
