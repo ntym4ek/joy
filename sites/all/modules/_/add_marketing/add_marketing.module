@@ -23,17 +23,37 @@ function add_marketing_page_build(&$page)
 {
   // добавить Пользователю маркетинговую информацию о UTM из кукис
   global $user;
-  if ($user->uid && !empty($_COOKIE['user_marketing'])) {
-    $marketing_server = [];
-    if (!empty($user->data['marketing'])) {
-      $marketing_server = $user->data['marketing'];
+  if (!empty($_COOKIE['user_marketing'])) {
+    $marketing_browser = json_decode($_COOKIE['user_marketing'], TRUE);
+
+    // записать в аккаунт пользователя
+    if ($user->uid) {
+      $marketing_user = [];
+      if (!empty($user->data['marketing'])) {
+        $marketing_user = $user->data['marketing'];
+      }
+      $marketing_user_old = $marketing_user;
+      $marketing_user = array_replace_recursive($marketing_user, $marketing_browser);
+      if ($marketing_user_old != $marketing_user) {
+        $user->data['marketing'] = $marketing_user;
+        user_save($user);
+      }
     }
-    $marketing_browser = json_decode($_COOKIE['user_marketing'], true);
-    $marketing_server_old = $marketing_server;
-    $marketing_server = array_replace_recursive($marketing_server, $marketing_browser);
-    $user->data['marketing'] = $marketing_server;
-    if ($marketing_server_old != $marketing_server) {
-      user_save($user);
+
+    // todo записать в корзину
+    if (($order_id = commerce_cart_order_id($user->uid)) != FALSE) {
+      $order = commerce_order_load($order_id);
+
+      $marketing_order = [];
+      if (!empty($order->data['marketing'])) {
+        $marketing_order = $order->data['marketing'];
+      }
+      $marketing_order_old = $marketing_order;
+      $marketing_order = array_replace_recursive($marketing_order, $marketing_browser);
+      if ($marketing_order_old != $marketing_order) {
+        $order->data['marketing'] = $marketing_order;
+        commerce_order_save($order);
+      }
     }
   }
 }
@@ -63,6 +83,13 @@ function add_marketing_views_data_alter(&$data)
       'title' => t('Marketing'),
       'help' => t('Filter by marketing info.'),
       'handler' => 'add_marketing_handler_filter_marketing',
+    ),
+  );
+  $data['commerce_order']['marketing'] = array(
+    'field' => array(
+      'title' => t('Marketing'),
+      'help' => t('View gathered marketing info.'),
+      'handler' => 'add_marketing_handler_field_order_marketing',
     ),
   );
 }
@@ -174,4 +201,42 @@ function add_marketing_preprocess_page(&$vars)
       'created' => empty($GLOBALS["user"]->created) ? null : $GLOBALS["user"]->created,
     ]
   ), 'setting');
+}
+
+
+function add_marketing_get_utm_markup($marketing)
+{
+  $output = '';
+  $output_arr = [];
+
+  if (!empty($marketing['utm'])) {
+    foreach($marketing["utm"] as $utm) {
+      $line = drupal_strtoupper($utm['utm_source']);
+      switch(strtolower($utm['utm_source'])) {
+        case 'facebook':
+          $line = '<i class="fab fa-facebook-square"></i>';
+          break;
+        case 'instagram':
+          $line = '<i class="fab fa-instagram-square"></i>';
+          break;
+        case 'yandex':
+          $line = '<i class="fab fa-yandex"></i>';
+          break;
+        case 'google':
+          $line = '<i class="fab fa-google"></i>';
+          break;
+      }
+      $line .= !empty($utm['utm_medium']) ? ' ' . $utm['utm_medium'] : '';
+      $line .= !empty($utm['utm_campaign']) ? ' ' . $utm['utm_campaign'] : '';
+      $line .= !empty($utm['utm_content']) ? ' ' . $utm['utm_content'] : '';
+      $line .= !empty($utm['utm_term']) ? ' ' . $utm['utm_term'] : '';
+      $line .= !empty($utm['timestamp']) ? ' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y') : '';
+      $output_arr [] = $line;
+    }
+  }
+  if ($output_arr) {
+    $output = implode('<br />', $output_arr);
+  }
+
+  return $output;
 }
