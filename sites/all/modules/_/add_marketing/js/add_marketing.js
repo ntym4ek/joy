@@ -301,7 +301,7 @@
       function onCheckoutCompleteEvent() {
         // var paid = $('.order-complete .oc-total').data('paid');
         var total = $('.order-complete .oc-total').data('total');
-          GTMCheckoutCompleteEvent(total);
+        GTMCheckoutCompleteEvent(total);
       }
 
 
@@ -422,11 +422,10 @@
       function GTMCheckoutCompleteEvent(total) {
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
-          'event': 'orderPaid',
+          'event': 'checkout',
           'ecommerce': {
-            'currencyCode': 'RUB',
             'checkout': {
-              'actionField': {revenue: total},
+              'actionField': {'step': 6, 'action': 'checkout'},
               'products' : getCartContentFromLocalStorage()
             }
           },
@@ -543,7 +542,7 @@
 
       // ------------------------- Banner Impressions
       function GTMcheckBannersImpressions() {
-        $(".carousel-inner .item.active").each(function(index) {
+        $(".view-sliders .carousel-inner .item.active").each(function(index) {
           GTMBannerImpressionSendData(this);
         });
       }
