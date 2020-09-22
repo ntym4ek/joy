@@ -115,3 +115,52 @@ function strada_commerce_wishlist_menu_wishlist_link(&$variables)
   }
   return '<a id="wishlist" href="' . $url . '" class="btn btn-link" title="Отложенные товары">' . commerce_helper_wishlist_info_block() . '</a>';
 }
+
+/**
+ * Implements hook_css_alter().
+ */
+function strada_css_alter(&$css)
+{
+  if ($_GET["q"] == 'node') {
+    unset($css['modules/system/system.base.css']);
+  }
+}
+
+/**
+ * Implements hook_js_alter().
+ */
+function strada_js_alter(&$js)
+{
+  $js["//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"]["defer"] = true;
+  $js["misc/autocomplete.js"]["defer"] = true;
+  $js["sites/all/themes/bootstrap/js/misc/_progress.js"]["defer"] = true;
+  $js["sites/all/modules/_/ext_search/js/ext_search.js"]["defer"] = true;
+  $js["sites/all/modules/search_api_live_results/js/search_api_live_results.js"]["defer"] = true;
+  $js["misc/autocomplete.js"]["defer"] = true;
+  $js["sites/all/modules/autodialog/autodialog.js"]["defer"] = true;
+  $js["sites/all/modules/fancybox/fancybox.js"]["defer"] = true;
+  $js["sites/all/libraries/fancybox/source/jquery.fancybox.pack.js"]["defer"] = true;
+  $js["sites/all/libraries/fancybox/lib/jquery.mousewheel.pack.js"]["defer"] = true;
+  $js["sites/all/themes/strada/js/jquery.maskedinput.min.js"]["defer"] = true;
+  $js["sites/all/modules/flexslider/assets/js/flexslider.load.js"]["defer"] = true;
+  $js["sites/all/libraries/flexslider/jquery.flexslider.js"]["defer"] = true;
+  $js["sites/all/modules/google_analytics/googleanalytics.js"]["defer"] = true;
+  $js["sites/all/modules/_/add_marketing/js/add_marketing.js"]["defer"] = true;
+  $js["public://languages/ru_txkEc-7JUiwn_CePF9CUcTRuhWxtXXGtQ-N3-QVys14.js"]["defer"] = true;
+  $js["sites/all/themes/bootstrap/js/misc/autocomplete.js"]["defer"] = true;
+  $js["sites/all/themes/bootstrap/js/bootstrap.js"]["defer"] = true;
+
+  if ($_GET["q"] == 'node') {
+    unset($js["//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"]);
+    unset($js["sites/all/modules/fancybox/fancybox.js"]);
+    unset($js["sites/all/libraries/fancybox/source/jquery.fancybox.pack.js"]);
+    unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/affix.js"]);
+    unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/button.js"]);
+    unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/collapse.js"]);
+    unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/modal.js"]);
+    unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/scrollspy.js"]);
+    unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/tab.js"]);
+    unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/transition.js"]);
+  }
+  unset($js["sites/all/libraries/fancybox/lib/jquery.mousewheel.pack.js"]);
+}

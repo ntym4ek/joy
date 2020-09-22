@@ -377,5 +377,7 @@ function ifec_schema_alter(&$schema) {
 function ifec_preprocess_page(&$vars)
 {
     // добавляем скрипт
+  if (!$vars['is_front']) {
     drupal_add_js(drupal_get_path('module', 'ifec') . '/js/ifec.js', ['scope' => 'footer']);
+  }
 }

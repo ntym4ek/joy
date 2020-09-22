@@ -91,6 +91,7 @@ function strada_preprocess_page(array &$vars)
     drupal_add_js('https://cdn.jsdelivr.net/npm/suggestions-jquery@latest/dist/js/jquery.suggestions.min.js', ['type' => 'external', 'defer' => true]);
     drupal_add_css('https://cdn.jsdelivr.net/npm/suggestions-jquery@latest/dist/css/suggestions.css', ['type' => 'external']);
 
+    // переменные для JS
     drupal_add_js(array(
       'strada' => [
         'base_url' => $GLOBALS['base_url'],
