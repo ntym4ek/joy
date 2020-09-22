@@ -6,6 +6,7 @@
             $('#boxberry_link').once(function () {
                 $('#boxberry_link').bind('click', function () {
                     boxberry_open();
+                    return false;
                 });
             });
 

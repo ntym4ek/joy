@@ -69,6 +69,7 @@
 
                     Drupal.attachBehaviors($dialog);
                     $dialog.dialog('open');
+                    return false;
                 });
             });
 
