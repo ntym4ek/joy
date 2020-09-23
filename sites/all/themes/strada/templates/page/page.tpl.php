@@ -258,7 +258,7 @@
                 <li><a href="<?php print $GLOBALS['user']->uid ? '/user/' . $GLOBALS['user']->uid . '/orders' : '/user/login'; ?>">Мои заказы</a></li>
                 <li><a href="/info/about">О компании</a></li>
                 <li><a href="/info/resellers">Оптовым покупателям</a></li>
-                <li><a href="/info/suppliers">Поставщкам</a></li>
+                <li><a href="/info/suppliers">Поставщикам</a></li>
                 <li><a href="/info/how-to-buy">Помощь</a></li>
             </ul>
         </div>

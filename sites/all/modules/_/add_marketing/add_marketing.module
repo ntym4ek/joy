@@ -226,11 +226,14 @@ function add_marketing_get_utm_markup($marketing)
           $line = '<i class="fab fa-google"></i>';
           break;
       }
-      $line .= !empty($utm['utm_medium']) ? ' ' . $utm['utm_medium'] : '';
-      $line .= !empty($utm['utm_campaign']) ? ' ' . $utm['utm_campaign'] : '';
-      $line .= !empty($utm['utm_content']) ? ' ' . $utm['utm_content'] : '';
-      $line .= !empty($utm['utm_term']) ? ' ' . $utm['utm_term'] : '';
-      $line .= !empty($utm['timestamp']) ? ' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y') : '';
+      $line .= !empty($utm['utm_medium']) ? (' ' . $utm['utm_medium']) : '';
+      $line .= !empty($utm['utm_campaign']) ? (' ' . $utm['utm_campaign']) : '';
+      $line .= !empty($utm['utm_content']) ? (' ' . $utm['utm_content']) : '';
+      $line .= !empty($utm['utm_term']) ? (' ' . $utm['utm_term']) : '';
+      $line .= !empty($utm['utm_position']) ? (' ' . $utm['utm_position']) : '';
+      $line .= !empty($utm['utm_group']) ? (' ' . $utm['utm_group']) : '';
+      $line .= !empty($utm['utm_device']) ? (' ' . $utm['utm_device']) : '';
+      $line .= !empty($utm['timestamp']) ? (' ' . format_date((int)($utm['timestamp']/1000), 'custom', 'd.m.Y')) : '';
       $output_arr [] = $line;
     }
   }

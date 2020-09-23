@@ -121,9 +121,15 @@ function strada_commerce_wishlist_menu_wishlist_link(&$variables)
  */
 function strada_css_alter(&$css)
 {
-  if ($_GET["q"] == 'node') {
-    unset($css['modules/system/system.base.css']);
-  }
+//  if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
+      if ($_GET["q"] == 'node') {
+        $styles = $css['sites/all/themes/strada/css/style.css'];
+        $styles['data'] = 'sites/all/themes/strada/css/style_front.css';
+        $css = [
+          'sites/all/themes/strada/css/style_front.css' => $styles,
+        ];
+      }
+//  }
 }
 
 /**
@@ -160,7 +166,5 @@ function strada_js_alter(&$js)
     unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/modal.js"]);
     unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/scrollspy.js"]);
     unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/tab.js"]);
-    unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/transition.js"]);
   }
-  unset($js["sites/all/libraries/fancybox/lib/jquery.mousewheel.pack.js"]);
 }

@@ -23,7 +23,10 @@
             utm_campaign: url.searchParams.get('utm_campaign'),
           };
           if (url.searchParams.has('utm_term')) user_marketing.utm[key]['utm_term'] = url.searchParams.get('utm_term');
-          if (url.searchParams.has('utm_content')) user_marketing.utm[key]['utm_term'] = url.searchParams.get('utm_content');
+          if (url.searchParams.has('utm_content')) user_marketing.utm[key]['utm_content'] = url.searchParams.get('utm_content');
+          if (url.searchParams.has('utm_position')) user_marketing.utm[key]['utm_position'] = url.searchParams.get('utm_position');
+          if (url.searchParams.has('utm_group')) user_marketing.utm[key]['utm_group'] = url.searchParams.get('utm_group');
+          if (url.searchParams.has('utm_device')) user_marketing.utm[key]['utm_device'] = url.searchParams.get('utm_device');
 
           $.cookie('user_marketing', JSON.stringify(user_marketing), {path: "/"});
         }

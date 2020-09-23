@@ -6,6 +6,16 @@ var token = "9948c242cbb5e110b4c488f61fe347c9fd038640";
 // глобальная переменная для всплывающих окон
 var popupStatus = 0;
 
+jQuery.event.special.touchstart = {
+  setup: function( _, ns, handle ){
+    if ((ns.indexOf('noPreventDefault') > -1)) {
+      this.addEventListener("touchstart", handle, { passive: false });
+    } else {
+      this.addEventListener("touchstart", handle, { passive: true });
+    }
+  }
+};
+
 (function ($, Drupal, window, document, undefined)
 {
     // собственная ajax команда на обновление страницы
