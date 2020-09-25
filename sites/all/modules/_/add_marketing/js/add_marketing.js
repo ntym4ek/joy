@@ -147,26 +147,22 @@
 
         // клик по кнопке "Перейти к оформлению"
         $('.page-cart .checkout-continue').bind('mousedown touchstart', function() {
-          onCheckoutClickEvent();
+          onCheckoutStartClickEvent();
         });
 
         // checkout page open
         if ($('body').is('.page-checkout-checkout')) {
           onCheckoutInitEvent();
         }
-        // order completed
-        if ($('body').is('.page-checkout-complete')) {
-          onCheckoutCompleteEvent();
-        }
 
-        // обработчик Flexslider carousel кнопки Next (тк js, то кнопка появляется не сразу)
+        // повесить обработчик Flexslider carousel кнопки Next (тк js, то кнопка появляется не сразу)
         setTimeout(function() {
           $(".flex-direction-nav .flex-next").click(function(){
             onFlexCarouselNextClickEvent();
           });
         }, 1000);
 
-        // обработчик Bootstrap carousel after slide
+        // повесить обработчик Bootstrap carousel after slide
         $('#views-bootstrap-carousel-1').on('slid.bs.carousel', function () {
           onBStrapCarouselSlideEvent();
         });
@@ -174,6 +170,12 @@
 
 
       $('.commerce-checkout-form-checkout').once(function() {
+
+        // клик по кнопке "Подтвердить заказ"
+        $('.commerce-checkout-form-checkout .checkout-continue').bind('mousedown touchstart', function() {
+          onCheckoutConfirmClickEvent();
+        });
+
         // отследить применение промокода -------------------------------------
         $(".commerce_coupon [name=coupon_add]").bind('mousedown touchstart', function() {
           // отследить нажатие сабмита
@@ -196,23 +198,22 @@
           localStorage.removeItem("userpoints");
         }
 
-
-
-        // payment method choose ----------------------------------------------
-        // отправить при загрузке страницы
-        onPaymentClickEvent($('.commerce_payment .active label.control-label'));
-        // отправить при выборе
-        $('.commerce_payment label.control-label').on('click', function() {
-          onPaymentClickEvent(this);
-        });
         // shipping method choose ---------------------------------------------
-        // отправить при загрузке страницы
-        onDeliveryClickEvent($('.commerce_shipping .active label.control-label'));
-        // отправить при выборе
-        $('.commerce_shipping label.control-label').on('click', function() {
+        $('.commerce_shipping label.control-label').bind('mousedown touchstart', function() {
+          localStorage.deliveryMethodSent = true;
           onDeliveryClickEvent(this);
         });
+        // заполнение адреса ---------------------------------------------
+        $('[name*=username], [name*=phone], [name*=zipcode], [name*=addr]').keyup(() => {
+          onUserDataFillEvent();
+        });
+        // payment method choose ----------------------------------------------
+        $('.commerce_payment label.control-label').bind('mousedown touchstart', function() {
+          localStorage.paymentMethodSent = true;
+          onPaymentClickEvent(this);
+        });
       });
+
 
 
 
@@ -273,12 +274,15 @@
         GTMcartOpenSendData();
       }
 
-      function onCheckoutClickEvent() {
+      function onCheckoutStartClickEvent() {
         saveCartContentToLocalStorage();
       }
 
       function onCheckoutInitEvent() {
         GTMCheckoutSendData();
+        localStorage.removeItem("paymentMethodSent");
+        localStorage.removeItem("deliveryMethodSent");
+        localStorage.removeItem("userDataSent");
       }
       function onUserPromocodeUse(promocode_used, promocode_redeemed) {
         GTMuserPromocodeUse(promocode_used, promocode_redeemed);
@@ -287,23 +291,62 @@
         GTMuserPointsUse(points_used, points_redeemed);
       }
       function onDeliveryClickEvent(el) {
-        var method = $(el).find(".carrier").text();
+        var method = $(el).find(".carrier").html().replace("<br>", " ");
         if (method) {
           GTMDeliveryClickSendData(method);
         }
       }
       function onPaymentClickEvent(el) {
-        var method = $(el).find(".carrier").text();
+        var method = $(el).find(".carrier").html().replace("<br>", " ");
         if (method) {
           GTMDPaymentClickSendData(method);
           fbq("track", "AddPaymentInfo");
         }
       }
-      function onCheckoutCompleteEvent() {
-        // var paid = $('.order-complete .oc-total').data('paid');
-        var total = $('.order-complete .oc-total').data('total');
-        GTMCheckoutCompleteEvent(total);
+
+      function onUserDataFillEvent() {
+        var filled = true;
+        if ($('#commerce-shipping-service-details input').has('[name*=username]')) {
+          if ($('#commerce-shipping-service-details input[name*=username]').val().length < 8) filled = false;
+        }
+        if ($('#commerce-shipping-service-details input').has('[name*=phone]')) {
+          if ($('#commerce-shipping-service-details input[name*=phone]').val().length < 16) filled = false;
+        }
+        if ($('#commerce-shipping-service-details input').has('[name*=zipcode]')) {
+          if ($('#commerce-shipping-service-details input[name*=zipcode]').val().length < 6) filled = false;
+        }
+        if ($('#commerce-shipping-service-details input').has('[name*=addr]')) {
+          if ($('#commerce-shipping-service-details input[name*=addr]').val().length < 8) filled = false;
+        }
+        if (filled) {
+          GTMuserDataFillEventSendData();
+          localStorage.userDataSent = true;
+        }
       }
+
+      function onCheckoutConfirmClickEvent() {
+        var total = $('.checkout-summary .cs-total').data('cs-total');
+        GTMCheckoutConfirmClickEventSendData(total);
+
+        if (!!localStorage.paymentMethodSent) {
+          localStorage.removeItem("paymentMethodSent");
+        } else {
+          onPaymentClickEvent($('.commerce_payment .active label.control-label'));
+        }
+
+        if (!!localStorage.deliveryMethodSent) {
+          localStorage.removeItem("deliveryMethodSent");
+        } else {
+          onDeliveryClickEvent($('.commerce_shipping .active label.control-label'));
+        }
+
+        if (!!localStorage.userDataSent) {
+          localStorage.removeItem("userDataSent");
+        } else {
+          onUserDataFillEvent();
+        }
+      }
+
 
 
 
@@ -397,7 +440,7 @@
           'event': 'checkout',
           'ecommerce': {
             'checkout': {
-              'actionField': {'step': 3, 'option': method},
+              'actionField': {'step': 3, 'action': 'checkout', 'option': method},
               'products' : getCartContentFromLocalStorage()
             }
           },
@@ -411,7 +454,22 @@
           'event': 'checkout',
           'ecommerce': {
             'checkout': {
-              'actionField': {'step': 5, 'option': method},
+              'actionField': {'step': 5, 'action': 'checkout', 'option': method},
+              'products' : getCartContentFromLocalStorage()
+            }
+          },
+          'userId': Drupal.settings.user.uid,
+        });
+      }
+
+      // ------------------------- Fill User Data
+      function GTMuserDataFillEventSendData() {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'checkout',
+          'ecommerce': {
+            'checkout': {
+              'actionField': {'step': 4, 'action': 'checkout'},
               'products' : getCartContentFromLocalStorage()
             }
           },
@@ -420,7 +478,7 @@
       }
 
       // ------------------------- Checkout Complete
-      function GTMCheckoutCompleteEvent(total) {
+      function GTMCheckoutConfirmClickEventSendData(total) {
         window.dataLayer = window.dataLayer || [];
         dataLayer.push({
           'event': 'checkout',
@@ -532,7 +590,8 @@
                   'name': $(el).data('title'),
                   'price': $(el).data('price'),
                   'variant': $(el).data('variant'),
-                  'position': $(el).parent().index()+1
+                  'position': $(el).parent().index()+1,
+                  "list": getProductsListing(el),
                 }]
               },
             });
