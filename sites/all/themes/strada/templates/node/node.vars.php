@@ -91,6 +91,11 @@ function strada_preprocess_node(&$vars)
         $vars['date'] = date('d.m.Y', $vars['node']->created);
     }
 
+  // - готовим переменные для вывода Блога ---------
+  if ($vars['type'] == 'blog') {
+    if (!empty($vars["content"]["links"])) unset($vars["content"]["links"]);
+  }
+
 }
 
 /**
