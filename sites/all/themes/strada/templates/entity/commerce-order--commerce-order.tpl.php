@@ -121,7 +121,7 @@ if ($payment['before_shipping']) {
                 <dt><?php print $payment_label; ?></dt>
                 <dd class="oc-total">
                     <p><?php print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total_formatted']) . '</span>'; ?></p>
-                    <p><?php print empty($shipping['cost']) ? '' : ('С учётом ' . $shipping['cost'] . ' за доставку'); ?></p>
+                    <p><? print isset($shipping['cost']) ? ('С учётом ' . $shipping['cost_formatted'] . ' за доставку') : ''; ?></p>
                     <p><?php print $payment['title']; ?></p>
                     <p><?php print $payment['addon']; ?></p>
                 </dd>

@@ -257,7 +257,8 @@ function ext_order_get_order_info($order, $including_line_items = false)
               ];
             }
 
-            $shipping['cost'] = commerce_currency_format($item_wr->commerce_total->amount->value() / 100, $item_wr->commerce_total->currency_code->value(), NULL, FALSE);
+            $shipping['cost'] = $item_wr->commerce_total->amount->value() / 100;
+            $shipping['cost_formatted'] = commerce_currency_format($item_wr->commerce_total->amount->value() / 100, $item_wr->commerce_total->currency_code->value(), NULL, FALSE);
 
             if (empty($shipping['address'])) {
               $shipping['address'] = ($shipping_profile_wr->field_zipcode->value() ? $shipping_profile_wr->field_zipcode->value() . ', ' : '')

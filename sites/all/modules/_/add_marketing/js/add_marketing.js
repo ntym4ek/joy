@@ -155,6 +155,11 @@
           onCheckoutInitEvent();
         }
 
+        // checkout complete page open
+        if ($('body').is('.page-checkout-complete')) {
+          onCheckoutCompleteEvent();
+        }
+
         // повесить обработчик Flexslider carousel кнопки Next (тк js, то кнопка появляется не сразу)
         setTimeout(function() {
           $(".flex-direction-nav .flex-next").click(function(){
@@ -347,6 +352,15 @@
         }
       }
 
+      function onCheckoutCompleteEvent() {
+        var order_id = $('.order-complete .oc-total').data('id');
+        var shipping = $('.order-complete .oc-total').data('shipping');
+        var coupon = $('.order-complete .oc-total').data('coupon');
+        var total = $('.order-complete .oc-total').data('total');
+        if ($('.order-complete .oc-total').data('paid')) {
+          GTMCheckoutCompleteEventSendData(order_id, total, coupon, shipping);
+        }
+      }
 
 
 
@@ -598,7 +612,27 @@
           }
         }
       }
+      function GTMCheckoutCompleteEventSendData(order_id, total, coupon, shipping) {
+        window.dataLayer = window.dataLayer || [];
+        dataLayer.push({
+          'event': 'transaction',
+          'eventCategory': 'Покупка',
+          'eventAction': 'Через корзину',
+          'eventLabel': total,
+          'ecommerce': {
+            'purchase': {
+              'actionField': {
+                'id': order_id,
+                'revenue': total,
+                'shipping': shipping,
+                'coupon': coupon
+              },
+              'products': getCartContentFromLocalStorage()
+            }
+          }
+        });
 
+      }
 
       // ------------------------- Banner Impressions
       function GTMcheckBannersImpressions() {

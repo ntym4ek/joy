@@ -335,7 +335,7 @@ function ext_payment_ya_commerce_api_check_order_paid($order)
         }
 
         // если сумма заказа и оплаченного не совпадает, проверить транзакции на сервере
-        if ($balance['amount'] > 0) {
+        if ($balance['amount'] > 0 && function_exists("yamoney_api__common__get_api_client")) {
             $apiClient = yamoney_api__common__get_api_client();
             $transactions = commerce_payment_transaction_load_multiple([], ['order_id' => $order->order_id]);
             foreach ($transactions as $transaction) {

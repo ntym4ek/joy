@@ -100,7 +100,7 @@ if ($shipping_row) $commerce_line_items[] = $shipping_row;
             <dt><?php print $payment_label; ?></dt>
             <dd class="oc-total">
               <div><?php print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total_formatted']) . '</span>'; ?></div>
-              <div><?php print empty($shipping['cost']) ? '' : ('С учётом ' . $shipping['cost'] . ' за доставку'); ?></div>
+              <div><? print isset($shipping['cost']) ? ('С учётом ' . $shipping['cost_formatted'] . ' за доставку') : ''; ?></div>
               <div><?php print $payment['title']; ?></div>
               <div><?php print $payment['addon']; ?></div>
             </dd>
