@@ -122,13 +122,13 @@ function strada_commerce_wishlist_menu_wishlist_link(&$variables)
 function strada_css_alter(&$css)
 {
   if (strpos($_SERVER['HTTP_HOST'], '.local') === false) {
-      if ($_GET["q"] == 'node') {
-        $styles = $css['sites/all/themes/strada/css/style.css'];
-        $styles['data'] = 'sites/all/themes/strada/css/style_front.css';
-        $css = [
-          'sites/all/themes/strada/css/style_front.css' => $styles,
-        ];
-      }
+//      if ($_GET["q"] == 'node') {
+//        $styles = $css['sites/all/themes/strada/css/style.css'];
+//        $styles['data'] = 'sites/all/themes/strada/css/style_front.css';
+//        $css = [
+//          'sites/all/themes/strada/css/style_front.css' => $styles,
+//        ];
+//      }
   }
 }
 

@@ -113,6 +113,17 @@ function add_marketing_commerce_order_presave($order)
   }
 }
 
+/**
+ * Implements hook_form_alter
+ */
+function add_marketing_form_alter(&$form, &$form_state, $form_id)
+{
+  // --------------------------------- Форма добавления в корзину
+  // e.g form id: commerce_cart_add_to_cart_form_u6onPJSgS7pOgw0Tlo7zHy42LTQzbV913taANkYQKTo
+  if (strpos($form_id, 'commerce_cart_add_to_cart_form') !== FALSE) {
+    $form["product_id"]['#attributes']['id'][] = 'product-id';
+  }
+}
 
 /*
  * ---------------------------- Facebook ---------------------------------------
