@@ -234,6 +234,8 @@
             "variant": $(".attribute-widgets > .form-item > label").text() + ": " + $(".attribute-widgets  .active.form-item > label").text().trim(),
             "price": $(".product-breaf .price-amount").text().replace("₽", "").trim(),
           });
+
+          fbq('track', 'ViewContent');
         }
         setTimeout(function() {
           GTMcheckCardsImpressions();

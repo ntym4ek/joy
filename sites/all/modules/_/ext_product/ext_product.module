@@ -34,6 +34,174 @@ function ext_product_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_preprocess_page
+ */
+function ext_product_process_page(&$vars)
+{
+  // добавляем библиотеку ajax
+  // (добавление товаров в корзину есть практически на любой странице)
+  drupal_add_library('system', 'drupal.ajax');
+}
+
+/**
+ * Implements hook_form_alter
+ */
+function ext_product_form_alter(&$form, &$form_state, $form_id)
+{
+  // --------------------------------- Изменение формы добавления в корзину
+  // e.g form id: commerce_cart_add_to_cart_form_u6onPJSgS7pOgw0Tlo7zHy42LTQzbV913taANkYQKTo
+  if (strpos($form_id, 'commerce_cart_add_to_cart_form') !== FALSE) {
+    ext_product_form_commerce_add_to_cart_form_alter($form, $form_state);
+  }
+}
+
+function ext_product_form_commerce_add_to_cart_form_alter(&$form, &$form_state)
+{
+  // назначить постобработку для добавления класса активному элементу
+  if (!empty($form['attributes'])) {
+    foreach($form['attributes'] as $field_name => &$field) {
+      if (strpos($field_name, '_attribute_') || $field_name == 'field_p_tare') {
+        $field['#after_build'][] = 'ext_product_radios_alter';
+      }
+    }
+  }
+
+  // если товар в наличии
+  if (empty($form_state['default_product']->field_p_out_of_stock['und'][0]['value'])) {
+    // - AJAXификация кнопки --------------------------------------------------------
+    // - проверка наличия товара в корзине и смена состояния и текста кнопки --------
+    $product_id = isset($form['product_id']) ? $form['product_id']['#value'] : null;
+    if (in_array($product_id, _get_order_product_ids($GLOBALS['user']->uid))) {
+      $form['submit']['#prefix'] = '<div class="btn-group" role="group"><a class="btn btn-primary btn-empty" href="/cart">Перейти в корзину</a>';
+      $form['submit']['#value'] = '+1';
+      $form['submit']['#attributes']['class'][] = 'btn-primary';
+      $form['submit']['#suffix'] = '</div>';
+    } else {
+      $form['submit']['#value'] = 'В корзину';
+      $form['submit']['#attributes']['class'][] = 'btn-primary';
+    }
+    $form['submit']['#ajax'] = array('callback' => 'ext_product_add_to_cart_ajax_callback');
+    $form['#submit'][] = 'ext_product_add_to_cart_form_submit';
+  }
+  // если товара нет
+  else {
+    $form['submit']['#value'] = 'Товар ожидается';
+    $form['submit']['#disabled'] = true;
+    $form['submit']['#attributes']['class'][] = 'btn-warning';
+  }
+
+  // настройка мультиопций
+  if (!empty($form['line_item_fields'])) {
+    $have_options = false;
+    foreach ($form['line_item_fields'] as $field_name => &$field) {
+      if (strpos($field_name, '_option_')) {
+        // проверить в Варианте продукта наличие установленных для поля опций
+        // если есть - вывести
+        $options = [];
+        if (isset($form_state['default_product']->{$field_name}['und']) && is_array($form_state['default_product']->{$field_name}['und'])) {
+          foreach ($form_state['default_product']->{$field_name}['und'] as $value) {
+            $options[$value['value']] = $field['und']['#options'][$value['value']];
+          }
+        }
+
+        if ($options) {
+          $have_options = true;
+          $field['und']['#type'] = 'radios';
+          $field['und']['#options'] = $options;
+          $field['und']['#after_build'][] = 'ext_product_radios_alter';
+          if (count($options) == 1) {
+            $field['und']['#default_value'] = key($options);
+          } else {
+            $field['und']['#default_value'] = '';
+            $form_state['input']['line_item_fields'][$field_name]['und'] = null;
+            $form_state['values']['line_item_fields'][$field_name]['und'][0]['value'] = null;
+          }
+        }
+        else {
+          $field['#access'] = FALSE;
+        }
+      }
+    }
+    if ($have_options) {
+      // нужно проверить, что опции были заданы
+      array_unshift($form['#validate'], 'ext_product_add_to_cart_form_validate');
+    }
+  }
+
+  // разметка schema.org itemprop="productID" content="facebook_tshirt_001"
+  $schema = '<meta itemprop="productID" content="' . $product_id . '">';
+  $schema .= '<meta itemprop="url" content="' . url('node/' . $form_state["context"]["entity_id"], ['absolute' => true, 'query' => ['id' => $product_id]]) . '">';
+  if (!empty($form['attributes'])) {
+    foreach($form['attributes'] as $attribute) {
+      if (isset($attribute["#options"])) {
+        $schema .=
+          '<div itemprop="value" itemscope itemtype="http://schema.org/PropertyValue">' .
+            '<span itemprop="name">' . $attribute['#title'] . '</span>' .
+            '<meta itemprop="value" content="True">' . $attribute['#options'][$attribute['#default_value']] . '</meta>' .
+          '</div>';
+      }
+    }
+  }
+  $schema .=
+    '<div itemprop="offers" itemscope itemtype="http://schema.org/Offer">' .
+      '<link itemprop="availability" href="http://schema.org/' . ($form_state["default_product"]->status ? 'InStock' : 'OutOfStock') . '">' .
+      '<meta itemprop="price" content="' . $form_state["default_product"]->commerce_price["und"][0]["amount"]/100 . '">' .
+      '<meta itemprop="priceCurrency" content="RUB">' .
+    '</div>';
+  $form["schema_org"]["#markup"] = '<div style="display: none;">' . $schema . '</div>';
+}
+
+
+function ext_product_add_to_cart_ajax_callback($form, $form_state)
+{
+  drupal_get_messages();
+  $product_ids = commerce_cart_add_to_cart_form_product_ids($form_state['line_item']);
+  $class = drupal_html_class(commerce_cart_add_to_cart_form_id($product_ids));
+  return array(
+    '#type' => 'ajax',
+    '#commands' => array(
+      ajax_command_replace('.'. $class, trim(render($form))),
+      ajax_command_invoke('#cart', 'html', [trim(ext_order_cart_info_block())]),
+    ),
+  );
+}
+
+function ext_product_add_to_cart_form_validate($form, &$form_state)
+{
+  foreach ($form_state['values']['line_item_fields'] as $field_name => $field) {
+    if (strpos($field_name, '_option_')
+      && $form['line_item_fields'][$field_name]['#access']
+      && empty($field['und'][0]['value'])) {
+      form_set_error('line_item_fields][' . $field_name, 'Выберите ' . $form['line_item_fields'][$field_name]['und']['#title']);
+    }
+  }
+}
+
+function ext_product_add_to_cart_form_submit($form, &$form_state)
+{
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Processing Radios Element using #after_build property.
+ * Adding the 'active' class attribute for selected item in Product display
+ */
+function ext_product_radios_alter($element, $form_state)
+{
+  if (isset($element['#default_value'])) {
+    $radios_value = $element['#default_value'];
+
+    // в мультиопциях Radios имеет неограниченное количество значений,
+    // поэтому #default_value является массивом, берем только первое значение
+    if (is_array($radios_value)) $radios_value = array_shift($radios_value);
+
+    if (isset($element[$radios_value])) {
+      $element[$radios_value]['#wrapper_attributes']['class'][] = 'active';
+    }
+  }
+  return $element;
+}
 
 /**
  * ------------------------------------------ Добавление Product Teaser в
@@ -331,4 +499,30 @@ function ext_product_field_attach_view_alter(&$output, $context)
       }
     }
   }
+}
+
+
+/**
+ * Возвращает список product id помещенных в корзину пользователя
+ * @param $uid
+ * @return array|mixed
+ */
+function _get_order_product_ids($uid)
+{
+  $pids = &drupal_static(__FUNCTION__);
+
+  // заполнить массив id товаров в корзине
+  if (!$pids) {
+    $pids = array();
+
+    if ($order = commerce_cart_order_load($GLOBALS['user']->uid)) {
+      $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+      foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+        if (in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
+          $pids[] = $line_item_wrapper->commerce_product->product_id->value();
+        }
+      }
+    }
+  }
+  return $pids;
 }

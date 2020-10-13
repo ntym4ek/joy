@@ -46,5 +46,11 @@
 ?>
 
 <div class="field product-stock">
-    <?php print $element['#items'][0]['value'] ? '<span class="text-warning" itemprop="availability">Нет в наличии</span>' : '<span itemprop="availability">В наличии на складе</span>'; ?>
+  <? if ($element['#items'][0]['value']): ?>
+    <span class="text-warning">Нет в наличии</span>
+    <link itemprop="availability" href="http://schema.org/OutOfStock">
+  <? else: ?>
+    <span>В наличии на складе</span>
+    <link itemprop="availability" href="http://schema.org/InStock">
+  <? endif; ?>
 </div>
