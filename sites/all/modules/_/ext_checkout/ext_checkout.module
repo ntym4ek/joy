@@ -593,7 +593,7 @@ function ext_checkout_preprocess_commerce_checkout_completion_message(&$vars)
   $have_yandex_payment = module_exists('yamoney_api');
   $have_sber_payment = module_exists('commerce_rbspayment_custom');
 
-  $vars['payment_label'] = $vars['payment']['balance'] ? 'К оплате' : '<span class="brand-success">Оплачено</span>';
+  $vars['payment_label'] = $vars['payment']['balance'] > 0 ? 'К оплате' : '<span class="brand-success">Оплачено</span>';
   if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout') !== false) {
     $vars['payment_label'] = 'Сумма';
   }
@@ -601,7 +601,7 @@ function ext_checkout_preprocess_commerce_checkout_completion_message(&$vars)
   // оплата
   $payment_widget = '';
   if ($vars['payment']['before_shipping']) {
-    if ($vars['payment']['balance']) {
+    if ($vars['payment']['balance'] > 0) {
       if ($vars['payment']['is_online']) {
         $vars['payment_widget'] =   '<div class="well">' .
           '<h4>Ожидание поступления оплаты</h4>' .

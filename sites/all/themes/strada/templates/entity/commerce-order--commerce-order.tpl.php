@@ -10,7 +10,7 @@ $have_sber_payment = module_exists('commerce_rbspayment_custom');
 
 $ordet_title = 'Информация о заказе';
 $ordet_num_title = 'Номер заказа';
-$payment_label = $payment['balance'] ? 'К оплате' : '<span class="brand-success">Оплачено</span>';
+$payment_label = $payment['balance'] > 0 ? 'К оплате' : '<span class="brand-success">Оплачено</span>';
 if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout') !== false) {
     $ordet_title = 'Информация о корзине';
     $ordet_num_title = 'Номер корзины';
@@ -20,7 +20,7 @@ if ($order_info['status'] == 'cart' || strpos($order_info['status'], 'checkout')
 // оплата
 $payment_widget = '';
 if ($payment['before_shipping']) {
-    if ($payment['balance']) {
+    if ($payment['balance'] > 0) {
         if ($payment['is_online']) {
             $payment_widget =   '<div class="well">' .
                                     '<h4>Ожидание поступления оплаты</h4>' .
@@ -109,7 +109,7 @@ if ($payment['before_shipping']) {
                     <p><?php if (is_array($order_info['weight'])): ?>Вес: <?php print $order_info['weight']['weight'] . ' ' . t($order_info['weight']['unit']); endif; ?></p>
                 </dd>
 
-              <? if ($coupons): ?>
+              <? if (!empty($coupons)): ?>
                 <dt>Купоны</dt>
                 <dd>
                   <? foreach($coupons as $coupon):  ?>
@@ -120,7 +120,7 @@ if ($payment['before_shipping']) {
 
                 <dt><?php print $payment_label; ?></dt>
                 <dd class="oc-total">
-                    <p><?php print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total_formatted']) . '</span>'; ?></p>
+                    <p><?php print '<span>' . ($payment['balance'] > 0 ? $payment['balance_formatted'] : $order_info['total_formatted']) . '</span>'; ?></p>
                     <p><? print isset($shipping['cost']) ? ('С учётом ' . $shipping['cost_formatted'] . ' за доставку') : ''; ?></p>
                     <p><?php print $payment['title']; ?></p>
                     <p><?php print $payment['addon']; ?></p>

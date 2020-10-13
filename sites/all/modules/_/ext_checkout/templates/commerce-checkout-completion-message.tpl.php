@@ -34,7 +34,7 @@
                 <p><? if (is_array($order_info['weight'])): ?>Вес: <? print $order_info['weight']['weight'] . ' ' . t($order_info['weight']['unit']); endif; ?></p>
             </dd>
 
-          <? if ($coupons): ?>
+          <? if (!empty($coupons)): ?>
             <dt>Купоны</dt>
             <dd>
               <? foreach($coupons as $coupon):  ?>
@@ -44,9 +44,9 @@
           <? endif; ?>
 
             <dt><? print $payment_label; ?></dt>
-            <dd class="oc-total" data-id="<? print $order_info['number']; ?>" data-total="<? print $order_info['total']['amount']/100; ?>" data-paid="<? print ($payment['balance'] ? 'false' : 'true'); ?>"
-                data-coupon="<? print $coupon['code']; ?>" data-shipping="<? print isset($shipping['cost']) ? $shipping['cost'] : ''; ?>">
-                <p><? print '<span>' . ($payment['balance'] ? $payment['balance_formatted'] : $order_info['total']['formatted']) . '</span>'; ?></p>
+            <dd class="oc-total" data-id="<? print $order_info['number']; ?>" data-total="<? print $order_info['total']['amount']/100; ?>" data-paid="<? print ($payment['balance'] > 0 ? 'false' : 'true'); ?>"
+                data-coupon="<? print empty($coupon) ? '' : $coupon['code']; ?>" data-shipping="<? print isset($shipping['cost']) ? $shipping['cost'] : ''; ?>">
+                <p><? print '<span>' . ($payment['balance'] > 0 ? $payment['balance_formatted'] : $order_info['total']['formatted']) . '</span>'; ?></p>
                 <p><? print isset($shipping['cost']) ? ('С учётом ' . $shipping['cost_formatted'] . ' за доставку') : ''; ?></p>
                 <p><? print $payment['title']; ?></p>
                 <p><? print $payment['addon']; ?></p>

@@ -5,9 +5,13 @@
 ?>
 <?php foreach ($themed_rows as $count => $row):
   if ($inter = array_intersect(explode(',', str_replace(' ', '', $row['field_pd_category'])), $categories)) {
+    $options = ['absolute' => TRUE, 'query' => ['id' => $row['product_id']]];
+    if ($_GET['q'] == 'export/yml/products') {
+      $options['query'] = array_merge($options['query'], ['utm_source' => 'yandex-market', 'utm_medium' => 'cpc', 'utm_campaign' => $row['product_id']]);
+    }
   ?>
   <offer id="<?php echo $row['product_id']; ?>" available="true">
-    <url><?php echo htmlentities(url('node/' . $row['nid'], ['absolute' => TRUE, 'query' =>['id' => $row['product_id'], 'utm_source' => 'yandex-market', 'utm_medium' => 'cpc', 'utm_campaign' => $row['product_id']]])); ?></url>
+    <url><?php echo htmlentities(url('node/' . $row['nid'], $options)); ?></url>
     <price><?php echo $row['commerce_price'] / 100; ?></price>
     <currencyId>RUR</currencyId>
     <categoryId><?php echo array_shift($inter); ?></categoryId>
