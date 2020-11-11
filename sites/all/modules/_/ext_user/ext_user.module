@@ -543,6 +543,7 @@ function ext_user_form_user_profile_form_alter (&$form, $form_state)
 {
   if ($GLOBALS['user']->uid != 1) {
     $form["account"]["name"]["#access"] = false;
+    $form["account"]["status"]["#access"] = false;
       $form['timezone']['#access'] = false;
       $form['locale']['#access'] = false;
       $form['mimemail']['#access'] = false;
