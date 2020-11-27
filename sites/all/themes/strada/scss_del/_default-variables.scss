@@ -28,7 +28,6 @@ $gray-lighter:           #ececec;
 
 
 //$brand-primary:      #18a629;
-$brand-primary:      #22993f;
 $brand-success:      #22993f;
 //$brand-primary:      #009900;
 //$brand-success:      #009900;
@@ -39,12 +38,15 @@ $brand-danger:       #d9534f;
 $brand-blue:         #428bca;
 $brand-green:        #22993f;
 //$brand-green:        #009900;
-$brand-orange:       #f0ad4e;
+//$brand-orange:       #f0ad4e;
+$brand-orange:       #ff7e21;
 $brand-yellow:       #ffdc30;
 $brand-red:          #d9534f;
 
 $divider-color:      #ececec;
 
+
+$brand-primary:      $brand-orange;
 /** ------------------------------------- Scaffolding --------------------------------------------------------------- */
 
 //** Background color for `<body>`.
