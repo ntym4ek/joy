@@ -150,18 +150,18 @@ div.divider {
     .line-1 { position: relative; }
 
     .line-2 {
-        position: absolute; left: 0; right: 0; z-index: 20; top: 28px;
-        background: white;
+      background-color: $brand-primary;
+        position: absolute; left: 0; right: 0; z-index: 20; top: 27px;
         @media #{$mobile} {
             position: static;
             @include make-row();
         }
     }
     .line-3 {
+      background-color: $brand-primary;
         line-height: 1;
         position: relative;
-        background-color: #fff;
-        margin-top: 76px;
+        margin-top: 75px;
     }
 
     .topbar {
@@ -187,10 +187,9 @@ div.divider {
         display:none;
         background: $brand-notice;
         padding: 0 10px;
-        color: white;
+        color: black;
         border-radius: 4px;
       }
-
     }
     .phone-help {
         font-size: .8em; line-height: 1.2;
@@ -213,6 +212,8 @@ div.divider {
         float: none;
         padding: 5px 0 0;
       position: relative;
+
+      .btn-brand { @include button-variant($btn-brand-bg, $btn-brand-color, $btn-brand-border); }
 
         .navbar-logo {
             flex: 0 0 100px; order: 1;
@@ -239,7 +240,17 @@ div.divider {
             .btn {
                 border-bottom-left-radius: 0!important;
                 border-top-left-radius: 0!important;
+              background-color: $brand-notice;
+              border-color: $brand-notice;
+              &:hover,
+              &:active,
+              &:focus {
+                border-color: $brand-notice;
+              }
             }
+          .live-results-search-textfield {
+            background: #fff;
+          }
             .navbar-search-mobile,
             .navbar-search-pane-close { display: none; }
         }
@@ -411,6 +422,11 @@ div.divider {
 
     }
 
+    $mm-color: #fff;
+    $mm-hover-color: $text-color;
+    $mm-bg-color: #fff;
+    $mm-bg-hover-color: $brand-primary;
+
     .main-menu {
         display: flex;
         text-transform: uppercase;
@@ -424,22 +440,29 @@ div.divider {
         .level-1-item {
             flex: 0 1 auto;
             > a {
-              color: $text-color;
+              color: $mm-color;
+              border: 1px solid transparent;
             }
             > a:hover,
             > a:focus {
               background: none;
             }
-            &:not(.dropdown) > a:hover {
-                color: #fff;
-                background-color: $brand-primary;
+          > .dropdown-menu {
+            border: 1px solid transparent;
+            border-top: 0;
+          }
+          &:not(.dropdown) > a:hover {
+                color: $mm-hover-color;
+                background-color: $mm-bg-color;
                 border-radius: 4px;
             }
             &.open {
                 > .dropdown-menu { opacity: 1; z-index: 1000; }
                 > a {
-                    color: #fff;
-                    background-color: $brand-primary;
+                    color: $mm-hover-color;
+                    background-color: $mm-bg-color;
+                    border-color: $mm-bg-hover-color;
+                    border-bottom-color: $mm-bg-color;
                     border-radius: 4px;
                     border-bottom-left-radius: 0; border-bottom-right-radius: 0;
                 }
@@ -447,13 +470,17 @@ div.divider {
             > .dropdown-menu {
                 display: block; opacity: 0; z-index: -100;
                 @include transition(all 120ms ease-in-out);
-                background-color: $brand-primary;
-                border: none; border-top-left-radius: 0; border-top-right-radius: 0;
+                background-color: $mm-bg-color;
+              border-color: $mm-bg-hover-color;
+              border-top-left-radius: 0; border-top-right-radius: 0;
                 box-shadow: none;
                 margin-top: 0;
                 ul { padding: 0; }
-                li:hover { background-color: lighten($brand-primary, 10%); }
-                li > a { color: #fff; }
+                li:hover {
+                  background-color: $mm-bg-hover-color;
+                  > a { color: $mm-color; }
+                }
+                li > a { color: $mm-hover-color; }
             }
         }
     }
@@ -591,7 +618,7 @@ div.divider {
 
 // собственная тема шапки
 // Navbar links
-$navbar-strada-link-color:                #222;
+$navbar-strada-link-color:                #fff;
 $navbar-strada-link-hover-color:          #aaa;
 $navbar-strada-link-hover-bg:             transparent;
 $navbar-strada-link-active-color:         $navbar-strada-link-hover-color;
@@ -660,11 +687,11 @@ $navbar-strada-toggle-border-color:       #ddd;
     }
 
     // Dropdown menu items
-    .nav > .open > a,
-    .nav > .open > a:hover,
-    .nav > .open > a:focus {
-        border-color: transparent;
-    }
+    //.nav > .open > a,
+    //.nav > .open > a:hover,
+    //.nav > .open > a:focus {
+    //    border-color: transparent;
+    //}
 
     // Links in navbars
     .navbar-link {

@@ -296,7 +296,7 @@ var popupStatus = 0;
                         }
                     } else {
                         if ($('.line-2').css('position') == 'fixed') {
-                            $('.line-2').css('top', 28);
+                            $('.line-2').css('top', 27);
                             $('.line-2').css('position', 'absolute');
                             $('.line-2').css('box-shadow', 'none');
                         }
