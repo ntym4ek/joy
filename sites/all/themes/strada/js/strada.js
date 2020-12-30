@@ -387,7 +387,7 @@ jQuery.event.special.touchstart = {
                 var docWidth = $(document).width();
                 var winHeight = $(window).height();
                 if( docHeight < winHeight ) { docHeight = winHeight; }
-                $("#modalBackdrop").css("top", "125px").css("height", docHeight + "px").css("width", docWidth + "px").show();
+                $("#modalBackdrop").css("top", "146px").css("height", docHeight + "px").css("width", docWidth + "px").show();
             });
             menu.find("> li").on("shown.bs.dropdown", function () {
                 mainMenuResize($(".level-2-item.visible"));

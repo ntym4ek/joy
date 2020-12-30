@@ -82,17 +82,18 @@
             <div class="topbar">
                 <div class="topbar-region hidden-xs"><i class="far fa-location-arrow"></i> <a href="#" id="user_region" class="select-region"></a></div>
 
-                <div class="topbar-phone hidden-xs">
-                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/<? print ext_user_normalize_phone(variable_get('manager_whatsapp', '8-922-910-99-40')); ?>" tabindex="0" role="button" target="_blank"><? print variable_get('manager_whatsapp', '8-922-910-99-40'); ?></a>
-                </div>
+<!--                <div class="topbar-phone hidden-xs">-->
+<!--                    Есть вопросы? Пишите WhatsApp:&nbsp;<a href="https://wa.me/--><?// print ext_user_normalize_phone(variable_get('manager_whatsapp', '8-922-910-99-40')); ?><!--" tabindex="0" role="button" target="_blank">--><?// print variable_get('manager_whatsapp', '8-922-910-99-40'); ?><!--</a>-->
+<!--                </div>-->
 
-                <div class="topbar-shipping"><a id="free_shipping" href="/info/delivery">Бесплатная доставка</a></div>
+<!--                <div class="topbar-shipping"><a id="free_shipping" href="/info/delivery">Доставка</a></div>-->
                 <div class="topbar-menu hidden-xs hidden-sm">
                     <ul class="dry-list">
-<!--                        <li><a href="/info/promo"><span class="text-info">Акции</span></a></li>-->
+                        <li><a href="/info/delivery">Доставка</a></li>
                         <li><a href="/info/payment">Оплата</a></li>
                         <li><a href="/info/return">Возврат</a></li>
                         <li><a href="/info/how-to-buy">Как купить</a></li>
+                        <li><a href="/info/contacts">Контакты</a></li>
                     </ul>
                 </div>
             </div>
@@ -111,14 +112,14 @@
                 </div>
 
                 <?php if (empty($tsss)): ?>
-                <div class="navbar-menu" role="navigation">
-                    <?php print render($main_menu_mobile); ?>
+                <div class="navbar-menu hidden-sm hidden-md hidden-lg" role="navigation">
+<!--                    --><?php //print render($main_menu_mobile); ?>
                 </div>
                 <?php endif; ?>
 
-              <div class="navbar-phone">
-                <a href="tel:88005502885" tabindex="0" role="button" class="btn btn-brand">8-800-550-28-85<br /><div>круглосуточно</div></a>
-              </div>
+<!--              <div class="navbar-phone">-->
+<!--                <a href="tel:88005502885" tabindex="0" role="button" class="btn btn-brand">8-800-550-28-85<br /><div>круглосуточно</div></a>-->
+<!--              </div>-->
 
               <?php if (empty($tsss)): ?>
                 <div class="navbar-search">
@@ -166,7 +167,22 @@
     <?php if (empty($tsss)): ?>
     <div class="line-3 row hidden-xs">
         <div class="<?php print $container_class; ?>">
-            <?php print render($main_menu); ?>
+          <div class="menu-horizont-wrapper">
+            <div class="navbar-menu" role="navigation">
+              <?php print render($main_menu_mobile); ?>
+            </div>
+<!--          --><?php //print render($main_menu); ?>
+            <div class="menu-horizont">
+              <ul class="">
+                <li><a href="/catalog/udobreniya">Удобрения</a></li>
+                <li><a href="/catalog/dom">Для дома</a></li>
+                <li><a href="/catalog/dacha">Для дачи</a></li>
+                <li><a href="/catalog/banya">Баня</a></li>
+                <li><a href="/catalog/otdyh-i-sport">Отдых и спорт</a></li>
+                <li><a href="/catalog/bytovaya-himiya">Бытовая химия</a></li>
+              </ul>
+            </div>
+          </div>
         </div>
     </div>
     <?php endif; ?>
@@ -258,7 +274,7 @@
                 <li><a href="<?php print $GLOBALS['user']->uid ? '/user/' . $GLOBALS['user']->uid . '/orders' : '/user/login'; ?>">Мои заказы</a></li>
                 <li><a href="/info/about">О компании</a></li>
                 <li><a href="/info/resellers">Оптовым покупателям</a></li>
-                <li><a href="/info/suppliers">Поставщикам</a></li>
+                <li><a href="/info/suppliers">Поставщкам</a></li>
                 <li><a href="/info/how-to-buy">Помощь</a></li>
             </ul>
         </div>

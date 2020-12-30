@@ -235,7 +235,9 @@
             "price": $(".product-breaf .price-amount").text().replace("₽", "").trim(),
           });
 
-          fbq('track', 'ViewContent');
+          if (typeof (fbq) === "function") {
+            fbq('track', 'ViewContent');
+          }
         }
         setTimeout(function() {
           GTMcheckCardsImpressions();
