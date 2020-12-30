@@ -41,6 +41,7 @@ function strada_preprocess_page(array &$vars)
     }
     $main_menu['#theme_wrappers'] = ['menu_tree__main_menu_mobile'];
     $vars['main_menu_mobile'] = $main_menu;
+    $vars['main_menu_mobile_html'] = render($main_menu);
 
 //    // menu menu
 //    $menu = menu_tree_all_data('menu-main');

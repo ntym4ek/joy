@@ -297,7 +297,7 @@ jQuery.event.special.touchstart = {
             $("body").once('header-scroll', function() {
                 window.onscroll = function () {
                     var fixedTop = 0;
-                    if ($('body').hasClass('admin-menu')) fixedTop = 28;
+                    if ($('body').hasClass('admin-menu')) fixedTop = 27;
                     if ($(window).scrollTop() > 40) {
                         if ($('.line-2').css('position') == 'absolute') {
                             $('.line-2').css('top', fixedTop);
@@ -390,7 +390,7 @@ jQuery.event.special.touchstart = {
                 $("#modalBackdrop").css("top", "146px").css("height", docHeight + "px").css("width", docWidth + "px").show();
             });
             menu.find("> li").on("shown.bs.dropdown", function () {
-                mainMenuResize($(".level-2-item.visible"));
+                mainMenuResize($(".open .level-2-item"));
             });
             menu.find("> li").on("hidden.bs.dropdown", function () {
                 $("#modalBackdrop").hide();

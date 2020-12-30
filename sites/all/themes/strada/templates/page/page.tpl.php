@@ -113,7 +113,7 @@
 
                 <?php if (empty($tsss)): ?>
                 <div class="navbar-menu hidden-sm hidden-md hidden-lg" role="navigation">
-<!--                    --><?php //print render($main_menu_mobile); ?>
+                    <?php print $main_menu_mobile_html; ?>
                 </div>
                 <?php endif; ?>
 
@@ -169,7 +169,7 @@
         <div class="<?php print $container_class; ?>">
           <div class="menu-horizont-wrapper">
             <div class="navbar-menu" role="navigation">
-              <?php print render($main_menu_mobile); ?>
+              <?php print $main_menu_mobile_html; ?>
             </div>
 <!--          --><?php //print render($main_menu); ?>
             <div class="menu-horizont">

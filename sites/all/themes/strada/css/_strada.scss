@@ -236,7 +236,7 @@ div.divider {
         }
         .navbar-search {
             flex: auto; order: 5;
-            padding-right: $grid-gutter-width*3;
+            padding: 0 70px 0 40px;
             .btn {
                 border-bottom-left-radius: 0!important;
                 border-top-left-radius: 0!important;
@@ -586,6 +586,13 @@ div.divider {
                     padding: 0;
                 }
             }
+          .main-menu-mobile {
+            .dropdown-toggle {
+              border: none;
+              padding: 0 5px 0 10px;
+              span { display: none; }
+            }
+          }
             .navbar-menu {
                 padding-right: 0;
             }
@@ -594,8 +601,16 @@ div.divider {
             }
             .navbar-search {
                 flex: 0 auto; order: 3;
-                padding-right: 0;
-                .navbar-search-mobile { display: block; }
+                padding: 0;
+                .navbar-search-mobile {
+                  display: block;
+                  .btn {
+                    background: #eee; border-color: #eee;
+                    color: $brand-primary;
+                    border-top-left-radius: 4px!important;
+                    border-bottom-left-radius: 4px!important;
+                  }
+                }
                 .navbar-search-pane {
                     display: none;
                     background: #ddd;
