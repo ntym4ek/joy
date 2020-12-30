@@ -180,6 +180,10 @@
                 <li><a href="/catalog/banya">Баня</a></li>
                 <li><a href="/catalog/otdyh-i-sport">Отдых и спорт</a></li>
                 <li><a href="/catalog/bytovaya-himiya">Бытовая химия</a></li>
+                <li><a href="/catalog/ot-pozhara">От пожара</a></li>
+                <li><a href="/catalog/avtohimiya">Автохимия</a></li>
+                <li><a href="/catalog/hobbi">Хобби</a></li>
+                <li><a href="/catalog/zootovary">Зоотовары</a></li>
               </ul>
             </div>
           </div>
