@@ -47,7 +47,7 @@ $a = url('unsubscribe', ['absolute' => true, 'query' => ['mail' => $message["to"
                         <tr>
                             <td style="border-bottom: 1px solid #ccc;">
                                 <div style="width: 110px; margin-bottom: 10px;">
-                                  <a href="https://joy-magazin.ru" target="_blank" title="JOY-MAGAZIN - ДЛЯ ДОМА И САДА"><img src="https://joy-magazin.ru/sites/all/themes/strada/logo.png" style="width: 100%;"></a>
+                                  <a href="https://joy-magazin.ru" target="_blank" title="JOY-MAGAZIN - ДЛЯ ДОМА И САДА"><img src="https://joy-magazin.ru/sites/all/themes/strada/logo_mail.png" style="width: 100%;"></a>
                                 </div>
                             </td>
                         </tr>

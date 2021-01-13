@@ -158,10 +158,36 @@ div.divider {
         }
     }
     .line-3 {
-      background-color: $brand-primary;
-        line-height: 1;
-        position: relative;
-        margin-top: 75px;
+      background-color: #232f3e;
+      line-height: 1;
+      position: relative;
+      margin-top: 75px;
+      .menu-horizont-wrapper {
+        display: flex;
+        padding: 5px 0;
+        .menu-horizont {
+          ul {
+            display: flex;
+            margin: 0; padding: 0;
+            list-style: none;
+            > li > a {
+              display: block;
+              color: #eee; font-size: 12px; text-transform: uppercase;
+              border: 1px solid transparent; border-radius: 4px;
+              padding: 10px 8px;
+              &:hover,
+              &:focus {
+                border-color: #eee;
+                text-decoration: none;
+              }
+              @media #{$wide} {
+                font-size: 14px;
+                padding: 8px 15px;
+              }
+            }
+          }
+        }
+      }
     }
 
     .topbar {
@@ -485,8 +511,27 @@ div.divider {
         }
     }
     .main-menu-mobile {
+      padding: 0; margin: 0;
         .level-1-item {
             position: initial;
+          > a {
+            display: block;
+            border: 1px solid #eee; border-radius: 4px;
+            color: #eee; font-size: 14px; text-transform: uppercase;
+            margin-right: $grid-gutter-width;
+            > i {
+              background: #eee; border-radius: 3px;
+              color: $brand-primary;
+              padding: 8px 10px;
+              @include transition(all 120ms ease-in-out);
+            }
+            &:focus { text-decoration: none; }
+            &:hover i {
+              background: #232f3e;
+              color: #eee;
+              text-decoration: none;
+            }
+          }
             > .dropdown-menu {
                 left: 0; right: 0;
                 margin: 0; padding: 0;
@@ -2427,6 +2472,7 @@ form[id^="user-profile-form"] {
   text-align: center;
     margin: $grid-gutter-width/2 0;
 }
+#block-views-sliders-block { margin-top: $grid-gutter-width*2; }
 .region-sidebar-first .block { margin-bottom: $grid-gutter-width*2; }
 
 .block-menu {

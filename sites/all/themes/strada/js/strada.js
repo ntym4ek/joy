@@ -146,7 +146,7 @@ jQuery.event.special.touchstart = {
 
                 // если кука в неправильном формате - сбросить
                 var user_region = JSON.parse($.cookie('user_region'));
-                if (!user_region || (user_region && user_region.data === undefined)) {
+                if (user_region && user_region.data === undefined) {
                     $.cookie('user_region', null, {path: "/"});
                 }
 
@@ -258,15 +258,13 @@ jQuery.event.special.touchstart = {
                         $.extend(suggestion.data, arg1.data, arg2.data, { shipping: arg3});
                         $.cookie('user_region', JSON.stringify(suggestion), {path: "/"});
                         var user_region = JSON.parse($.cookie('user_region'));
-                        if (user_region && user_region.data !== undefined) {
-                          $("#user_region").html(user_region.data.settlement ? user_region.data.settlement : user_region.data.city);
+                        $("#user_region").html(user_region.data.settlement ? user_region.data.settlement : user_region.data.city);
 
-                          // обновить текст о бесплатной доставке
-                          if (user_region.data.shipping) {
-                            $('#free_shipping').html(user_region.data.shipping).show();
-                          } else {
-                            $('#free_shipping').hide();
-                          }
+                        // обновить текст о бесплатной доставке
+                        if (user_region.data.shipping) {
+                          $('#free_shipping').html(user_region.data.shipping).show();
+                        } else {
+                          $('#free_shipping').hide();
                         }
                     });
             }

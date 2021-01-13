@@ -38,11 +38,9 @@ function strada_menu_tree__main_menu(&$variables) {
  * Bootstrap theme wrapper function for the primary desktop menu links.
  */
 function strada_menu_tree__main_menu_mobile(&$variables) {
-  return '<ul class="nav main-menu-mobile">
+  return '<ul class="main-menu-mobile">
             <li class="first last expanded dropdown level-1-item" id="dropdown">
-                <a href="/" title="Каталог товаров" class="dropdown-toggle btn btn-brand" data-toggle="dropdown">
-                    <i class="far fa-bars" aria-hidden="true"></i>
-                </a>
+                <a href="/" title="Каталог товаров" class="dropdown-toggle" data-toggle="dropdown"><i class="far fa-bars" aria-hidden="true"></i></a>
                 <div class="dropdown-menu">
                     <div class="level-2-wrapper">
                         <ul class="level-2">' .
