@@ -107,7 +107,7 @@
             <div class="navbar-header">
                 <div class="navbar-logo">
                     <a class="logo" href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>">
-                        <img class="img-responsive" src="/sites/all/themes/strada/logo.png" alt="<?php print $site_name; ?>" />
+                        <img class="img-responsive" src="/sites/all/themes/strada/logo3.png" alt="<?php print $site_name; ?>" />
                     </a>
                 </div>
 
@@ -261,7 +261,7 @@
     <div class="f-main <?php print $container_class; ?>">
         <div class="f-logo">
             <a class="logo" href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>">
-                <img class="img-responsive" src="/sites/all/themes/strada/logo_w.png" alt="<?php print t('Home'); ?>" />
+                <img class="img-responsive" src="/sites/all/themes/strada/logo3.png" alt="<?php print t('Home'); ?>" />
             </a>
             <div class="f-info">
                 <div class="f-company"><? print date("Y"); ?> © joy-magazin.ru — интернет-магазин товаров для сада и дома. Все права защищены. Доставка по всей России!</div>
