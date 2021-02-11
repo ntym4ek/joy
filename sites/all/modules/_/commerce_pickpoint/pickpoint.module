@@ -200,7 +200,7 @@ function pickpoint_api_request($data)
   $login = 'vq7uGq';
   $pass = '4tyjgtVV';
   $ikn = '9990813812';
-  $error_messages = array();
+  $error_messages = [];
 
   // запросить новый $session_id, если отсутствует или не актуален
   if (empty($session) || time()+60 > strtotime($session['expires']) ) {
@@ -231,7 +231,7 @@ function pickpoint_api_request($data)
         ];
         variable_set('commerce_pickpoint_session', $session);
       } else {
-        $error_messages = array_merge($error_messages, $response['ErrorMessage']);
+        $error_messages = array_merge($error_messages, [$response['ErrorMessage']]);
       }
     }
   }
@@ -274,7 +274,7 @@ function pickpoint_api_request($data)
   if (isset($response)) {
     // Collect additional error messages.
     if ($response['ErrorMessage']) {
-      $error_messages = array_merge($error_messages, $response['ErrorMessage']);
+      $error_messages = array_merge($error_messages, [$response['ErrorMessage']]);
     }
   }
 

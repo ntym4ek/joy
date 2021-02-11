@@ -910,32 +910,6 @@ $navbar-strada-toggle-border-color:       #ddd;
     }
 }
 
-.view-sliders {
-    .carousel-inner {
-        min-height: 50px;
-        @media #{$tablet} { min-height: 100px; }
-        @media #{$wide} { min-height: 300px; }
-    }
-    .carousel-control {
-        background: none;
-        .icon-prev { left: 18%; }
-        .icon-next { right: 18%; }
-        .icon-prev::before,
-        .icon-next::before {
-            display: inline-block;
-            font-family: "flexslider-icon";
-            font-style: normal;
-            font-size: 40px;
-            font-variant: normal;
-            text-rendering: auto;
-            -webkit-font-smoothing: antialiased;
-        }
-        .icon-next::before { content: "\f002"; }
-        .icon-prev::before { content: "\f001"; }
-      &:focus:not(:hover) { opacity: .5 }
-    }
-}
-
 .view-catalog-products,
 .view-commerce-wishlist-page,
 .view-related-items,
@@ -2570,20 +2544,48 @@ form[id^="user-profile-form"] {
 
 
 /* ------------------------------------------------- Слайдеры ------------------------------------------------------- */
-.carousel-indicators {
+.view-sliders {
+  .carousel-inner {
+    min-height: 50px;
+    @media #{$tablet} { min-height: 100px; }
+    @media #{$wide} { min-height: 300px; }
+  }
+  .carousel-control {
+    background: none;
+    .icon-prev { left: 18%; }
+    .icon-next { right: 18%; }
+    .icon-prev::before,
+    .icon-next::before {
+      display: inline-block;
+      font-family: "flexslider-icon";
+      font-style: normal;
+      font-size: 40px;
+      font-variant: normal;
+      text-rendering: auto;
+      -webkit-font-smoothing: antialiased;
+    }
+    .icon-next::before { content: "\f002"; }
+    .icon-prev::before { content: "\f001"; }
+    &:focus:not(:hover) { opacity: .5 }
+  }
+  .carousel-indicators {
     margin-bottom: 0;
+    bottom: 10px;
+    &:not(:hover) { opacity: .5; }
+    @include transition(opacity 0.2s ease-in-out);
     li {
-        box-shadow: 1px 1px 2px #111;
+      box-shadow: 1px 1px 2px #111;
     }
     @media #{$mobile} {
-        bottom: 0;
-        li {
-            width: 5px; height: 5px;
-            &.active {
-                width: 6px; height: 6px;
-            }
+      bottom: 0;
+      li {
+        width: 5px; height: 5px;
+        &.active {
+          width: 6px; height: 6px;
         }
+      }
     }
+  }
 }
 
 
