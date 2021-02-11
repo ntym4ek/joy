@@ -1,6 +1,0 @@
-name = DaData suggestions examples
-description = Set of examples for DaData suggestions module.
-version = 7.x-1.x-dev
-package = Fields
-core = 7.x
-dependencies[] = dadata
