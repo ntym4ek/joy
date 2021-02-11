@@ -149,3 +149,4 @@ function strada_js_alter(&$js)
     unset($js["sites/all/themes/strada/bootstrap/assets/javascripts/bootstrap/tab.js"]);
   }
 }
+

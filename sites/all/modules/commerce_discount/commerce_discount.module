@@ -892,13 +892,9 @@ function commerce_discount_commerce_line_item_type_info() {
  *   The line item title.
  */
 function commerce_discount_line_item_title($line_item) {
-  $discount = entity_load_single('commerce_discount', $line_item->data['discount_name']);
-
-  if (is_object($discount) && !empty($discount->component_title)) {
-    return check_plain($discount->component_title);
-  }
-
-  return t('Fixed amount discount');
+  $wrapper = entity_metadata_wrapper('commerce_discount', $line_item->data['discount_name']);
+  $title = $wrapper->component_title->value();
+  return empty($title) ? t('Fixed amount discount') : check_plain($title);
 }
 
 /**

@@ -459,16 +459,6 @@ function helper_views_data_alter(&$data) {
     }
   }
 }
-/**
- * --------------------------------- Заглушка вместо отсутствующих картинок --------------------------------------------
- * http://xandeadx.ru/blog/drupal/854
- * Preprocess function for theme_image_style().
- */
-function helper_preprocess_image_style(&$vars) {
-  if (strpos($_SERVER['HTTP_HOST'],'.local')) {
-    $vars['path'] = 'public://default_images/no_photo.png';
-  }
-}
 
 
 /**

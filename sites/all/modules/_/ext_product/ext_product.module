@@ -68,10 +68,10 @@ function ext_product_form_commerce_add_to_cart_form_alter(&$form, &$form_state)
   }
 
   // если товар в наличии
+  $product_id = isset($form['product_id']) ? $form['product_id']['#value'] : null;
   if (empty($form_state['default_product']->field_p_out_of_stock['und'][0]['value'])) {
     // - AJAXификация кнопки --------------------------------------------------------
     // - проверка наличия товара в корзине и смена состояния и текста кнопки --------
-    $product_id = isset($form['product_id']) ? $form['product_id']['#value'] : null;
     if (in_array($product_id, _get_order_product_ids($GLOBALS['user']->uid))) {
       $form['submit']['#prefix'] = '<div class="btn-group" role="group"><a class="btn btn-primary btn-empty" href="/cart">Перейти в корзину</a>';
       $form['submit']['#value'] = '+1';
@@ -130,26 +130,31 @@ function ext_product_form_commerce_add_to_cart_form_alter(&$form, &$form_state)
   }
 
   // разметка schema.org itemprop="productID" content="facebook_tshirt_001"
-  $schema = '<meta itemprop="productID" content="' . $product_id . '">';
-  $schema .= '<meta itemprop="url" content="' . url('node/' . $form_state["context"]["entity_id"], ['absolute' => true, 'query' => ['id' => $product_id]]) . '">';
-  if (!empty($form['attributes'])) {
-    foreach($form['attributes'] as $attribute) {
-      if (isset($attribute["#options"])) {
-        $schema .=
-          '<div itemprop="value" itemscope itemtype="http://schema.org/PropertyValue">' .
+  if ($product_id) {
+    $schema = '<meta itemprop="productID" content="' . $product_id . '">';
+    $schema .= '<meta itemprop="url" content="' . url('node/' . $form_state["context"]["entity_id"], [
+        'absolute' => TRUE,
+        'query' => ['id' => $product_id]
+      ]) . '">';
+    if (!empty($form['attributes'])) {
+      foreach ($form['attributes'] as $attribute) {
+        if (isset($attribute["#options"])) {
+          $schema .=
+            '<div itemprop="value" itemscope itemtype="http://schema.org/PropertyValue">' .
             '<span itemprop="name">' . $attribute['#title'] . '</span>' .
             '<meta itemprop="value" content="True">' . $attribute['#options'][$attribute['#default_value']] . '</meta>' .
-          '</div>';
+            '</div>';
+        }
       }
     }
-  }
-  $schema .=
-    '<div itemprop="offers" itemscope itemtype="http://schema.org/Offer">' .
+    $schema .=
+      '<div itemprop="offers" itemscope itemtype="http://schema.org/Offer">' .
       '<link itemprop="availability" href="http://schema.org/' . ($form_state["default_product"]->status ? 'InStock' : 'OutOfStock') . '">' .
-      '<meta itemprop="price" content="' . $form_state["default_product"]->commerce_price["und"][0]["amount"]/100 . '">' .
+      '<meta itemprop="price" content="' . $form_state["default_product"]->commerce_price["und"][0]["amount"] / 100 . '">' .
       '<meta itemprop="priceCurrency" content="RUB">' .
-    '</div>';
-  $form["schema_org"]["#markup"] = '<div style="display: none;">' . $schema . '</div>';
+      '</div>';
+    $form["schema_org"]["#markup"] = '<div style="display: none;">' . $schema . '</div>';
+  }
 }
 
 
