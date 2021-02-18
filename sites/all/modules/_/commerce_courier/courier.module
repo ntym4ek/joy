@@ -63,9 +63,11 @@ function courier_service_rate_order($shipping_service, $order)
       $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
 
       // возможно это Киров или Чепецк
-      if (isset($data["region"]) && in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
+      $non_free_shipping = ext_checkout_non_free_shipping($order);
+      if (isset($data["region"]) && in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])
+        && (empty($non_free_shipping['reason']) || $non_free_shipping['reason'] != 'weight')) {
         $rate['amount'] = 0;
-        if (ext_checkout_non_free_shipping($order)) {
+        if ($non_free_shipping) {
           // если в стоимости доставки курьером в админке стоит 1, стоимость рассчитывать от Курьерских служб
           $amount = variable_get('courier_delivery_cost', 250) == 1 ? 250 : variable_get('courier_delivery_cost', 250);
         } else {
@@ -73,8 +75,7 @@ function courier_service_rate_order($shipping_service, $order)
         }
         $rate['amount'] = ceil($amount) * 100;
       }
-      elseif ((!empty($data['boxberry']['courier']['ExpressDelivery']) || !empty($data["cdek"]["profiles"]["courier"]["price"]))
-        || (isset($data["region"]) && in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000']))) {
+      elseif ((!empty($data['boxberry']['courier']['ExpressDelivery']) || !empty($data["cdek"]["profiles"]["courier"]["price"]))) {
         // если есть расчёты по ББ или СДЭК
         $amount_bb = 99999;
         $to_door_cost_bb = 0;
