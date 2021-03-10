@@ -50,19 +50,28 @@ function pickup_commerce_shipping_service_info() {
 function pickup_service_rate_order($shipping_service, $order)
 {
   $rate = array(
-    'amount' => 0,
+    'amount' => -1,
     'currency_code' => 'RUB',
     'data' => [],
   );
 
   if (arg(0) != 'checkout') {
-    // оставить самовывоз только для служесного пользования
-    if (user_has_role(PRODUCT_MANAGER_ROLE_ID) && $GLOBALS['user']->uid != 393) {
-      return $rate;
+    $order_wr = entity_metadata_wrapper('commerce_order', $order);
+    $field_name = commerce_physical_order_shipping_field_name($order);
+    $shipping_profile = $order_wr->{$field_name}->value();
+
+    if (isset($shipping_profile->field_data['und'][0]['value'])) {
+      $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+      $order_amount = $order_wr->commerce_order_total->amount->value();
+
+      // сумма заказа больше 300 р. и только для чепецка и кирова
+      if ($order_amount >= 30000 && isset($data["region"]) && in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
+        $rate['amount'] = 0;
+      }
     }
   }
 
-  return false;
+  return ($rate['amount'] != -1 || isset($rate['data']['errors'])) ? $rate : false;
 }
 
 
