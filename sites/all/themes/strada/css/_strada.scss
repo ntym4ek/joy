@@ -241,15 +241,27 @@ div.divider {
 
       .btn-brand { @include button-variant($btn-brand-bg, $btn-brand-color, $btn-brand-border); }
 
-        .navbar-logo {
-            flex: 0 0 100px; order: 1;
-            padding: 2px 0;
-            position: relative;
-            .logo {
-                display: inline-block;
-                padding-right: 0;
-            }
+      .navbar-logo {
+        flex: 0 0 100px; order: 1;
+        padding: 2px 0;
+        position: relative;
+
+        .logo {
+          display: inline-block;
+          padding-right: 0;
+          text-align: center;
         }
+        .logo-img {
+          display: inline-block;
+          width: 70%;
+        }
+        .logo-words {
+          transition: all .1s linear;
+          &:hover {
+            opacity: .8;
+          }
+        }
+      }
         .navbar-menu {
             flex: 0 1 auto; order: 3;
             padding-right: $grid-gutter-width;
