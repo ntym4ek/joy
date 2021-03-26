@@ -242,7 +242,7 @@ div.divider {
       .btn-brand { @include button-variant($btn-brand-bg, $btn-brand-color, $btn-brand-border); }
 
       .navbar-logo {
-        flex: 0 0 100px; order: 1;
+        flex: 0 0 155px; order: 1;
         padding: 2px 0;
         position: relative;
 
@@ -253,13 +253,12 @@ div.divider {
         }
         .logo-img {
           display: inline-block;
-          width: 70%;
+          width: 45%;
+          margin: -10px 0 4px;
         }
         .logo-words {
           transition: all .1s linear;
-          &:hover {
-            opacity: .8;
-          }
+          width: 100%;
         }
       }
         .navbar-menu {
@@ -274,7 +273,7 @@ div.divider {
         }
         .navbar-search {
             flex: auto; order: 5;
-            padding: 0 70px 0 40px;
+            padding: 0 40px;
             .btn {
                 border-bottom-left-radius: 0!important;
                 border-top-left-radius: 0!important;
