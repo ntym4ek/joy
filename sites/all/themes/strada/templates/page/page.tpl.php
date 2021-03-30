@@ -107,8 +107,8 @@
             <div class="navbar-header">
                 <div class="navbar-logo">
                     <a class="logo" href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>">
-                      <img class="logo-img img-responsive" src="/sites/all/themes/strada/images/joy.png" alt="<?php print $site_name; ?>" />
-                      <img class="logo-words" src="/sites/all/themes/strada/logo_words.svg" alt="<?php print $site_name; ?>" />
+                      <img class="logo-img" src="/sites/all/themes/strada/logo-img.png" alt="<?php print $site_name; ?>" />
+                      <img class="logo-words" src="/sites/all/themes/strada/logo_words2.svg" alt="<?php print $site_name; ?>" />
                     </a>
                 </div>
 

@@ -242,23 +242,25 @@ div.divider {
       .btn-brand { @include button-variant($btn-brand-bg, $btn-brand-color, $btn-brand-border); }
 
       .navbar-logo {
-        flex: 0 0 155px; order: 1;
-        padding: 2px 0;
+        flex: 0 0 400px; order: 1;
+        padding: 0;
         position: relative;
 
         .logo {
-          display: inline-block;
+          //display: inline-block;
           padding-right: 0;
-          text-align: center;
+          //text-align: center;
+          width: 100%;
         }
         .logo-img {
+          width: 15%;
+          margin-top: -4px;
           display: inline-block;
-          width: 45%;
-          margin: -10px 0 4px;
+          margin-right: 16px;
         }
         .logo-words {
-          transition: all .1s linear;
-          width: 100%;
+          width: 80%;
+          display: inline-block;
         }
       }
         .navbar-menu {
@@ -273,12 +275,13 @@ div.divider {
         }
         .navbar-search {
             flex: auto; order: 5;
-            padding: 0 40px;
+            padding: 0 20px;
             .btn {
                 border-bottom-left-radius: 0!important;
                 border-top-left-radius: 0!important;
               background-color: $brand-notice;
               border-color: $brand-notice;
+              padding: 5px 12px;
               &:hover,
               &:active,
               &:focus {
@@ -287,6 +290,7 @@ div.divider {
             }
           .live-results-search-textfield {
             background: #fff;
+            height: 36px;
           }
             .navbar-search-mobile,
             .navbar-search-pane-close { display: none; }
