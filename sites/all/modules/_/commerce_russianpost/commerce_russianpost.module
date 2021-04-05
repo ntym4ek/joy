@@ -309,7 +309,7 @@ function commerce_russianpost_api_request($params = array(), $message = '') {
                 );
             } else {
                 foreach ($response_arr['Отправления'] as $key => $item) {
-                    if ($item['Товарное'] == 1 && $item['Ценное'] == 1) {
+                    if (!empty($item['Доставка'])) {
                         $enkey = transliteration_get($key, '?', language_default('language'));
                         $calc['services'][$enkey] = array(
                             'key' => $enkey,
@@ -319,7 +319,7 @@ function commerce_russianpost_api_request($params = array(), $message = '') {
                             'package_count' => $item['Количество'],
                             'base_cost' => $item['Тариф'],
                             'ensurance' => isset($item['Страховка']) ? $item['Страховка'] : 0,
-                            'class' => $item['КлассДоставки'],
+                            'class' => '', // устарело
                             'error' => isset($item['НетРасчета']) ? $item['НетРасчета'] : '',
                         );
                     }
