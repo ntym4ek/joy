@@ -87,12 +87,12 @@ function cdek_service_rate_order($shipping_service, $order)
           }
 
           // если ошибка
-          if (isset($response["error"])) {
+          if (empty($response) || isset($response["error"])) {
             if ($response["error"][0]["code"] == 3) {
               $rate['data']['errors'][] = 'Нет доставки в этот населенный пункт';
             }
             else {
-              $rate['data']['errors'][] = $response["error"][0]["text"];
+              $rate['data']['errors'][] = isset($response["error"]) ? $response["error"][0]["text"] : 'Ошибка при запросе расчёта';
             }
             $field_data['cdek'] = [];
           }

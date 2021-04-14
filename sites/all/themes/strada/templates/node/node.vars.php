@@ -97,16 +97,3 @@ function strada_preprocess_node(&$vars)
   }
 
 }
-
-/**
- * Processes variables for the "node" theme hook.
- *
- * See template for list of available variables.
- *
- * @see node.tpl.php
- *
- * @ingroup theme_process
- */
-function strada_process_node(&$vars) {
-
-}

@@ -78,12 +78,12 @@ function pickpoint_service_rate_order($shipping_service, $order)
           try {
             $response = pickpoint_api_request($rate_request);
           } catch (Exception $e) {
-            $response['cost_data'][] = ['err' => $e->getMessage()];
+            $response['ErrorMessage'] = $e->getMessage();
           }
 
           // если пустой ответ или ошибка
-          if ($response["ErrorCode"]) {
-            $rate['data']['errors'][] = $response["ErrorMessage"];
+          if (empty($response) || $response["ErrorMessage"]) {
+            $rate['data']['errors'][] = empty($response["ErrorMessage"]) ? 'Ошибка при запросе расчёта' : $response["ErrorMessage"];
             $field_data['pickpoint'] = [];
           }
           // расчёт выполнен
@@ -124,7 +124,7 @@ function pickpoint_service_rate_order($shipping_service, $order)
   }
 
   // если доставка всё ещё равна нулю, то это ошибка
-  return ($rate['amount'] != -1 || isset($rate['data']['errors'])) ? $rate : false;
+  return ($rate['amount'] != -1) ? $rate : false;
 }
 
 /**

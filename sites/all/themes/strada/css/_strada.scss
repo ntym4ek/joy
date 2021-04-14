@@ -277,8 +277,8 @@ div.divider {
             flex: auto; order: 5;
             padding: 0 20px;
             .btn {
-                border-bottom-left-radius: 0!important;
-                border-top-left-radius: 0!important;
+              border-bottom-left-radius: 0!important;
+              border-top-left-radius: 0!important;
               background-color: $brand-notice;
               border-color: $brand-notice;
               padding: 5px 12px;
@@ -292,8 +292,8 @@ div.divider {
             background: #fff;
             height: 36px;
           }
-            .navbar-search-mobile,
-            .navbar-search-pane-close { display: none; }
+          .navbar-search-mobile,
+          .navbar-search-pane-close { display: none; }
         }
         .navbar-user {
             flex: 0 0 auto; order: 7;
