@@ -109,7 +109,6 @@
                         delete data.region;
                         $(".field-name-field-data textarea").val(JSON.stringify(data));
                         $(".field-name-field-region input").val("");
-                        $(".field-name-field-region input").val("");
                         $(".field-name-field-zipcode-calc input").val("");
                     }
 

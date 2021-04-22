@@ -377,6 +377,7 @@ div.divider {
           .cart-fade-box {
             background: #fff; box-shadow: 1px 1px 10px 4px #aaa; border-radius: 4px;
             position: absolute; right: 0; top: 99%; z-index: 10;
+            max-width: 450px;
             padding: 16px;
             opacity: 0; visibility: hidden;
             @include transition(opacity 0.2s ease-in-out);

@@ -186,6 +186,12 @@ function cdek_build_rate_request($order)
       $target_point = $data["cdek"]["point"]["id"];
     }
 
+    // Москва перестала определяться по этому индексу, меняем запрос по индексу на запрос по ID
+    if ($zipcode == '101000') {
+      $receiver_city_id = 44;
+      $zipcode = '';
+    }
+
     // $calc->setAuth('DCCP2Y0vHfQJXdxesgu5xcfZzAXB5kMx', '2IHAf3whPpeUz85BPqrVuQGz21B9dfDV');
     // $calc->setAuth('z9GRRu7FxmO53CQ9cFfI6qiy32wpfTkd', 'w24JTCv4MnAcuRTx0oHjHLDtyt3I6IBq'); тест
     $request += [
