@@ -56,65 +56,58 @@ function courier_service_rate_order($shipping_service, $order)
   if (arg(0) != 'checkout') {
     $order_wr = entity_metadata_wrapper('commerce_order', $order);
     $field_name = commerce_physical_order_shipping_field_name($order);
-    $shipping_profile = $order_wr->{$field_name}->value();
+    $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+    $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
 
-    // базовые данные
-    if (isset($shipping_profile->field_data['und'][0]['value'])) {
-      $data = json_decode($shipping_profile->field_data['und'][0]['value'], TRUE);
+    // возможно это Киров или Чепецк
+    if (isset($field_data["region"]) && in_array($field_data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
+      if ($field_data["region"]["data"]["city_kladr_id"] == '4300000100000') {
+        $rate['amount'] = 30000;
+      }
+      if ($field_data["region"]["data"]["city_kladr_id"] == '4300000400000') {
+        if ($products_amount_base < 100000) $rate['amount'] = 25000;
+        else $rate['amount'] = 0;
+      }
+    }
+    elseif ((!empty($field_data['boxberry']['courier']['ExpressDelivery']) || !empty($field_data["cdek"]["profiles"]["courier"]["price"]))) {
+      // если есть расчёты по ББ или СДЭК
+      $amount_bb = 99999;
+      $to_door_cost_bb = 0;
+      if (!empty($field_data['boxberry']['courier']['ExpressDelivery'])) {
+        $to_door_cost_bb = $field_data['boxberry']['cost_data']['price_service'];
+        $amount_bb = $field_data['boxberry']['cost_data']['price_base'] + $to_door_cost_bb;
+      }
 
-      // возможно это Киров или Чепецк
-      $non_free_shipping = ext_checkout_non_free_shipping($order);
-      if (isset($data["region"]) && in_array($data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])
-        && (empty($non_free_shipping['reason']) || $non_free_shipping['reason'] != 'weight')) {
-        $rate['amount'] = 0;
-        if ($non_free_shipping) {
-          // если в стоимости доставки курьером в админке стоит 1, стоимость рассчитывать от Курьерских служб
-          $amount = variable_get('courier_delivery_cost', 250) == 1 ? 250 : variable_get('courier_delivery_cost', 250);
-        } else {
-          $amount = 0;
+      $amount_cd = 99999;
+      $to_door_cost_cd = 0;
+      if (!empty($field_data["cdek"]["profiles"]["courier"]["price"])) {
+        $amount_cd = $field_data["cdek"]["profiles"]["courier"]["price"];
+        $to_door_cost_cd = $amount_cd - $field_data["cdek"]["profiles"]["pickup"]["price"];
+      }
+
+      $amount = $to_door_cost = 0;
+      if ($amount_bb < $amount_cd) {
+        $amount = $amount_bb;
+        $to_door_cost = $to_door_cost_bb;
+      }
+      if (!$amount && $amount_cd != 99999) {
+        $amount = $amount_cd;
+        $to_door_cost = $to_door_cost_cd;
+      }
+
+      // если в стоимости доставки курьером в админке стоит 1, стоимость рассчитывать от Курьерских служб
+      // если фикс сумма, то при беспланой доставке выводим её, а при платной - от Курьерских служб
+      if (variable_get('courier_delivery_cost', 250) == 1) {
+        if (!ext_checkout_non_free_shipping($order)) {
+          $amount = $to_door_cost;
         }
         $rate['amount'] = ceil($amount) * 100;
       }
-      elseif ((!empty($data['boxberry']['courier']['ExpressDelivery']) || !empty($data["cdek"]["profiles"]["courier"]["price"]))) {
-        // если есть расчёты по ББ или СДЭК
-        $amount_bb = 99999;
-        $to_door_cost_bb = 0;
-        if (!empty($data['boxberry']['courier']['ExpressDelivery'])) {
-          $to_door_cost_bb = $data['boxberry']['cost_data']['price_service'];
-          $amount_bb = $data['boxberry']['cost_data']['price_base'] + $to_door_cost_bb;
+      else {
+        if (!ext_checkout_non_free_shipping($order)) {
+          $amount = variable_get('courier_delivery_cost', 250);
         }
-
-        $amount_cd = 99999;
-        $to_door_cost_cd = 0;
-        if (!empty($data["cdek"]["profiles"]["courier"]["price"])) {
-          $amount_cd = $data["cdek"]["profiles"]["courier"]["price"];
-          $to_door_cost_cd = $amount_cd - $data["cdek"]["profiles"]["pickup"]["price"];
-        }
-
-        $amount = $to_door_cost = 0;
-        if ($amount_bb < $amount_cd) {
-          $amount = $amount_bb;
-          $to_door_cost = $to_door_cost_bb;
-        }
-        if (!$amount && $amount_cd != 99999) {
-          $amount = $amount_cd;
-          $to_door_cost = $to_door_cost_cd;
-        }
-
-        // если в стоимости доставки курьером в админке стоит 1, стоимость рассчитывать от Курьерских служб
-        // если фикс сумма, то при беспланой доставке выводим её, а при платной - от Курьерских служб
-        if (variable_get('courier_delivery_cost', 250) == 1) {
-          if (!ext_checkout_non_free_shipping($order)) {
-            $amount = $to_door_cost;
-          }
-          $rate['amount'] = ceil($amount) * 100;
-        }
-        else {
-          if (!ext_checkout_non_free_shipping($order)) {
-            $amount = variable_get('courier_delivery_cost', 250);
-          }
-          $rate['amount'] = ceil($amount) * 100;
-        }
+        $rate['amount'] = ceil($amount) * 100;
       }
     }
   }

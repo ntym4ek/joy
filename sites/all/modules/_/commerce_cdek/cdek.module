@@ -80,40 +80,42 @@ function cdek_service_rate_order($shipping_service, $order)
         }
 
         if (!$cache) {
-          try {
-            $response = cdek_api_request($rate_request);
-          } catch (Exception $e) {
-            $response["error"][] = ['text' => $e->getMessage()];
-          }
+          if (isset($field_data["region"]) && !in_array($field_data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
+            try {
+              $response = cdek_api_request($rate_request);
+            } catch (Exception $e) {
+              $response["error"][] = ['text' => $e->getMessage()];
+            }
 
-          // если ошибка
-          if (empty($response) || isset($response["error"])) {
-            if ($response["error"][0]["code"] == 3) {
-              $rate['data']['errors'][] = 'Нет доставки в этот населенный пункт';
-            }
-            else {
-              $rate['data']['errors'][] = isset($response["error"]) ? $response["error"][0]["text"] : 'Ошибка при запросе расчёта';
-            }
-            $field_data['cdek'] = [];
-          }
-          else {
-            // сохраняем стоимость доставки
-            if (empty($field_data['cdek'])) {
+            // если ошибка
+            if (empty($response) || isset($response["error"])) {
+              if ($response["error"][0]["code"] == 3) {
+                $rate['data']['errors'][] = 'Нет доставки в этот населенный пункт';
+              }
+              else {
+                $rate['data']['errors'][] = isset($response["error"]) ? $response["error"][0]["text"] : 'Ошибка при запросе расчёта';
+              }
               $field_data['cdek'] = [];
             }
-            $field_data['cdek']['calc_backend'] = $response['result'];
+            else {
+              // сохраняем стоимость доставки
+              if (empty($field_data['cdek'])) {
+                $field_data['cdek'] = [];
+              }
+              $field_data['cdek']['calc_backend'] = $response['result'];
 
-            $rate['amount'] = ceil($response['result']['price']) * 100;
-            $rate['data']['delivery_time'] = $response['result']['deliveryPeriodMax'];
-            if (!empty($field_data['cdek']['point']['address'])) {
-              $rate['data']['address'] = $field_data['cdek']['cityName'] . ', ' . $field_data['cdek']['point']['address'];
+              $rate['amount'] = ceil($response['result']['price']) * 100;
+              $rate['data']['delivery_time'] = $response['result']['deliveryPeriodMax'];
+              if (!empty($field_data['cdek']['point']['address'])) {
+                $rate['data']['address'] = $field_data['cdek']['cityName'] . ', ' . $field_data['cdek']['point']['address'];
+              }
+
+              if (!ext_checkout_non_free_shipping($order)) {
+                $rate['amount'] = 0;
+              }
+
+              commerce_shipping_rates_cache_set('cdek' . $cache_key, $order, $rate);
             }
-
-            if (!ext_checkout_non_free_shipping($order)) {
-              $rate['amount'] = 0;
-            }
-
-            commerce_shipping_rates_cache_set('cdek' . $cache_key, $order, $rate);
           }
         }
         else {

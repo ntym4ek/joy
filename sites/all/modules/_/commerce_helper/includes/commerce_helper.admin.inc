@@ -132,29 +132,29 @@ function commerce_helper_settings($form, &$form_state)
         '#default_value' => variable_get('zone3_regions', []),
     );
 
-  $form['fieldset4'] = array('#type' => 'fieldset', '#title' => 'Киров', '#group' => 'vertical_tabs');
-  $form['fieldset4']['zone4_amount'] = array(
-    '#type' => 'textfield',
-    '#size' => 10,
-    '#title' => 'Бесплатно от суммы',
-    '#default_value' => variable_get('zone4_amount', 0),
-  );
-  $form['fieldset4']['zone4_regions'] = array(
-    '#type' => 'hidden',
-    '#value' => [624],
-  );
-
-  $form['fieldset5'] = array('#type' => 'fieldset', '#title' => 'Кирово-Чепецк', '#group' => 'vertical_tabs');
-  $form['fieldset5']['zone5_amount'] = array(
-    '#type' => 'textfield',
-    '#size' => 10,
-    '#title' => 'Бесплатно от суммы',
-    '#default_value' => variable_get('zone5_amount', 0),
-  );
-  $form['fieldset4']['zone5_regions'] = array(
-    '#type' => 'hidden',
-    '#value' => [625],
-  );
+//  $form['fieldset4'] = array('#type' => 'fieldset', '#title' => 'Киров', '#group' => 'vertical_tabs');
+//  $form['fieldset4']['zone4_amount'] = array(
+//    '#type' => 'textfield',
+//    '#size' => 10,
+//    '#title' => 'Бесплатно от суммы',
+//    '#default_value' => variable_get('zone4_amount', 0),
+//  );
+//  $form['fieldset4']['zone4_regions'] = array(
+//    '#type' => 'hidden',
+//    '#value' => [624],
+//  );
+//
+//  $form['fieldset5'] = array('#type' => 'fieldset', '#title' => 'Кирово-Чепецк', '#group' => 'vertical_tabs');
+//  $form['fieldset5']['zone5_amount'] = array(
+//    '#type' => 'textfield',
+//    '#size' => 10,
+//    '#title' => 'Бесплатно от суммы',
+//    '#default_value' => variable_get('zone5_amount', 0),
+//  );
+//  $form['fieldset4']['zone5_regions'] = array(
+//    '#type' => 'hidden',
+//    '#value' => [625],
+//  );
 
     return system_settings_form($form);
 }

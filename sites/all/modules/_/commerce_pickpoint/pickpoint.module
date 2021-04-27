@@ -75,36 +75,38 @@ function pickpoint_service_rate_order($shipping_service, $order)
         }
 
         if (!$cache) {
-          try {
-            $response = pickpoint_api_request($rate_request);
-          } catch (Exception $e) {
-            $response['ErrorMessage'] = $e->getMessage();
-          }
-
-          // если пустой ответ или ошибка
-          if (empty($response) || $response["ErrorMessage"]) {
-            $rate['data']['errors'][] = empty($response["ErrorMessage"]) ? 'Ошибка при запросе расчёта' : $response["ErrorMessage"];
-            $field_data['pickpoint'] = [];
-          }
-          // расчёт выполнен
-          else {
-            // сохраняем стоимость доставки
-            if (!isset($field_data['pickpoint']['backend'])) {
-              $field_data['pickpoint']['backend'] = [];
-            }
-            $field_data['pickpoint']['backend'] = $response;
-
-            $rate['amount'] = ceil($response["Services"][0]["Tariff"]) * 100;
-            $rate['data']['delivery_time'] = $response["DPMin"] . '-' . $response["DPMax"] . ' д.';
-            if (!empty($field_data['pickpoint']['point']['address'])) {
-              $rate['data']['address'] = $field_data['pickpoint']['point']['address'];
+          if (isset($field_data["region"]) && !in_array($field_data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
+            try {
+              $response = pickpoint_api_request($rate_request);
+            } catch (Exception $e) {
+              $response['ErrorMessage'] = $e->getMessage();
             }
 
-            if (!ext_checkout_non_free_shipping($order)) {
-              $rate['amount'] = 0;
+            // если пустой ответ или ошибка
+            if (empty($response) || $response["ErrorMessage"]) {
+              $rate['data']['errors'][] = empty($response["ErrorMessage"]) ? 'Ошибка при запросе расчёта' : $response["ErrorMessage"];
+              $field_data['pickpoint'] = [];
             }
+            // расчёт выполнен
+            else {
+              // сохраняем стоимость доставки
+              if (!isset($field_data['pickpoint']['backend'])) {
+                $field_data['pickpoint']['backend'] = [];
+              }
+              $field_data['pickpoint']['backend'] = $response;
 
-            commerce_shipping_rates_cache_set('pickpoint' . $cache_key, $order, $rate);
+              $rate['amount'] = ceil($response["Services"][0]["Tariff"]) * 100;
+              $rate['data']['delivery_time'] = $response["DPMin"] . '-' . $response["DPMax"] . ' д.';
+              if (!empty($field_data['pickpoint']['point']['address'])) {
+                $rate['data']['address'] = $field_data['pickpoint']['point']['address'];
+              }
+
+              if (!ext_checkout_non_free_shipping($order)) {
+                $rate['amount'] = 0;
+              }
+
+              commerce_shipping_rates_cache_set('pickpoint' . $cache_key, $order, $rate);
+            }
           }
         }
         else {

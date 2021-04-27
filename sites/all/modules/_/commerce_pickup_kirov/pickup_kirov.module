@@ -9,12 +9,12 @@
 /**
  * Implements hook_commerce_shipping_method_info().
  */
-function pickup_commerce_shipping_method_info() {
+function pickup_kirov_commerce_shipping_method_info() {
     $shipping_methods = array();
 
-    $shipping_methods['pickup_shipping_method'] = array(
-        'title' => t('Pickup shipping method'),
-        'description' => t('Defines shipping method by pickup.'),
+    $shipping_methods['pickup_kirov_shipping_method'] = array(
+        'title' => t('Pickup in Kirov shipping method'),
+        'description' => t('Defines shipping method by pickup from point in Kirov.'),
     );
 
     return $shipping_methods;
@@ -23,20 +23,20 @@ function pickup_commerce_shipping_method_info() {
 /**
  * Implements hook_commerce_shipping_service_info().
  */
-function pickup_commerce_shipping_service_info() {
+function pickup_kirov_commerce_shipping_service_info() {
   $shipping_services = array();
 
-  $shipping_services['pickup_shipping_service'] = array(
-    'title' => t('Pickup shipping service'),
-    'display_title' => t('Pickup'),
-    'shipping_method' => 'pickup_shipping_method',
+  $shipping_services['pickup_kirov_shipping_service'] = array(
+    'title' => t('Pickup in Kirov shipping service'),
+    'display_title' => 'Пункт выдачи',
+    'shipping_method' => 'pickup_kirov_shipping_method',
     'price_component' => 'shipping',
-    'weight' => 15,
+    'weight' => 5,
     'callbacks' => array(
-      'rate' => 'pickup_service_rate_order',
-      'details_form' => 'pickup_service_details_form',
-      'details_form_validate' => 'pickup_service_details_form_validate',
-      'details_form_submit' => 'pickup_service_details_form_submit',
+      'rate' => 'pickup_kirov_service_rate_order',
+      'details_form' => 'pickup_kirov_service_details_form',
+      'details_form_validate' => 'pickup_kirov_service_details_form_validate',
+      'details_form_submit' => 'pickup_kirov_service_details_form_submit',
     ),
   );
 
@@ -47,7 +47,7 @@ function pickup_commerce_shipping_service_info() {
  * Shipping service callback: returns a base price array for a shipping service
  * calculated for the given order.
  */
-function pickup_service_rate_order($shipping_service, $order)
+function pickup_kirov_service_rate_order($shipping_service, $order)
 {
   $rate = array(
     'amount' => -1,
@@ -59,10 +59,12 @@ function pickup_service_rate_order($shipping_service, $order)
     $order_wr = entity_metadata_wrapper('commerce_order', $order);
     $field_name = commerce_physical_order_shipping_field_name($order);
     $field_data = json_decode($order_wr->{$field_name}->field_data->value(), TRUE);
+    $products_amount_base = commerce_price_component_total($order_wr->commerce_order_total->value(), 'base_price')['amount'];
 
-    // только для чепецка и кирова
-    if (isset($field_data["region"]) && in_array($field_data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
-      $rate['amount'] = 0;
+    // сумма заказа больше 1000 р. и только для кирова
+    if (isset($field_data["region"]) && $field_data["region"]["data"]["city_kladr_id"] == '4300000100000') {
+      if ($products_amount_base < 100000) $rate['amount'] = 15000;
+      else $rate['amount'] = 0;
     }
   }
 
@@ -74,24 +76,37 @@ function pickup_service_rate_order($shipping_service, $order)
  * Allows modules to alter the options array generated to select a shipping
  * service on the checkout form.
  */
-function pickup_commerce_shipping_service_rate_options_alter(&$options, $order){
-    if (isset( $order->shipping_rates['pickup_shipping_service'] )) {
-        $options['pickup_shipping_service'] =   '<div class="carrier">' . t('Pickup') . '</div>' .
-            '<div class="message">' . t('From our warehouse') . '</div>' .
-            '<div class="cost">' . t('free', [], ['context' => 'Checkout delivery cost']) . '</div>';
+function pickup_kirov_commerce_shipping_service_rate_options_alter(&$options, $order)
+{
+  if (isset($order->shipping_rates['pickup_kirov_shipping_service'] )) {
+    $line_item = $order->shipping_rates['pickup_kirov_shipping_service'];
+    $line_item_wr = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $data = $line_item_wr->commerce_unit_price->data->value();
+
+    $message = $cost = '';
+    if (empty($data['errors'])) {
+      $cost = $line_item_wr->commerce_unit_price->amount->value();
+      $cost = $cost ? commerce_currency_format($cost, 'RUB') : t('free');
+    } else {
+      $message = 'Ошибка расчёта: ' . drupal_strtolower(implode(', ', $data['errors']));
     }
+
+    $options['pickup_kirov_shipping_service'] =  '<div class="carrier">Пункт выдачи</div>' .
+      '<div class="message">в г. Киров</div>' .
+      '<div class="cost">' . $cost . '</div>';
+  }
 }
 
 /**
  * Shipping service callback: returns the shipping service details form.
  */
-function pickup_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
+function pickup_kirov_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service)
 {
     // вывести инфо о пункте самовывоза
     $pane_form = array();
 
     $pane_form['info'] = array(
-        '#markup' => '<div class="form-item form-item-markup"><p>Забрать товар можно по адресу г. Кирово-Чепецк, ул. Производственная, д.6</p><p></p></div>',
+        '#markup' => '<div class="form-item form-item-markup"><p>Забрать товар можно по адресу г. Киров, Октябрьский проспект, д.87</p><p></p></div>',
     );
 
   $user_info = ext_user_get_user_info($order->uid, true);
@@ -125,7 +140,7 @@ function pickup_service_details_form($pane_form, $pane_values, $checkout_pane, $
 /**
  * Shipping service callback: validates the example shipping service details.
  */
-function pickup_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
+function pickup_kirov_service_details_form_validate($details_form, $details_values, $shipping_service, $order, $form_parents)
 {
   $validate = true;
 
@@ -151,7 +166,7 @@ function pickup_service_details_form_validate($details_form, $details_values, $s
  * Shipping service callback: increases the shipping line item's unit price if
  * express delivery was selected.
  */
-function pickup_service_details_form_submit($details_form, $details_values, $line_item)
+function pickup_kirov_service_details_form_submit($details_form, $details_values, $line_item)
 {
     // сохраняем введенные пользователем данные
     $order_wrapper = entity_metadata_wrapper('commerce_order', $line_item->order_id);
@@ -165,12 +180,12 @@ function pickup_service_details_form_submit($details_form, $details_values, $lin
 }
 
 // callback функция, возвращающая информацию о доставке для заказов
-function pickup_shipping_service_info($item)
+function pickup_kirov_shipping_service_info($item)
 {
     $component_data = empty($item->commerce_total['und'][0]['data']) ? [] : $item->commerce_total['und'][0]['data'];
     return [
         'title' => $item->line_item_label,
         'method' => $item->commerce_shipping_service,
-        'address' => '613048, Кирово-Чепецк, ул. Производственная, д.6',
+        'address' => 'г. Киров, Октябрьский проспект, д.87',
     ];
 }

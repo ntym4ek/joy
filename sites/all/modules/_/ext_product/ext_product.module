@@ -209,8 +209,7 @@ function ext_product_radios_alter($element, $form_state)
 }
 
 /**
- * ------------------------------------------ Добавление Product Teaser в
- * корзину --------------------------------------
+ * ------------------------------------------ Добавление Product Teaser в корзину --------------------------------------
  * http://www.realtidings.com/blog/12/Apr/26/drupal-commerce-custom-add-cart-link
  * callback для добавления товара в корзину по id.
  */

@@ -75,42 +75,44 @@ function boxberry_service_rate_order($shipping_service, $order)
         }
 
         if (!$cache) {
-          try {
-            $response = boxberry_api_request($rate_request);
-          } catch (Exception $e) {
-            $response['cost_data'][] = ['err' => $e->getMessage()];
-          }
+          if (isset($field_data["region"]) && !in_array($field_data["region"]["data"]["city_kladr_id"], ['4300000100000', '4300000400000'])) {
+            try {
+              $response = boxberry_api_request($rate_request);
+            } catch (Exception $e) {
+              $response['cost_data'][] = ['err' => $e->getMessage()];
+            }
 
-          // если пустой ответ или ошибка
-          if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
-            $rate['data']['errors'][] = $response['cost_data'][0]['err'];
-            $field_data['boxberry'] = [];
-          }
-          // если стомость нулевая
-          elseif ($response["cost_data"]["price_base"] == 0) {
-            $field_data['boxberry'] = [];
-            //                      $rate['data']['errors'][] = 'Пунктов выдачи не найдено';
-            return FALSE;
-          }
-          // расчёт выполнен
-          else {
-            // сохраняем стоимость доставки
-            if (empty($field_data['boxberry'])) {
+            // если пустой ответ или ошибка
+            if (count($response['cost_data']) <= 0 || !empty($response['cost_data'][0]['err'])) {
+              $rate['data']['errors'][] = $response['cost_data'][0]['err'];
               $field_data['boxberry'] = [];
             }
-            $field_data['boxberry'] = array_merge($field_data['boxberry'], $response);
-
-            $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
-            $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
-            if (!empty($field_data['boxberry']['point']['address'])) {
-              $rate['data']['address'] = $field_data['boxberry']['point']['address'];
+            // если стомость нулевая
+            elseif ($response["cost_data"]["price_base"] == 0) {
+              $field_data['boxberry'] = [];
+              //                      $rate['data']['errors'][] = 'Пунктов выдачи не найдено';
+              return FALSE;
             }
+            // расчёт выполнен
+            else {
+              // сохраняем стоимость доставки
+              if (empty($field_data['boxberry'])) {
+                $field_data['boxberry'] = [];
+              }
+              $field_data['boxberry'] = array_merge($field_data['boxberry'], $response);
 
-            if (!ext_checkout_non_free_shipping($order)) {
-              $rate['amount'] = 0;
+              $rate['amount'] = ceil($response['cost_data']['price_base']) * 100;
+              $rate['data']['delivery_time'] = $response['cost_data']['delivery_period'];
+              if (!empty($field_data['boxberry']['point']['address'])) {
+                $rate['data']['address'] = $field_data['boxberry']['point']['address'];
+              }
+
+              if (!ext_checkout_non_free_shipping($order)) {
+                $rate['amount'] = 0;
+              }
+
+              commerce_shipping_rates_cache_set('boxberry' . $cache_key, $order, $rate);
             }
-
-            commerce_shipping_rates_cache_set('boxberry' . $cache_key, $order, $rate);
           }
         }
         else {

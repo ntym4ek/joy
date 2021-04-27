@@ -182,42 +182,47 @@ function commerce_russianpost_service_rate_order($shipping_service, $order)
         }
 
         if (!$cache) {
-          $rates = [];
+          if (isset($field_data["region"]) && !in_array($field_data["region"]["data"]["city_kladr_id"], [
+              '4300000100000',
+              '4300000400000'
+            ])) {
+            $rates = [];
 
-          try {
-            $response = commerce_russianpost_api_request($rate_request, t('Requesting shipping rates for package in Order @order_number', ['@order_number' => $order->order_number]));
-          } catch (Exception $e) {
-            $response['services']['message']['error'] = $e->getMessage();
-          }
+            try {
+              $response = commerce_russianpost_api_request($rate_request, t('Requesting shipping rates for package in Order @order_number', ['@order_number' => $order->order_number]));
+            } catch (Exception $e) {
+              $response['services']['message']['error'] = $e->getMessage();
+            }
 
-          if ($response) {
-            if (empty($response['services']['message']['error'])) {
-              foreach (commerce_russianpost_parse_rate_response($response['services']) as $service_name => $rate) {
-                $rate['amount'] = ceil($rate['amount'] / 100) * 100;
-                if (!ext_checkout_non_free_shipping($order)) {
-                  $rate['amount'] = 0;
+            if ($response) {
+              if (empty($response['services']['message']['error'])) {
+                foreach (commerce_russianpost_parse_rate_response($response['services']) as $service_name => $rate) {
+                  $rate['amount'] = ceil($rate['amount'] / 100) * 100;
+                  if (!ext_checkout_non_free_shipping($order)) {
+                    $rate['amount'] = 0;
+                  }
+                  $rates[$service_name] = $rate;
                 }
-                $rates[$service_name] = $rate;
               }
-            }
-            else {
-              foreach (commerce_russianpost_load_enabled_services() as $service_name => $service) {
-                $message = empty($response["services"]["message"]["message"]) ? t($response['services']['message']['error']) : t($response["services"]["message"]["message"]);
-                $rates[$service_name] = [
-                  'amount' => -1,
-                  'currency_code' => '',
-                  'data' => [
-                    'errors' => [$message],
-                  ],
-                ];
+              else {
+                foreach (commerce_russianpost_load_enabled_services() as $service_name => $service) {
+                  $message = empty($response["services"]["message"]["message"]) ? t($response['services']['message']['error']) : t($response["services"]["message"]["message"]);
+                  $rates[$service_name] = [
+                    'amount' => -1,
+                    'currency_code' => '',
+                    'data' => [
+                      'errors' => [$message],
+                    ],
+                  ];
+                }
               }
-            }
 
-            commerce_shipping_rates_cache_set('russianpost' . $cache_key, $order, $rates);
+              commerce_shipping_rates_cache_set('russianpost' . $cache_key, $order, $rates);
+            }
           }
-        }
-        else {
-          $rates = $cache;
+          else {
+            $rates = $cache;
+          }
         }
       }
       else {
